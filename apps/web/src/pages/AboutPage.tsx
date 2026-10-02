@@ -3,287 +3,197 @@ import {
   Waves, 
   ShieldCheck, 
   AlertTriangle, 
-  Lock, 
   PhoneCall, 
   HelpCircle, 
   Eye, 
-  FileCheck2, 
-  ExternalLink 
+  Database,
+  Compass,
+  ArrowDown,
+  Building2,
+  FileCheck2,
+  ExternalLink
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AboutPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0B243D] pb-16">
-      {/* Top Hero Banner */}
-      <div className="bg-[#103D76] text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-[#0C57C7]/30 shadow-inner">
-        <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sky-200 text-xs font-semibold mb-4 border border-white/20">
-            <Waves className="w-4 h-4 text-sky-300" />
-            เกี่ยวกับ FloodTrace ปราจีนบุรี
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+      
+      {/* Top Banner (Section 24) */}
+      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-bold mb-3 border border-blue-100">
+            <Waves className="w-3.5 h-3.5" />
+            <span>แพลตฟอร์มภาคประชาชน</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-            แพลตฟอร์มคัดกรองและเฝ้าระวังสิ่งแวดล้อมภาคประชาชน
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#063B70] tracking-tight">
+            เกี่ยวกับ Ruwaigon (ระวังก่อน)
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-sky-100 max-w-2xl leading-relaxed">
-            FloodTrace พัฒนาขึ้นเพื่อช่วยตอบคำถามสำคัญของประชาชนในจังหวัดปราจีนบุรีว่า{' '}
-            <span className="font-semibold text-white">
-              "พื้นที่ของฉันควรได้รับการติดตามหรือตรวจสอบสิ่งแวดล้อมใกล้ชิดหรือไม่?"
+          <p className="text-sm sm:text-base text-slate-600 mt-2 max-w-2xl leading-relaxed">
+            เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย พัฒนาขึ้นเพื่อช่วยตอบคำถามสำคัญของประชาชนว่า{' '}
+            <span className="font-semibold text-[#063B70]">
+              "พื้นที่ของฉันควรได้รับการเฝ้าระวังหรือตรวจสอบเพิ่มเติมหรือไม่?"
             </span>
           </p>
         </div>
+
+        <div className="shrink-0 flex items-center justify-center w-20 h-20 rounded-3xl bg-[#063B70] text-white shadow-lg">
+          <Waves className="w-10 h-10 text-white" />
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        
-        {/* Core Product Principle & What it is NOT */}
-        <section className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-                หลักการทำงานและข้อจำกัดของระบบ
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                สิ่งที่ FloodTrace เป็น และสิ่งที่ FloodTrace ไม่ใช่
-              </p>
-            </div>
-          </div>
+      {/* 1. Ruwaigon คืออะไร */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-4">
+        <h2 className="text-lg font-bold text-[#063B70] pb-2 border-b border-slate-100 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-[#0C65E8]" />
+          <span>Ruwaigon คืออะไร?</span>
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+          Ruwaigon เป็นแพลตฟอร์มสารสนเทศภูมิศาสตร์และประเมินความเสี่ยงด้านสิ่งแวดล้อมเชิงพื้นที่สำหรับประชาชนในจังหวัดปราจีนบุรี โดยไม่จำกัดเฉพาะช่วงน้ำท่วม แต่มีประโยชน์ต่อเนื่องทั้งก่อนน้ำหลาก ระหว่างน้ำท่วม หลังน้ำลด และการเฝ้าระวังคุณภาพน้ำและสิ่งแวดล้อมในระยะยาว เพื่อให้ประชาชนมีความตระหนักรู้และดูแลความปลอดภัยในชีวิตประจำวันได้อย่างทันท่วงที
+        </p>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
-              <h3 className="font-bold text-emerald-900 text-sm sm:text-base flex items-center gap-2 mb-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                สิ่งที่ระบบทำ (หน้าที่หลัก)
-              </h3>
-              <ul className="text-xs sm:text-sm text-emerald-950 space-y-2 leading-relaxed">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-emerald-600">•</span>
-                  <span><strong>จัดลำดับความสำคัญในการตรวจสอบ (Verification Priority):</strong> คัดกรองพื้นที่ที่ควรระมัดระวังและสุ่มตรวจคุณภาพน้ำก่อนตามหลักอุทกวิทยา</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-emerald-600">•</span>
-                  <span><strong>รวบรวมข้อสังเกตจากชุมชน:</strong> เปิดให้ประชาชนส่งภาพและบันทึกความผิดปกติ เช่น กลิ่น สี คราบน้ำ เพื่อเป็นฐานข้อมูลตรวจสอบ</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-emerald-600">•</span>
-                  <span><strong>เชื่อมโยงข้อมูลเปิดจากภาครัฐ:</strong> นำข้อมูลโทรมาตรน้ำ ฝนดาวเทียม และประกาศทางการมารวมไว้ในจุดเดียว</span>
-                </li>
-              </ul>
-            </div>
+      {/* 2. Simple Flow Diagram (Section 24) */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-6">
+        <div>
+          <h2 className="text-lg font-bold text-[#063B70]">
+            ระบบวิเคราะห์อย่างไร? (Workflow Diagram)
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            แผนผังกระบวนการประมวลผลข้อมูลอย่างเป็นระบบและโปร่งใส
+          </p>
+        </div>
 
-            <div className="p-5 rounded-xl bg-rose-50/70 border border-rose-200/80">
-              <h3 className="font-bold text-rose-900 text-sm sm:text-base flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-rose-700" />
-                สิ่งที่ไม่ใช่หน้าที่ของระบบ (ข้อจำกัดสำคัญ)
-              </h3>
-              <ul className="text-xs sm:text-sm text-rose-950 space-y-2 leading-relaxed">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-rose-600">•</span>
-                  <span><strong>ไม่ใช่การระบุผู้ก่อมลพิษ:</strong> ระบบไม่ระบุชื่อโรงงาน นิติบุคคล หรือกล่าวหาแหล่งกำเนิดมลพิษใด ๆ</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-rose-600">•</span>
-                  <span><strong>ไม่ใช่ผลตรวจทางห้องปฏิบัติการ:</strong> แบบจำลองการไหลและข้อสังเกตของประชาชนไม่สามารถทดแทนผลวิเคราะห์สารเคมีทางวิทยาศาสตร์ได้</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-rose-600">•</span>
-                  <span><strong>ไม่ได้รับรองว่า "ปลอดภัย":</strong> สภาพแวดล้อมทางน้ำเปลี่ยนแปลงรวดเร็ว จึงระบุเป็น "ไม่มีพื้นที่เฝ้าระวังที่กำลังใช้งาน" แทนคำว่าปลอดภัย</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed">
-            <span className="font-semibold text-slate-900">ข้อความมาตรฐานกำกับข้อมูล: </span>
-            "FloodTrace เป็นระบบคัดกรองและประเมินลำดับความสำคัญในการเฝ้าระวังสิ่งแวดล้อมภาคประชาชน 
-            ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ได้ระบุความรับผิดทางกฎหมายของผู้ใด 
-            หากสงสัยเหตุฉุกเฉินทางมลพิษ โปรดแจ้งสายด่วน 1650 หรือหน่วยงานที่มีอำนาจตามกฎหมาย"
-          </div>
-        </section>
-
-        {/* 3 Information Classes */}
-        <section className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Eye className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-                การจำแนกข้อมูล 3 หมวดหมู่อย่างโปร่งใส
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                ทุกข้อมูลบน FloodTrace มีการระบุแหล่งที่มาและระดับความเชื่อถืออย่างเคร่งครัด
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-2">
-            <div className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                  OFFICIAL
-                </span>
-                <span className="font-bold text-sm text-slate-800">ข้อมูลจากหน่วยงาน</span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                ข้อมูลสถานีวัดระดับน้ำ ฝนโทรมาตร และประกาศตรวจวัดคุณภาพสิ่งแวดล้อมจากกรมควบคุมมลพิษ (PCD), 
-                สำนักงานทรัพยากรน้ำแห่งชาติ (ONWR), กรมชลประทาน (RID), กรมอุตุนิยมวิทยา (TMD) และ GISTDA
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                  COMMUNITY
-                </span>
-                <span className="font-bold text-sm text-slate-800">รายงานจากประชาชน</span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                ข้อสังเกตสภาพน้ำ กลิ่น คราบ หรือสัตว์น้ำผิดปกติที่ประชาชนส่งเข้ามา 
-                <span className="text-amber-700 font-medium"> (มีข้อความกำกับเสมอ: "รายงานจากประชาชนเป็นข้อมูลสังเกตการณ์ ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน")</span>
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                  MODEL
-                </span>
-                <span className="font-bold text-sm text-slate-800">ผลจากแบบจำลอง</span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                พื้นที่ประเมินลำดับความสำคัญในการตรวจสอบตามแนวลุ่มน้ำสาขา 
-                <span className="text-amber-700 font-medium"> (มีข้อความกำกับเสมอ: "ผลจากแบบจำลองไม่ใช่ผลตรวจทางห้องปฏิบัติการ")</span>
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Privacy & Safety by Design */}
-        <section className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-                การคุ้มครองความเป็นส่วนตัวและความปลอดภัย (Privacy by Design)
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                มาตรการปกป้องข้อมูลส่วนบุคคลและป้องกันผลกระทบทางกฎหมายที่ไม่เป็นธรรม
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed pt-2">
-            <div className="flex items-start gap-2">
-              <FileCheck2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-              <span><strong>ลดทอนความแม่นยำของพิกัดรายงาน (Coordinate Generalization):</strong> พิกัดที่ประชาชนส่งเข้ามาจะถูกปัดเศษเป็นระดับตำบลหรือกริดหยาบ ~1.1 กิโลเมตร เพื่อไม่ให้ระบุตำแหน่งบ้านหรือที่พักอาศัยได้</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <FileCheck2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-              <span><strong>ลบข้อมูล EXIF/GPS ในรูปถ่าย:</strong> ระบบจะตัดข้อมูลระบุตำแหน่งและอุปกรณ์ที่ติดมากับไฟล์ภาพโดยอัตโนมัติก่อนจัดเก็บและเผยแพร่</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <FileCheck2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-              <span><strong>ไม่มีการเผยแพร่ข้อมูลระบุตัวบุคคล:</strong> ไม่เปิดเผยชื่อ เบอร์โทรศัพท์ หรืออีเมลของผู้ส่งรายงานในหน้าสาธารณะ</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <FileCheck2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-              <span><strong>ไม่มีการระบุพิกัดโรงงานหรือจุดกำเนิดมลพิษ:</strong> แผนที่แสดงผลเฉพาะรูปแปลงลุ่มน้ำสาขาและทางน้ำธรรมชาติ ไม่แสดงจุดที่ตั้งโรงงานหรือลูกศรชี้แหล่งกำเนิด</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Emergency Contacts & Official Channels */}
-        <section className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <PhoneCall className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-800">
-                ช่องทางแจ้งเหตุฉุกเฉินและหน่วยงานทางการ
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                หากพบเหตุด่วนด้านมลพิษ หรืออุทกภัยร้ายแรง โปรดติดต่อหน่วยงานโดยตรงทันที
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <a 
-              href="tel:1650" 
-              className="p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs text-slate-500">กรมควบคุมมลพิษ (PCD)</div>
-                <div className="font-bold text-slate-900 text-sm sm:text-base">สายด่วนร้องทุกข์มลพิษ</div>
-              </div>
-              <span className="text-base font-extrabold text-blue-600 px-3 py-1 bg-blue-100 rounded-lg">1650</span>
-            </a>
-
-            <a 
-              href="tel:1784" 
-              className="p-4 rounded-xl border border-slate-200 hover:border-rose-400 hover:bg-rose-50/50 transition-all flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs text-slate-500">กรมป้องกันและบรรเทาสาธารณภัย (DDPM)</div>
-                <div className="font-bold text-slate-900 text-sm sm:text-base">สายด่วนสาธารณภัย / น้ำท่วม</div>
-              </div>
-              <span className="text-base font-extrabold text-rose-600 px-3 py-1 bg-rose-100 rounded-lg">1784</span>
-            </a>
-
-            <a 
-              href="tel:1460" 
-              className="p-4 rounded-xl border border-slate-200 hover:border-sky-400 hover:bg-sky-50/50 transition-all flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs text-slate-500">กรมชลประทาน (RID)</div>
-                <div className="font-bold text-slate-900 text-sm sm:text-base">สายด่วนน้ำชลประทาน</div>
-              </div>
-              <span className="text-base font-extrabold text-sky-600 px-3 py-1 bg-sky-100 rounded-lg">1460</span>
-            </a>
-
-            <a 
-              href="tel:1567" 
-              className="p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 transition-all flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs text-slate-500">กระทรวงมหาดไทย</div>
-                <div className="font-bold text-slate-900 text-sm sm:text-base">ศูนย์ดำรงธรรม ร้องทุกข์</div>
-              </div>
-              <span className="text-base font-extrabold text-amber-600 px-3 py-1 bg-amber-100 rounded-lg">1567</span>
-            </a>
-          </div>
-
-          <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 flex items-center justify-between mt-2">
-            <span>สำนักงานทรัพยากรธรรมชาติและสิ่งแวดล้อมจังหวัดปราจีนบุรี (ทสจ. ปราจีนบุรี)</span>
-            <span className="font-semibold text-slate-800">โทร. 037-454-041</span>
-          </div>
-        </section>
-
-        {/* Read More Links */}
-        <section className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-sky-50 rounded-2xl border border-sky-200">
+        {/* 3-Step Flow Diagram */}
+        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-6">
+          
+          {/* Step 1: Input sources */}
           <div>
-            <h3 className="font-bold text-sky-950 text-base">ต้องการศึกษาวิธีวิทยาและแคตตาล็อกข้อมูล?</h3>
-            <p className="text-xs sm:text-sm text-sky-800 mt-1">
-              อ่านรายละเอียดสูตรการคำนวณ แหล่งข้อมูลโทรมาตร และข้อจำกัดทางวิชาการ
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">
+              ขั้นที่ 1: แหล่งข้อมูลนำเข้า (Data Inputs)
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <Building2 className="w-5 h-5 text-[#0C65E8] mx-auto mb-1" />
+                <span className="font-bold text-xs text-[#063B70] block">ข้อมูลหน่วยงาน</span>
+                <span className="text-[10px] text-slate-400">PCD / สสน. / RID</span>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <Compass className="w-5 h-5 text-sky-600 mx-auto mb-1" />
+                <span className="font-bold text-xs text-[#063B70] block">สภาพแวดล้อม</span>
+                <span className="text-[10px] text-slate-400">โครงข่ายทางน้ำ / ฝน</span>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <Eye className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                <span className="font-bold text-xs text-[#063B70] block">รายงานประชาชน</span>
+                <span className="text-[10px] text-slate-400">ข้อสังเกตชุมชน</span>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <Database className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                <span className="font-bold text-xs text-[#063B70] block">ผลจากแบบจำลอง</span>
+                <span className="text-[10px] text-slate-400">การไหลและลุ่มน้ำย่อย</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center text-slate-300">
+            <ArrowDown className="w-6 h-6 animate-bounce" />
+          </div>
+
+          {/* Step 2: Processing */}
+          <div className="max-w-md mx-auto p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center space-y-1">
+            <div className="text-[11px] font-bold text-[#0C65E8] uppercase tracking-wider">
+              ขั้นที่ 2: การประมวลผลเชิงพื้นที่ (Spatial Analysis)
+            </div>
+            <div className="font-extrabold text-sm sm:text-base text-[#063B70]">
+              วิเคราะห์และจัดลำดับพื้นที่เฝ้าระวัง
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              ประเมินความเชื่อมโยงทางน้ำ พื้นที่รับน้ำตอนล่าง และข้อสังเกตชุมชน
             </p>
           </div>
-          <Link
-            to="/data-methodology"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#103D76] text-white text-sm font-semibold hover:bg-[#0C57C7] transition-colors shrink-0 shadow-sm"
-          >
-            <span>ดูข้อมูลและวิธีวิทยา</span>
-            <ExternalLink className="w-4 h-4" />
-          </Link>
-        </section>
 
+          <div className="flex justify-center text-slate-300">
+            <ArrowDown className="w-6 h-6 animate-bounce" />
+          </div>
+
+          {/* Step 3: Citizen Delivery */}
+          <div className="max-w-md mx-auto p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1">
+            <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+              ขั้นที่ 3: สารสนเทศเพื่อประชาชน (Citizen Value)
+            </div>
+            <div className="font-extrabold text-sm sm:text-base text-emerald-900">
+              แสดงผลให้ประชาชนเข้าใจง่าย และปลอดภัย
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              แผนที่ภาพถ่ายดาวเทียม, ระดับสีเฝ้าระวัง 5 ระดับ, และคำแนะนำการดูแลตนเอง
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 3. Core Principles & System Limitations (Section 24) */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-6">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <AlertTriangle className="w-5 h-5 text-amber-600" />
+          <h2 className="text-lg font-bold text-[#063B70]">ข้อจำกัดสำคัญของระบบ</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+              <span>🚫 ไม่ระบุความรับผิดทางกฎหมาย</span>
+            </div>
+            <p className="text-slate-600">
+              Ruwaigon ไม่ได้ถูกสร้างขึ้นเพื่อตัดสินหรือระบุความรับผิดทางกฎหมายของผู้ใด การดำเนินคดีเป็นอำนาจของหน่วยงานรัฐตามกฎหมาย
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+              <span>🏭 ไม่ระบุชื่อโรงงานหรือผู้ก่อมลพิษ</span>
+            </div>
+            <p className="text-slate-600">
+              ระบบไม่เปิดเผยชื่อโรงงานหรือชี้เป้าแหล่งกำเนิดมลพิษ เพื่อความโปร่งใสและปฏิบัติตามมาตรฐานการปกป้องข้อมูลสาธารณะ
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+              <span>🧪 ไม่สามารถทดแทนผลแล็บได้</span>
+            </div>
+            <p className="text-slate-600">
+              แบบจำลองอุทกวิทยาและข้อสังเกตจากชุมชนเป็นเพียงข้อมูลสนับสนุนการเฝ้าระวังเบื้องต้น ไม่ใช่ผลการวิเคราะห์สารเคมีทางวิทยาศาสตร์
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Emergency Contacts */}
+      <div className="p-6 rounded-3xl bg-blue-50/70 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <div className="w-12 h-12 rounded-2xl bg-[#0C65E8] text-white flex items-center justify-center shrink-0">
+            <PhoneCall className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-sm text-[#063B70]">
+              พบเห็นเหตุมลพิษร้ายแรง หรือต้องการความช่วยเหลือเร่งด่วน?
+            </h3>
+            <p className="text-xs text-slate-600 mt-0.5">
+              แจ้งตรงศูนย์ปฏิบัติการฉุกเฉินมลพิษ กรมควบคุมมลพิษ (PCD)
+            </p>
+          </div>
+        </div>
+
+        <a
+          href="tel:1650"
+          className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors min-h-[44px] flex items-center gap-2 shrink-0 shadow-sm"
+        >
+          <span>โทรฟรีสายด่วน 1650</span>
+        </a>
       </div>
+
     </div>
   );
 };

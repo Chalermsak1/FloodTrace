@@ -20,13 +20,13 @@ export const Footer: React.FC<FooterProps> = ({
         
         {/* Left: Brand & Mission */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#0C57C7] flex items-center justify-center shrink-0 border border-white/20">
+          <div className="w-9 h-9 rounded-xl bg-[#0C65E8] flex items-center justify-center shrink-0 border border-white/20">
             <Waves className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="font-bold text-base tracking-tight text-white">FloodTrace</div>
+            <div className="font-bold text-base tracking-tight text-white">Ruwaigon (ระวังก่อน)</div>
             <div className="text-xs text-sky-200/90 font-medium">
-              เฝ้าระวังน้ำและความเสี่ยงด้านสิ่งแวดล้อม จังหวัดปราจีนบุรี
+              เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย
             </div>
           </div>
         </div>

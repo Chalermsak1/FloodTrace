@@ -60,18 +60,18 @@ export const Header: React.FC<HeaderProps> = ({
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
-          <div className="w-10 h-10 rounded-xl bg-[#0C57C7] flex items-center justify-center shadow-inner border border-white/20">
+          <div className="w-10 h-10 rounded-xl bg-[#0C65E8] flex items-center justify-center shadow-inner border border-white/20">
             <Waves className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold tracking-tight text-white leading-none">FloodTrace</span>
-              <span className="text-[11px] font-medium bg-[#0C57C7]/80 text-sky-100 px-2 py-0.5 rounded-full border border-sky-300/30">
+              <span className="text-xl font-bold tracking-tight text-white leading-none">Ruwaigon</span>
+              <span className="text-[11px] font-medium bg-[#0C65E8]/80 text-sky-100 px-2 py-0.5 rounded-full border border-sky-300/30">
                 ปราจีนบุรี
               </span>
             </div>
             <p className="text-[11px] text-sky-200/90 font-medium leading-tight mt-0.5">
-              เฝ้าระวังน้ำและความเสี่ยงด้านสิ่งแวดล้อม
+              เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย
             </p>
           </div>
         </div>

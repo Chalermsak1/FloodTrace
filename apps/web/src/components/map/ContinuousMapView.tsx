@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 
-interface ContinuousMapViewProps {
+export interface ContinuousMapViewProps {
   zones: any; // GeoJSON FeatureCollection of Environmental Watch Areas
   floodExtent: any; // GeoJSON FeatureCollection of Current Flood Extent
   forecastZones: any; // GeoJSON FeatureCollection of Modeled Forecast Watch Areas
@@ -10,16 +10,18 @@ interface ContinuousMapViewProps {
   observations: any[]; // Generalized community observations
   visibleLayers: {
     watchZones: boolean;
-    floodExtent: boolean;
-    forecastZones: boolean;
     waterways: boolean;
     stations: boolean;
-    observations: boolean;
+    forecastZones?: boolean;
+    observations?: boolean;
+    floodExtent?: boolean;
+    adminLabels?: boolean;
   };
   selectedDistrict: string;
   onSelectDistrict: (district: string) => void;
   onSelectZone?: (zoneProps: any) => void;
   forecastHorizon?: string;
+  watchZoneOpacity?: number;
 }
 
 const DISTRICT_CENTROIDS: Record<string, [number, number]> = {
@@ -32,6 +34,33 @@ const DISTRICT_CENTROIDS: Record<string, [number, number]> = {
   'ศรีมโหสถ': [13.865, 101.415]
 };
 
+// Verified authentic subdistricts (Tambon) in Prachin Buri from official administrative registry
+export const AUTHENTIC_TAMBONS = [
+  { name: 'ต.กบินทร์', district: 'กบินทร์บุรี', lat: 13.9876, lng: 101.7214 },
+  { name: 'ต.นนทรี', district: 'กบินทร์บุรี', lat: 13.9245, lng: 101.7612 },
+  { name: 'ต.นาแขม', district: 'กบินทร์บุรี', lat: 13.8712, lng: 101.8021 },
+  { name: 'ต.วังดาล', district: 'กบินทร์บุรี', lat: 13.9612, lng: 101.6621 },
+  { name: 'ต.หนองกี่', district: 'กบินทร์บุรี', lat: 14.0214, lng: 101.8123 },
+  { name: 'ต.ลาดตะเคียน', district: 'กบินทร์บุรี', lat: 13.8521, lng: 101.6945 },
+  { name: 'ต.เมืองเก่า', district: 'กบินทร์บุรี', lat: 13.9921, lng: 101.7543 },
+  { name: 'ต.ท่าตูม', district: 'ศรีมหาโพธิ', lat: 13.8967, lng: 101.5642 },
+  { name: 'ต.ศรีมหาโพธิ', district: 'ศรีมหาโพธิ', lat: 13.8762, lng: 101.5403 },
+  { name: 'ต.กรอกสมบูรณ์', district: 'ศรีมหาโพธิ', lat: 13.821, lng: 101.6214 },
+  { name: 'ต.หนองโพรง', district: 'ศรีมหาโพธิ', lat: 13.8321, lng: 101.5412 },
+  { name: 'ต.หัวหว้า', district: 'ศรีมหาโพธิ', lat: 13.7845, lng: 101.5123 },
+  { name: 'ต.หน้าเมือง', district: 'เมืองปราจีนบุรี', lat: 14.053, lng: 101.372 },
+  { name: 'ต.ดงขี้เหล็ก', district: 'เมืองปราจีนบุรี', lat: 14.1345, lng: 101.4512 },
+  { name: 'ต.บ้านพระ', district: 'เมืองปราจีนบุรี', lat: 14.1212, lng: 101.4123 },
+  { name: 'ต.โนนห้อม', district: 'เมืองปราจีนบุรี', lat: 14.0812, lng: 101.4312 },
+  { name: 'ต.บ้านสร้าง', district: 'บ้านสร้าง', lat: 13.985, lng: 101.215 },
+  { name: 'ต.บางพลวง', district: 'บ้านสร้าง', lat: 13.9621, lng: 101.2412 },
+  { name: 'ต.ประจันตคาม', district: 'ประจันตคาม', lat: 14.112, lng: 101.552 },
+  { name: 'ต.นาดี', district: 'นาดี', lat: 14.2123, lng: 101.8745 },
+  { name: 'ต.ทุ่งโพธิ์', district: 'นาดี', lat: 14.1812, lng: 101.8921 },
+  { name: 'ต.โคกไทย', district: 'ศรีมโหสถ', lat: 13.8612, lng: 101.4312 },
+  { name: 'ต.โคกปีบ', district: 'ศรีมโหสถ', lat: 13.865, lng: 101.415 }
+];
+
 export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
   zones,
   floodExtent,
@@ -42,20 +71,22 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
   visibleLayers,
   selectedDistrict,
   onSelectDistrict,
-  onSelectZone
+  onSelectZone,
+  watchZoneOpacity = 0.35
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
-  // Layer references for continuous GIS visualization
+  // Layer references
   const watchZonesLayerRef = useRef<L.GeoJSON | null>(null);
   const floodExtentLayerRef = useRef<L.GeoJSON | null>(null);
   const forecastLayerRef = useRef<L.GeoJSON | null>(null);
   const waterwaysLayerRef = useRef<L.GeoJSON | null>(null);
   const stationsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const observationsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
+  const labelsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
 
-  // Initialize Map
+  // Initialize Leaflet Map with Satellite Imagery as Default Base
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -67,7 +98,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
       zoomControl: false
     });
 
-    // Satellite Imagery Base
+    // Satellite Imagery Base (Esri World Imagery) - PRIMARY BASE
     const satellite = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
@@ -76,7 +107,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
       }
     );
 
-    // Carto Voyager Street Map Base
+    // Alternative Clean Street Map Base
     const streetBase = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
       {
@@ -85,18 +116,24 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
       }
     );
 
-    // Default to clean Street Base or Satellite
+    // Default to Satellite Base as specified in Section 11
     satellite.addTo(map);
 
     const baseLayers = {
       '🛰️ ภาพถ่ายดาวเทียม (Satellite)': satellite,
-      '🗺️ แผนที่ภูมิประเทศ (Carto)': streetBase
+      '🗺️ แผนที่ถนน (Street Map)': streetBase
     };
     L.control.layers(baseLayers, undefined, { position: 'topright' }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     stationsLayerRef.current.addTo(map);
     observationsLayerRef.current.addTo(map);
+    labelsLayerRef.current.addTo(map);
+
+    // Update labels on zoom
+    map.on('zoomend', () => {
+      renderAdministrativeLabels(map.getZoom());
+    });
 
     mapInstanceRef.current = map;
 
@@ -106,8 +143,40 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
     };
   }, []);
 
-  // 1. Environmental Watch Area Layer (Continuous GeoJSON Polygons - Yellow / Orange / Red)
-  // Strictly NO circles. Red means Higher Priority for Verification, NOT Toxic Concentration.
+  // Render Administrative Labels with dark halo on satellite
+  const renderAdministrativeLabels = (zoom: number) => {
+    const layer = labelsLayerRef.current;
+    layer.clearLayers();
+
+    if (visibleLayers.adminLabels === false) return;
+
+    // Zoom 8 to 10: Show District centroids
+    if (zoom < 11) {
+      Object.entries(DISTRICT_CENTROIDS).forEach(([districtName, coords]) => {
+        const icon = L.divIcon({
+          className: 'map-district-label',
+          html: `<span>อ.${districtName}</span>`,
+          iconSize: [80, 20],
+          iconAnchor: [40, 10]
+        });
+        layer.addLayer(L.marker(coords, { icon, interactive: false }));
+      });
+    } else {
+      // Zoom 11+: Show Authentic Tambon labels (Control collision)
+      AUTHENTIC_TAMBONS.forEach(tb => {
+        const icon = L.divIcon({
+          className: 'map-tambon-label',
+          html: `<span>${tb.name}</span>`,
+          iconSize: [70, 18],
+          iconAnchor: [35, 9]
+        });
+        layer.addLayer(L.marker([tb.lat, tb.lng], { icon, interactive: false }));
+      });
+    }
+  };
+
+  // 1. Environmental Watch Area Polygons (Section 12 & 13)
+  // Strictly continuous GeoJSON polygons. Strictly NO circular buffers.
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -124,21 +193,31 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
           const isSelected = props.district === selectedDistrict;
           const priority = props.verification_priority;
 
-          // Color progression: Light Yellow -> Orange -> Red
-          let color = '#CA8A04'; // Low (ต่ำ)
-          let fillColor = '#FACC15';
-          if (priority === 'สูง') {
-            color = '#DC2626';
-            fillColor = '#EF4444';
-          } else if (priority === 'ปานกลาง') {
-            color = '#EA580C';
-            fillColor = '#F97316';
+          // Simple 5-Level Watch Color System
+          let strokeColor = '#D97706';
+          let fillColor = '#D97706';
+
+          if (priority === 'สูงมาก') {
+            strokeColor = '#991B1B';
+            fillColor = '#991B1B';
+          } else if (priority === 'สูง') {
+            strokeColor = '#DC2626';
+            fillColor = '#DC2626';
+          } else if (priority === 'ปานกลาง' || priority === 'ควรติดตาม') {
+            strokeColor = '#D97706';
+            fillColor = '#D97706';
+          } else if (priority === 'ต่ำ' || priority === 'ระดับเฝ้าระวังต่ำ') {
+            strokeColor = '#16A34A';
+            fillColor = '#16A34A';
+          } else {
+            strokeColor = '#64748B';
+            fillColor = '#64748B';
           }
 
           return {
-            color: isSelected ? '#1E3A8A' : color,
+            color: isSelected ? '#38BDF8' : strokeColor,
             fillColor,
-            fillOpacity: isSelected ? 0.38 : (props.fill_opacity || 0.22),
+            fillOpacity: isSelected ? Math.min(watchZoneOpacity + 0.15, 0.55) : watchZoneOpacity,
             weight: isSelected ? 3.5 : 2,
             dashArray: isSelected ? undefined : '2, 4',
             lineJoin: 'round'
@@ -151,40 +230,121 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
             if (onSelectZone) onSelectZone(props);
           });
 
-          const badgeBg = props.verification_priority === 'สูง' ? '#fee2e2' : props.verification_priority === 'ปานกลาง' ? '#ffedd5' : '#fef9c3';
-          const badgeText = props.verification_priority === 'สูง' ? '#991b1b' : props.verification_priority === 'ปานกลาง' ? '#9a3412' : '#854d0e';
+          const priorityBadgeBg = 
+            props.verification_priority === 'สูงมาก' ? '#991B1B' :
+            props.verification_priority === 'สูง' ? '#DC2626' :
+            props.verification_priority === 'ปานกลาง' ? '#D97706' : '#16A34A';
 
           layer.bindPopup(`
-            <div style="font-family: 'Sarabun', system-ui, sans-serif; min-width: 250px; padding: 4px;">
+            <div style="font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; min-width: 260px; padding: 4px;">
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px; margin-bottom: 6px;">
-                <strong style="color: #0F172A; font-size: 13px;">${props.zone_name || props.district}</strong>
-                <span style="background: ${badgeBg}; color: ${badgeText}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 9999px;">
-                  ${props.verification_priority_label}
+                <strong style="color: #063B70; font-size: 14px;">${props.zone_name || props.district}</strong>
+                <span style="background: ${priorityBadgeBg}; color: white; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 9999px;">
+                  ${props.verification_priority_label || props.verification_priority}
                 </span>
               </div>
               <div style="font-size: 11px; color: #334155; margin-bottom: 4px; line-height: 1.4;">
-                <strong>สถานะพื้นที่:</strong> ${props.watch_status}
+                <strong>สถานะพื้นที่:</strong> ${props.watch_status || 'เฝ้าระวังตามปกติ'}
               </div>
               <div style="font-size: 11px; color: #475569; margin-bottom: 4px;">
-                <strong>สถานการณ์น้ำ:</strong> ${props.flood_status}
+                <strong>สภาวะน้ำ:</strong> ${props.flood_status || 'ปกติ'}
               </div>
-              <div style="font-size: 11px; color: #475569; margin-bottom: 4px;">
-                <strong>การเชื่อมต่อทางน้ำ:</strong> ${props.hydrological_connectivity_status}
+              <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
+                <strong>การเชื่อมต่อทางน้ำ:</strong> ${props.hydrological_connectivity_status || 'เชื่อมต่อลำน้ำสายหลัก'}
               </div>
-              <div style="font-size: 10px; color: #64748B; background: #F8FAFC; padding: 4px 6px; border-radius: 6px; border: 1px solid #E2E8F0; margin-top: 6px; line-height: 1.3;">
-                ${props.verification_priority_explanation}
+              <div style="font-size: 10px; color: #475569; background: #F8FAFC; padding: 6px; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 6px; line-height: 1.4;">
+                ${props.verification_priority_explanation || 'ระดับสีเป็นการประเมินเพื่อการเฝ้าระวัง ไม่ใช่ผลยืนยันการปนเปื้อน'}
               </div>
-              <div style="font-size: 9px; color: #94A3B8; margin-top: 4px;">
-                * ป้าย: ${props.badge || 'MODEL'} (ผลจากแบบจำลองไม่ใช่ผลตรวจทางห้องปฏิบัติการ)
+              <a href="/area-detail?district=${encodeURIComponent(props.district)}" style="display: block; text-align: center; background: #0C65E8; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; text-decoration: none;">
+                ดูรายละเอียดพื้นที่
+              </a>
+            </div>
+          `);
+        }
+      }).addTo(map);
+    }
+  }, [zones, visibleLayers.watchZones, selectedDistrict, onSelectDistrict, onSelectZone, watchZoneOpacity]);
+
+  // 2. Public Waterways Layer (Default ON - Section 15)
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    if (waterwaysLayerRef.current) {
+      map.removeLayer(waterwaysLayerRef.current);
+      waterwaysLayerRef.current = null;
+    }
+
+    if (visibleLayers.waterways && waterways && waterways.features) {
+      waterwaysLayerRef.current = L.geoJSON(waterways, {
+        style: {
+          color: '#38BDF8',
+          weight: 3.5,
+          opacity: 0.9,
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature, layer) => {
+          const props = feature.properties || {};
+          layer.bindPopup(`
+            <div style="font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; font-size: 12px; padding: 4px; min-width: 210px;">
+              <strong style="color: #0284C7; font-size: 13px;">🌊 ${props.name || 'แม่น้ำปราจีนบุรี'}</strong>
+              <div style="font-size: 11px; color: #475569; margin-top: 4px;">
+                ${props.description || 'โครงข่ายทางน้ำลุ่มน้ำปราจีนบุรี (กรมชลประทาน / กรมทรัพยากรน้ำ)'}
+              </div>
+              <div style="font-size: 10px; color: #16A34A; font-weight: bold; margin-top: 6px;">
+                OFFICIAL ข้อมูลจากหน่วยงาน
               </div>
             </div>
           `);
         }
       }).addTo(map);
     }
-  }, [zones, visibleLayers.watchZones, selectedDistrict, onSelectDistrict, onSelectZone]);
+  }, [waterways, visibleLayers.waterways]);
 
-  // 2. Current Flood Extent Layer (Semi-transparent Blue Continuous Polygon)
+  // 3. Official Water Monitoring Stations (Default ON - Section 15)
+  useEffect(() => {
+    const layer = stationsLayerRef.current;
+    layer.clearLayers();
+
+    if (!visibleLayers.stations || !stations) return;
+
+    stations.forEach(st => {
+      const icon = L.divIcon({
+        className: 'custom-station-pin',
+        html: `
+          <div style="background-color: #0C65E8; border: 2px solid white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.35); cursor: pointer;">
+            <span style="color: white; font-size: 9px; font-weight: bold;">WQ</span>
+          </div>
+        `,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+
+      const marker = L.marker([st.latitude, st.longitude], { icon });
+      marker.bindPopup(`
+        <div style="font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; font-size: 12px; padding: 4px; min-width: 220px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; margin-bottom: 4px;">
+            <strong style="color: #063B70; font-size: 13px;">${st.name_th}</strong>
+            <span style="background: #EFF6FF; color: #0C65E8; font-size: 9px; font-weight: bold; padding: 1px 6px; border-radius: 9999px;">
+              OFFICIAL
+            </span>
+          </div>
+          <div style="font-size: 11px; color: #334155; margin-bottom: 3px;">
+            <strong>ระดับน้ำ:</strong> ${st.water_level_msl !== null && st.water_level_msl !== undefined ? `${st.water_level_msl} ม.รทก.` : 'ไม่มีข้อมูลตรวจวัด'}
+          </div>
+          <div style="font-size: 11px; color: #475569; margin-bottom: 3px;">
+            <strong>อำเภอ:</strong> ${st.district} | <strong>ลุ่มน้ำ:</strong> ${st.basin}
+          </div>
+          <div style="font-size: 9px; color: #64748B; margin-top: 6px;">
+            แหล่งข้อมูล: สสน. / กรมชลประทาน (ThaiWater / RID)
+          </div>
+        </div>
+      `);
+      layer.addLayer(marker);
+    });
+  }, [stations, visibleLayers.stations]);
+
+  // 4. Optional: Current Flood Extent Polygons
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -199,7 +359,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
         style: {
           color: '#2563EB',
           fillColor: '#3B82F6',
-          fillOpacity: 0.35,
+          fillOpacity: 0.32,
           weight: 2,
           lineJoin: 'round'
         },
@@ -213,10 +373,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
               <div style="font-size: 11px; color: #334155; margin-bottom: 2px;">
                 <strong>อำเภอ:</strong> ${props.district}
               </div>
-              <div style="font-size: 11px; color: #475569; margin-bottom: 4px;">
-                <strong>ประมาณการระดับน้ำ:</strong> ${props.water_depth_est || 'ท่วมขังริมตลิ่ง'}
-              </div>
-              <div style="font-size: 10px; color: #15803D; font-weight: bold; background: #DCFCE7; padding: 2px 6px; border-radius: 4px; display: inline-block;">
+              <div style="font-size: 10px; color: #15803D; font-weight: bold; background: #DCFCE7; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">
                 OFFICIAL ข้อมูลจากหน่วยงาน
               </div>
             </div>
@@ -226,7 +383,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
     }
   }, [floodExtent, visibleLayers.floodExtent]);
 
-  // 3. Forecast Watch Area Layer (Dashed purple polygon - distinct from current)
+  // 5. Optional: Forecast Watch Areas (Purple Dashed Polygons)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -241,7 +398,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
         style: {
           color: '#7C3AED',
           fillColor: '#8B5CF6',
-          fillOpacity: 0.16,
+          fillOpacity: 0.22,
           weight: 2.5,
           dashArray: '6, 6',
           lineJoin: 'round'
@@ -250,14 +407,12 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
           const props = feature.properties || {};
           layer.bindPopup(`
             <div style="font-family: 'Sarabun', system-ui, sans-serif; min-width: 240px; padding: 4px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; margin-bottom: 4px;">
-                <strong style="color: #6D28D9; font-size: 13px;">${props.label || 'แนวโน้มการขยายพื้นที่เฝ้าระวัง'}</strong>
-                <span style="background: #F3E8FF; color: #6D28D9; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">
-                  MODEL
-                </span>
-              </div>
+              <strong style="color: #6D28D9; font-size: 13px;">${props.label || 'แนวโน้มการขยายพื้นที่เฝ้าระวัง'}</strong>
+              <span style="background: #F3E8FF; color: #6D28D9; font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">
+                MODEL
+              </span>
               <div style="font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.4;">
-                ${forecastZones.disclaimer || 'แนวโน้มที่แสดงเป็นผลจากแบบจำลองการขยายพื้นที่เฝ้าระวัง ไม่ใช่การคาดการณ์ตำแหน่งหรือการเคลื่อนที่ของสารปนเปื้อน และไม่ใช่ผลตรวจทางห้องปฏิบัติการ'}
+                ${forecastZones.disclaimer || 'ผลจากแบบจำลองใช้เพื่อการเฝ้าระวัง ไม่ใช่ผลตรวจทางห้องปฏิบัติการ'}
               </div>
             </div>
           `);
@@ -266,95 +421,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
     }
   }, [forecastZones, visibleLayers.forecastZones]);
 
-  // 4. Public Waterways Layer (DWR/RID GeoJSON LineStrings)
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    const map = mapInstanceRef.current;
-
-    if (waterwaysLayerRef.current) {
-      map.removeLayer(waterwaysLayerRef.current);
-      waterwaysLayerRef.current = null;
-    }
-
-    if (visibleLayers.waterways && waterways && waterways.features) {
-      waterwaysLayerRef.current = L.geoJSON(waterways, {
-        style: {
-          color: '#0284C7',
-          weight: 3.5,
-          opacity: 0.85,
-          lineJoin: 'round'
-        },
-        onEachFeature: (feature, layer) => {
-          const props = feature.properties || {};
-          layer.bindPopup(`
-            <div style="font-family: 'Sarabun', system-ui, sans-serif; font-size: 12px; padding: 4px; min-width: 200px;">
-              <strong style="color: #0369A1; font-size: 13px;">${props.name || 'ทางน้ำสายหลัก'}</strong>
-              <div style="font-size: 11px; color: #475569; margin-top: 2px;">
-                ${props.description || 'โครงข่ายทางน้ำลุ่มน้ำปราจีนบุรี (กรมทรัพยากรน้ำ / กรมชลประทาน)'}
-              </div>
-              <div style="font-size: 9px; color: #16A34A; font-weight: bold; margin-top: 4px;">
-                OFFICIAL ข้อมูลจากหน่วยงาน
-              </div>
-            </div>
-          `);
-        }
-      }).addTo(map);
-    }
-  }, [waterways, visibleLayers.waterways]);
-
-  // 5. Public Telemetry Monitoring Stations (Gauges - Green Pins)
-  useEffect(() => {
-    const layer = stationsLayerRef.current;
-    layer.clearLayers();
-
-    if (!visibleLayers.stations || !stations) return;
-
-    stations.forEach(st => {
-      const icon = L.divIcon({
-        className: 'custom-station-pin',
-        html: `
-          <div style="background-color: #10B981; border: 2px solid white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.25); cursor: pointer;">
-            <span style="color: white; font-size: 9px; font-weight: bold;">WL</span>
-          </div>
-        `,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
-      });
-
-      const rawTs = (st.provenance as any)?.source_updated_at || st.last_updated;
-      const obsTimeStr = rawTs
-        ? new Date(rawTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) + ' น.'
-        : null;
-
-      const marker = L.marker([st.latitude, st.longitude], { icon });
-      marker.bindPopup(`
-        <div style="font-family: 'Sarabun', system-ui, sans-serif; font-size: 12px; padding: 4px; min-width: 220px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; margin-bottom: 4px;">
-            <strong style="color: #0F172A; font-size: 13px;">${st.name_th}</strong>
-            <span style="background: #DCFCE7; color: #15803D; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">
-              OFFICIAL
-            </span>
-          </div>
-          <div style="font-size: 11px; color: #334155; margin-bottom: 2px;">
-            <strong>ระดับน้ำ:</strong> ${st.water_level_msl !== null && st.water_level_msl !== undefined ? `${st.water_level_msl} ม.รทก.` : 'ไม่มีข้อมูลตรวจวัด'}
-          </div>
-          ${obsTimeStr ? `
-          <div style="font-size: 11px; color: #0284C7; margin-bottom: 2px;">
-            <strong>เวลาตรวจวัด:</strong> ${obsTimeStr} (Asia/Bangkok)
-          </div>` : ''}
-          <div style="font-size: 11px; color: #475569; margin-bottom: 2px;">
-            <strong>อำเภอ:</strong> ${st.district} | <strong>ลุ่มน้ำ:</strong> ${st.basin}
-          </div>
-          <div style="font-size: 9px; color: #64748B; margin-top: 4px;">
-            แหล่งข้อมูล: สสน. / กรมชลประทาน (ThaiWater / RID)
-          </div>
-        </div>
-      `);
-      layer.addLayer(marker);
-    });
-  }, [stations, visibleLayers.stations]);
-
-  // 6. Generalized Community Observations (No exact GPS - Orange/Amber Pins)
+  // 6. Optional: Generalized Community Observations (Orange Pins - Zero private data)
   useEffect(() => {
     const layer = observationsLayerRef.current;
     layer.clearLayers();
@@ -365,7 +432,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
       const icon = L.divIcon({
         className: 'custom-obs-pin',
         html: `
-          <div style="background-color: #F97316; border: 2px solid white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;">
+          <div style="background-color: #EA580C; border: 2px solid white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor: pointer;">
             <span style="color: white; font-size: 10px; font-weight: bold;">!</span>
           </div>
         `,
@@ -377,7 +444,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
       marker.bindPopup(`
         <div style="font-family: 'Sarabun', system-ui, sans-serif; font-size: 12px; padding: 4px; min-width: 230px;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; margin-bottom: 4px;">
-            <strong style="color: #9A3412; font-size: 12px;">ข้อสังเกต #${idx + 1}</strong>
+            <strong style="color: #9A3412; font-size: 12px;">รายงานข้อสังเกต #${idx + 1}</strong>
             <span style="background: #FFEDD5; color: #9A3412; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 4px;">
               COMMUNITY
             </span>
@@ -386,16 +453,20 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
             หมวดหมู่: ${obs.category}
           </div>
           <div style="font-size: 11px; color: #475569; margin-bottom: 2px;">
-            พื้นที่: ${obs.generalized_location}
-          </div>
-          <div style="font-size: 10px; color: #64748B; margin-top: 4px; line-height: 1.3; background: #F8FAFC; padding: 4px 6px; border-radius: 4px;">
-            ${obs.classification_explanation || 'รายงานจากประชาชนเป็นข้อมูลสังเกตการณ์ ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน'}
+            พื้นที่: ${obs.generalized_location || obs.district}
           </div>
         </div>
       `);
       layer.addLayer(marker);
     });
   }, [observations, visibleLayers.observations]);
+
+  // Initial Label Rendering
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      renderAdministrativeLabels(mapInstanceRef.current.getZoom());
+    }
+  }, [visibleLayers.adminLabels]);
 
   // Fly to selected district on change
   useEffect(() => {
@@ -407,7 +478,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
   }, [selectedDistrict]);
 
   return (
-    <div className="relative w-full h-full min-h-[420px] rounded-2xl overflow-hidden border border-[#CBD5E1] shadow-xs">
+    <div className="relative w-full h-full min-h-[460px] rounded-2xl overflow-hidden border border-slate-200 shadow-subtle">
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

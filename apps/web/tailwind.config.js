@@ -8,39 +8,41 @@ export default {
   theme: {
     extend: {
       colors: {
-        flood: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+        ruwaigon: {
+          navy: '#063B70',
+          'navy-dark': '#04274B',
+          blue: '#0C65E8',
+          'blue-light': '#3B82F6',
+          'blue-subtle': '#EFF6FF',
+          bg: '#F5F8FC',
+          card: '#FFFFFF',
+          border: '#E2E8F0',
+          muted: '#64748B',
+          dark: '#073967',
         },
-        ft: {
-          navy: '#103D76',
-          blue: '#0C57C7',
-          'blue-light': '#5794E0',
-          bg: '#E3EAF1',
-          card: '#FBFCFC',
-          text: '#0B243D',
-          warning: '#E16434',
-          border: '#C4C7D1',
-          muted: '#717F8F',
+        watch: {
+          critical: '#991B1B', // แดงเข้ม: เฝ้าระวังสูงมาก
+          high: '#DC2626',     // แดง/ส้ม: เฝ้าระวังสูง
+          medium: '#D97706',   // เหลือง: ควรติดตาม
+          low: '#16A34A',      // เขียว: ระดับเฝ้าระวังต่ำ
+          insufficient: '#64748B', // เทา: ไม่มีข้อมูลเพียงพอ
         },
         hazard: {
-          low: '#10b981',
-          medium: '#f59e0b',
-          high: '#f97316',
-          critical: '#ef4444',
+          low: '#16A34A',
+          medium: '#D97706',
+          high: '#EA580C',
+          critical: '#DC2626',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['Sarabun', 'Noto Sans Thai', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      borderRadius: {
+        'card': '16px',
+      },
+      boxShadow: {
+        'subtle': '0 1px 3px 0 rgba(6, 59, 112, 0.04), 0 1px 2px -1px rgba(6, 59, 112, 0.04)',
+        'card': '0 4px 12px 0 rgba(6, 59, 112, 0.05)',
       },
       backdropBlur: {
         xs: '2px',

@@ -55,7 +55,7 @@ export const ReportPage: React.FC = () => {
   // Restore draft from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('floodtrace_report_draft');
+      const saved = localStorage.getItem('ruwaigon_report_draft');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.category) setCategory(parsed.category);
@@ -73,7 +73,7 @@ export const ReportPage: React.FC = () => {
   useEffect(() => {
     if (draftStatus !== 'SUBMITTED') {
       try {
-        localStorage.setItem('floodtrace_report_draft', JSON.stringify({
+        localStorage.setItem('ruwaigon_report_draft', JSON.stringify({
           category,
           district,
           subdistrict,
