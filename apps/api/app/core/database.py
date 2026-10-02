@@ -45,3 +45,58 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def reconcile_database_schema(target_engine=None):
+    """
+    Ensures all tables and newly added operational columns exist.
+    Idempotent and safe across development, testing, and production.
+    """
+    from sqlalchemy import text
+    eng = target_engine or engine
+    Base.metadata.create_all(bind=eng)
+
+    if "postgresql" in str(eng.url):
+        with eng.begin() as conn:
+            cols = [
+                ("status", "VARCHAR DEFAULT 'NEW'"),
+                ("priority", "VARCHAR DEFAULT 'NORMAL'"),
+                ("category", "VARCHAR DEFAULT 'GENERAL'"),
+                ("observed_at", "TIMESTAMP WITH TIME ZONE"),
+                ("assigned_to", "VARCHAR"),
+                ("assigned_by", "VARCHAR"),
+                ("assigned_at", "TIMESTAMP WITH TIME ZONE"),
+                ("assignment_note", "TEXT"),
+                ("cluster_id", "VARCHAR"),
+                ("cluster_role", "VARCHAR DEFAULT 'INDEPENDENT'"),
+                ("publication_state", "VARCHAR DEFAULT 'PRIVATE'"),
+                ("triage_status", "VARCHAR DEFAULT 'PENDING'"),
+                ("triage_flags", "JSONB DEFAULT '[]'::jsonb"),
+                ("triage_notes", "TEXT"),
+                ("resolution_type", "VARCHAR"),
+                ("resolution_summary", "TEXT"),
+                ("resolved_by", "VARCHAR"),
+                ("resolved_at", "TIMESTAMP WITH TIME ZONE"),
+                ("updated_at", "TIMESTAMP WITH TIME ZONE DEFAULT NOW()"),
+            ]
+            for col, col_type in cols:
+                conn.execute(text(f"ALTER TABLE citizen_reports ADD COLUMN IF NOT EXISTS {col} {col_type};"))
+
+    # Seed default staff users if empty
+    from apps.api.app.models.entities import StaffUser
+    db = SessionLocal()
+    try:
+        if db.query(StaffUser).count() == 0:
+            default_users = [
+                StaffUser(id="staff_admin_01", username="admin_user", display_name="System Administrator (ผู้ดูแลระบบ)", role="ADMIN", email="admin@floodtrace.internal", department="Executive & Platform Operations"),
+                StaffUser(id="staff_reviewer_01", username="reviewer_01", display_name="Somchai Reviewer (นักวิชาการสิ่งแวดล้อม)", role="REVIEWER", email="reviewer1@floodtrace.internal", department="Environmental Verification Unit"),
+                StaffUser(id="staff_operator_01", username="operator_01", display_name="Wipha Triage (เจ้าหน้าที่คัดกรองเหตุ)", role="OPERATOR", email="operator1@floodtrace.internal", department="Triage & Field Dispatch"),
+                StaffUser(id="staff_readonly_01", username="readonly_01", display_name="Auditor Public Observer (ผู้สังเกตการณ์อิสระ)", role="READ_ONLY", email="observer1@floodtrace.internal", department="External Audit & Governance"),
+            ]
+            db.add_all(default_users)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+

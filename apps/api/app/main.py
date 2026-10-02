@@ -8,7 +8,7 @@ import os
 from sqlalchemy.orm import Session
 
 from apps.api.app.core.config import settings
-from apps.api.app.core.database import SessionLocal, Base, engine, get_db
+from apps.api.app.core.database import SessionLocal, Base, engine, get_db, reconcile_database_schema
 
 from apps.api.app.models.entities import WaterStation, RainfallStation, Reservoir, IndustrialFacility
 from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations, fetch_thaiwater_rainfall
@@ -23,6 +23,7 @@ from apps.api.app.api.v1.reports import router as reports_router
 from apps.api.app.api.v1.alerts import router as alerts_router
 from apps.api.app.api.v1.governance import router as governance_router
 from apps.api.app.api.v1.admin import router as admin_router
+from apps.api.app.api.v1.admin_reports import router as admin_reports_router
 from apps.api.app.api.v1.realtime import router as realtime_router
 from apps.api.app.api.public.router import public_router
 from apps.api.app.api.internal.router import internal_router
@@ -43,7 +44,7 @@ logger = logging.getLogger("floodtrace")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing FloodTrace Prachin Buri engine...")
-    Base.metadata.create_all(bind=engine)
+    reconcile_database_schema(engine)
     
     # Database integrity & source gate reconciliation (Master Prompt Section 8)
     db = SessionLocal()
@@ -257,6 +258,8 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(alerts_router, prefix=settings.API_V1_STR)
 app.include_router(governance_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
+app.include_router(admin_reports_router, prefix=settings.API_V1_STR)
+app.include_router(admin_reports_router, prefix="/api")
 app.include_router(realtime_router, prefix=settings.API_V1_STR)
 
 # Master Architecture Section 5: Dedicated Public & Internal Routers

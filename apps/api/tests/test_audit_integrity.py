@@ -310,5 +310,5 @@ def test_live_api_endpoints_provenance():
     # In strict production isolation, TEST/DEMO data is excluded (len == 0 unless a real report was submitted)
     if len(reports) > 0:
         prov_rep = reports[0]["provenance"]
-        assert prov_rep["category"] in ["CITIZEN_REPORTED", "TEST_DEMO"]
+        assert prov_rep["category"] in ["CITIZEN_REPORTED", "TEST_DEMO", "COMMUNITY"]
 

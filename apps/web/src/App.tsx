@@ -13,12 +13,18 @@ import { ForecastPage } from './pages/ForecastPage';
 import { KnowledgePage } from './pages/KnowledgePage';
 import { DataMethodologyPage } from './pages/DataMethodologyPage';
 import { AboutPage } from './pages/AboutPage';
+import { AdminReportsPage } from './pages/AdminReportsPage';
 
 export const App: React.FC = () => {
   return (
     <ErrorBoundary fallbackTitle="เกิดข้อผิดพลาดในการโหลดหน้าเว็บ">
       <BrowserRouter>
         <Routes>
+          {/* Internal Staff Operations Console (Protected & Separated from Citizen UI) */}
+          <Route path="/admin" element={<Navigate to="/admin/reports" replace />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+
+          {/* Public Citizen Interface */}
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Navigate to="/overview" replace />} />
             <Route path="overview" element={<OverviewPage />} />

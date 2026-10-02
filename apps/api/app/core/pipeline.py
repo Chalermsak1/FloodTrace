@@ -71,6 +71,16 @@ class RealtimeEventBroadcaster:
                     except ValueError:
                         pass
 
+    def notify_event_sync(self, event_type: str, payload: Dict[str, Any]):
+        """Dispatches event safely from synchronous FastAPI endpoints or background threads."""
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.broadcast_event(event_type, payload))
+        except RuntimeError:
+            pass
+
+    broadcast = broadcast_event
+
 event_broadcaster = RealtimeEventBroadcaster()
 
 

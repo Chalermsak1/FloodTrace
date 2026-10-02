@@ -134,6 +134,38 @@ class CitizenReport(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     provenance = Column(JSON, nullable=False) # CITIZEN_REPORTED
 
+    # OPERATIONAL WORKFLOW & BACK-OFFICE STATE (Master Spec Section 7 & 9)
+    status = Column(String, default="NEW", index=True) # NEW, TRIAGING, ASSIGNED, IN_REVIEW, NEED_MORE_INFO, UNDER_VERIFICATION, VERIFIED_OBSERVATION, ESCALATED, OFFICIAL_CONFIRMED, RESOLVED, INVALID, DUPLICATE, SPAM, WITHDRAWN, OUT_OF_SCOPE
+    priority = Column(String, default="NORMAL", index=True) # URGENT, HIGH, NORMAL, LOW
+    category = Column(String, default="GENERAL", index=True) # e.g. "น้ำเปลี่ยนสี", "คราบบนผิวน้ำ", "กลิ่นผิดปกติ", etc.
+    observed_at = Column(DateTime(timezone=True), nullable=True) # Citizen stated observation time
+    
+    # ASSIGNMENT
+    assigned_to = Column(String, nullable=True, index=True) # Staff username
+    assigned_by = Column(String, nullable=True)
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
+    assignment_note = Column(Text, nullable=True)
+    
+    # CLUSTERING & RELATIONSHIP
+    cluster_id = Column(String, nullable=True, index=True)
+    cluster_role = Column(String, default="INDEPENDENT") # DUPLICATE, RELATED, INDEPENDENT
+    
+    # PUBLICATION STATE (Master Spec Section 24)
+    publication_state = Column(String, default="PRIVATE", index=True) # PRIVATE, PUBLIC_SAFE_SUMMARY, PUBLIC_VERIFIED, WITHHELD
+    
+    # TRIAGE & VALIDATION (Master Spec Section 8)
+    triage_status = Column(String, default="PENDING", index=True) # PASSED, FLAGGED, OUT_OF_SCOPE
+    triage_flags = Column(JSON, default=list) # e.g. ["OUT_OF_BOUNDS", "POTENTIAL_DUPLICATE"]
+    triage_notes = Column(Text, nullable=True)
+    
+    # RESOLUTION (Master Spec Section 21)
+    resolution_type = Column(String, nullable=True) # VERIFIED_OBSERVATION, DUPLICATE, INVALID, NO_LONGER_PRESENT, REFERRED, OFFICIAL_CONFIRMATION_RECEIVED, INSUFFICIENT_EVIDENCE, OTHER
+    resolution_summary = Column(Text, nullable=True)
+    resolved_by = Column(String, nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 class ClaimPublication(Base):
     """
     Formal publication workflow model for sensitive environmental statements and claims.
@@ -265,5 +297,102 @@ class RainfallObservation(Base):
     freshness_status = Column(String, default="FRESH", nullable=False)
     ingestion_mode = Column(String, default="EXTERNAL_API", nullable=False) # EXTERNAL_API, LOCAL_IMPORT
     provenance = Column(JSON, nullable=False)
+
+
+class CitizenReportAuditLog(Base):
+    """
+    Append-only immutable audit log of all citizen report operational events.
+    Normal staff cannot modify or delete audit entries.
+    """
+    __tablename__ = "citizen_report_audit_logs"
+
+    audit_id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, index=True, nullable=False)
+    actor_id = Column(String, nullable=False)
+    actor_role = Column(String, nullable=False) # ADMIN, REVIEWER, OPERATOR, READ_ONLY, SYSTEM
+    action = Column(String, index=True, nullable=False)
+    # Actions: REPORT_RECEIVED, REPORT_VALIDATED, REPORT_ASSIGNED, REPORT_REASSIGNED, STATUS_CHANGED,
+    # PRIORITY_CHANGED, EVIDENCE_VIEWED, EVIDENCE_ADDED, INFO_REQUESTED, INFO_RECEIVED,
+    # VERIFICATION_UPDATED, ESCALATED, RESOLVED, PUBLICATION_CHANGED
+    previous_status = Column(String, nullable=True)
+    new_status = Column(String, nullable=True)
+    reason = Column(Text, nullable=True)
+    relevant_entity = Column(String, nullable=True)
+    evidence_reference = Column(String, nullable=True)
+    details = Column(JSON, default=dict)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class CitizenReportVerification(Base):
+    """
+    Structured verification record establishing factual status of observations.
+    Mandatory distinction: WHAT_WAS_REPORTED vs WHAT_WAS_OBSERVED vs WHAT_SYSTEM_SHOWS vs WHAT_MODEL_SUGGESTS.
+    """
+    __tablename__ = "citizen_report_verifications"
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, index=True, nullable=False)
+    verification_status = Column(String, index=True, nullable=False) # UNVERIFIED, PARTIALLY_VERIFIED, VERIFIED_OBSERVATION, OFFICIAL_CONFIRMED
+    verification_method = Column(String, nullable=False) # VISUAL_REVIEW, CROSS_CHECKED_SYSTEM_DATA, MULTIPLE_REPORTS, FIELD_VERIFICATION, OFFICIAL_SOURCE, OTHER
+    verified_by = Column(String, nullable=False)
+    verified_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    notes = Column(Text, nullable=True)
+    structured_assessment = Column(JSON, default=dict) # what_was_reported, what_was_observed, what_system_data_shows, what_model_suggests, what_is_unknown, what_should_be_verified
+    official_source_evidence = Column(Text, nullable=True) # Mandatory if status is OFFICIAL_CONFIRMED
+
+
+class CitizenReportInfoRequest(Base):
+    """
+    Information request to citizen / follow-up record.
+    """
+    __tablename__ = "citizen_report_info_requests"
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, index=True, nullable=False)
+    request_type = Column(String, nullable=False) # CONFIRM_LOCATION, CONFIRM_OBSERVATION_TIME, UPLOAD_ANOTHER_PHOTO, DESCRIBE_WATER_DEPTH, CONFIRM_CONDITION_STILL_PRESENT, OTHER
+    request_text = Column(Text, nullable=False)
+    requested_by = Column(String, nullable=False)
+    requested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    status = Column(String, default="PENDING") # PENDING, RESPONDED, CANCELLED
+    response_text = Column(Text, nullable=True)
+    response_received_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class CitizenReportEscalation(Base):
+    """
+    Formal operational escalation to external or specialized response teams.
+    """
+    __tablename__ = "citizen_report_escalations"
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, index=True, nullable=False)
+    escalation_reason = Column(Text, nullable=False)
+    destination_team = Column(String, nullable=False) # REGIONAL_WATER_OFFICE, PROVINCIAL_DISASTER_PREVENTION, POLLUTION_CONTROL_CENTER_7, LOCAL_ADMIN_ORG
+    urgency = Column(String, nullable=False) # URGENT, HIGH, NORMAL, LOW
+    evidence_summary = Column(Text, nullable=False)
+    status = Column(String, default="PENDING", index=True) # PENDING, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, CLOSED
+    escalated_by = Column(String, nullable=False)
+    escalated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    acknowledged_by = Column(String, nullable=True)
+    acknowledged_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class StaffUser(Base):
+    """
+    Internal back-office staff user for RBAC enforcement.
+    """
+    __tablename__ = "staff_users"
+
+    id = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    display_name = Column(String, nullable=False)
+    role = Column(String, index=True, nullable=False) # ADMIN, REVIEWER, OPERATOR, READ_ONLY
+    email = Column(String, nullable=False)
+    department = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
 
