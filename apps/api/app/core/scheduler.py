@@ -193,7 +193,7 @@ class SourceScheduler:
                         await asyncio.sleep(1.0 * (2 ** (attempt - 1)))
 
             if records is None:
-                cb.record_failure(last_exc or Exception("Fetch failed"), ErrorClassification.NETWORK_DOWN)
+                cb.record_failure(last_exc or Exception("Fetch failed"), ErrorClassification.NETWORK_ERROR)
                 stat["consecutive_failures"] += 1
                 stat["last_error"] = str(last_exc)
                 return {
