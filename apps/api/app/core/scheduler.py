@@ -17,6 +17,8 @@ from apps.api.app.models.entities import (
     RainfallObservation
 )
 from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations, fetch_thaiwater_rainfall
+from apps.api.app.core.datetime_utils import parse_thaiwater_timestamp, FutureTimestampError, BANGKOK_TZ
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -99,19 +101,33 @@ class SourceScheduler:
                 "total_runs": 0,
                 "total_successes": 0,
                 "consecutive_failures": 0,
+                "scheduler_started_at": None,
                 "last_run": None,
                 "last_success": None,
                 "last_error": None,
+                "request_started_at": None,
+                "request_finished_at": None,
+                "http_status": None,
+                "latency_ms": None,
                 "records_received_last_run": 0,
                 "records_inserted_last_run": 0,
                 "duplicates_skipped_last_run": 0,
                 "rejected_last_run": 0,
+                "source_timestamp_raw": None,
+                "source_timezone": "Asia/Bangkok (UTC+07:00)",
+                "normalized_timestamp_utc": None,
+                "normalized_timestamp_asia_bangkok": None,
+                "newest_source_timestamp": None,
                 "latest_source_timestamp": None,
+                "retrieved_at": None,
+                "data_age_seconds": None,
+                "next_run_at": None,
                 "circuit_breaker_status": "CLOSED",
                 "is_running": False
             }
         self._tasks: List[asyncio.Task] = []
         self._running = False
+        self._started_at: Optional[str] = None
 
     def get_status(self) -> Dict[str, Any]:
         """Returns the current operational status of the scheduler and all sources."""
@@ -143,7 +159,11 @@ class SourceScheduler:
         stat = self._stats[source_id]
         stat["is_running"] = True
         stat["total_runs"] += 1
-        stat["last_run"] = datetime.now(timezone.utc).isoformat()
+        
+        t0 = time.perf_counter()
+        now_start = datetime.now(timezone.utc)
+        stat["request_started_at"] = now_start.isoformat()
+        stat["last_run"] = now_start.isoformat()
 
         close_db_on_finish = False
         if db is None:
@@ -196,6 +216,7 @@ class SourceScheduler:
                 cb.record_failure(last_exc or Exception("Fetch failed"), ErrorClassification.NETWORK_ERROR)
                 stat["consecutive_failures"] += 1
                 stat["last_error"] = str(last_exc)
+                stat["http_status"] = 503
                 return {
                     "source_id": source_id,
                     "status": "FETCH_FAILED",
@@ -204,15 +225,24 @@ class SourceScheduler:
 
             # Successful fetch -> notify circuit breaker
             cb.record_success()
+            t1 = time.perf_counter()
+            now_finish = datetime.now(timezone.utc)
+            stat["http_status"] = 200
+            stat["latency_ms"] = round((t1 - t0) * 1000, 2)
+            stat["request_finished_at"] = now_finish.isoformat()
+            stat["retrieved_at"] = now_finish.isoformat()
+            stat["next_run_at"] = (now_finish + timedelta(seconds=cfg.interval_seconds)).isoformat()
 
             # 4. Ingest and deduplicate records
             stat["records_received_last_run"] = len(records)
             inserted_count = 0
             duplicates_count = 0
             rejected_count = 0
-            newest_ts = None
+            latest_raw_ts = None
+            newest_ts_utc = None
+            newest_ts_bkk = None
 
-            now_utc = datetime.now(timezone.utc)
+            now_utc = now_finish
 
             if source_id == "thaiwater_rid_runoff":
                 for item in records:
@@ -225,14 +255,19 @@ class SourceScheduler:
                     dt_parsed = None
                     if obs_time_str:
                         try:
-                            clean_time = obs_time_str.replace("Z", "+00:00")
-                            dt_parsed = datetime.fromisoformat(clean_time)
-                            if dt_parsed.tzinfo is None:
-                                dt_parsed = dt_parsed.replace(tzinfo=timezone.utc)
-                            if newest_ts is None or dt_parsed.isoformat() > newest_ts:
-                                newest_ts = dt_parsed.isoformat()
-                        except Exception:
-                            pass
+                            t_meta = parse_thaiwater_timestamp(obs_time_str)
+                            dt_parsed = t_meta["dt_utc"]
+                            raw_val = item.get("raw_observation_time") or t_meta["raw"]
+                            if newest_ts_utc is None or dt_parsed.isoformat() > newest_ts_utc:
+                                newest_ts_utc = dt_parsed.isoformat()
+                                newest_ts_bkk = t_meta["normalized_bkk"]
+                                latest_raw_ts = raw_val
+                        except FutureTimestampError as fe:
+                            rejected_count += 1
+                            logger.warning(f"Scheduler rejected future timestamp for {st_id}: {fe}")
+                            continue
+                        except Exception as te:
+                            logger.warning(f"Scheduler timestamp parse error for {st_id}: {te}")
 
                     # Upsert current state in WaterStation
                     existing_st = db.query(WaterStation).filter(WaterStation.id == st_id).first()
@@ -310,14 +345,19 @@ class SourceScheduler:
                     dt_parsed = None
                     if obs_time_str:
                         try:
-                            clean_time = obs_time_str.replace("Z", "+00:00")
-                            dt_parsed = datetime.fromisoformat(clean_time)
-                            if dt_parsed.tzinfo is None:
-                                dt_parsed = dt_parsed.replace(tzinfo=timezone.utc)
-                            if newest_ts is None or dt_parsed.isoformat() > newest_ts:
-                                newest_ts = dt_parsed.isoformat()
-                        except Exception:
-                            pass
+                            t_meta = parse_thaiwater_timestamp(obs_time_str)
+                            dt_parsed = t_meta["dt_utc"]
+                            raw_val = item.get("raw_observation_time") or t_meta["raw"]
+                            if newest_ts_utc is None or dt_parsed.isoformat() > newest_ts_utc:
+                                newest_ts_utc = dt_parsed.isoformat()
+                                newest_ts_bkk = t_meta["normalized_bkk"]
+                                latest_raw_ts = raw_val
+                        except FutureTimestampError as fe:
+                            rejected_count += 1
+                            logger.warning(f"Scheduler rainfall rejected future timestamp for {st_id}: {fe}")
+                            continue
+                        except Exception as te:
+                            logger.warning(f"Scheduler rainfall timestamp parse error for {st_id}: {te}")
 
                     # Upsert current state in RainfallStation
                     existing_rf = db.query(RainfallStation).filter(RainfallStation.id == st_id).first()
@@ -387,7 +427,17 @@ class SourceScheduler:
             stat["records_inserted_last_run"] = inserted_count
             stat["duplicates_skipped_last_run"] = duplicates_count
             stat["rejected_last_run"] = rejected_count
-            stat["newest_source_timestamp"] = newest_ts
+            stat["source_timestamp_raw"] = latest_raw_ts
+            stat["source_timezone"] = "Asia/Bangkok (UTC+07:00)"
+            stat["normalized_timestamp_utc"] = newest_ts_utc
+            stat["normalized_timestamp_asia_bangkok"] = newest_ts_bkk
+            stat["newest_source_timestamp"] = newest_ts_utc
+            stat["latest_source_timestamp"] = newest_ts_bkk
+            if newest_ts_utc:
+                dt_newest = datetime.fromisoformat(newest_ts_utc)
+                stat["data_age_seconds"] = round((now_utc - dt_newest).total_seconds(), 2)
+            else:
+                stat["data_age_seconds"] = None
             stat["total_successes"] += 1
             stat["consecutive_failures"] = 0
             stat["last_success"] = now_utc.isoformat()
@@ -420,8 +470,9 @@ class SourceScheduler:
                 "received": len(records),
                 "inserted": inserted_count,
                 "duplicates_skipped": duplicates_count,
-                "rejected": rejected_count,
-                "latest_timestamp": newest_ts
+                "latest_timestamp": newest_ts_bkk,
+                "latest_timestamp_utc": newest_ts_utc,
+                "latest_timestamp_bkk": newest_ts_bkk
             }
 
         except Exception as e:
@@ -465,11 +516,13 @@ class SourceScheduler:
         if self._running:
             return
         self._running = True
+        self._started_at = datetime.now(timezone.utc).isoformat()
         for s_id, cfg in self._configs.items():
+            self._stats[s_id]["scheduler_started_at"] = self._started_at
             if cfg.automated_refresh:
                 task = asyncio.create_task(self._source_poll_loop(s_id))
                 self._tasks.append(task)
-        logger.info(f"SourceScheduler started with {len(self._tasks)} automated source loops.")
+        logger.info(f"SourceScheduler started with {len(self._tasks)} automated source loops at {self._started_at}.")
 
     def stop(self):
         """Gracefully cancels all automated background tasks."""

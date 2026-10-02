@@ -57,10 +57,14 @@ def compute_freshness(
     try:
         now = datetime.now(timezone.utc)
         
+        from apps.api.app.core.datetime_utils import BANGKOK_TZ
+        
         if isinstance(original_timestamp, datetime):
             ts = original_timestamp
             if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
+                ts = ts.replace(tzinfo=BANGKOK_TZ).astimezone(timezone.utc)
+            else:
+                ts = ts.astimezone(timezone.utc)
             delta = now - ts
             age_days = round(delta.total_seconds() / 86400.0, 2)
         elif isinstance(original_timestamp, date):
@@ -70,10 +74,13 @@ def compute_freshness(
             orig_str = original_timestamp.strip()
             if not orig_str:
                 return default_status or FreshnessStatus.UNKNOWN, None
-            if "T" in orig_str:
-                ts = datetime.fromisoformat(orig_str.replace("Z", "+00:00"))
-                if ts.tzinfo is None:
-                    ts = ts.replace(tzinfo=timezone.utc)
+            if len(orig_str) > 10:
+                clean_str = orig_str.replace("Z", "")
+                if "+" in clean_str:
+                    ts = datetime.fromisoformat(orig_str).astimezone(timezone.utc)
+                else:
+                    ts_naive = datetime.fromisoformat(clean_str)
+                    ts = ts_naive.replace(tzinfo=BANGKOK_TZ).astimezone(timezone.utc)
                 delta = now - ts
                 age_days = round(delta.total_seconds() / 86400.0, 2)
             else:

@@ -174,23 +174,14 @@ class DataIngestionPipeline:
             except (ValueError, TypeError):
                 return False, "water_level_msl must be numeric"
 
-        # Timestamp validation (reject timestamps in far future > 24 hours)
+        # Timestamp validation (Master Prompt Rule: SOURCE_TIMESTAMP_MUST_NOT_BE_IN_FUTURE)
         obs_time = payload.get("observation_time")
         if obs_time:
             try:
-                if isinstance(obs_time, str):
-                    t = datetime.fromisoformat(obs_time.replace("Z", "+00:00"))
-                elif isinstance(obs_time, datetime):
-                    t = obs_time
-                else:
-                    t = None
-                
-                if t:
-                    if t.tzinfo is None:
-                        t = t.replace(tzinfo=timezone.utc)
-                    delta_future = (t - datetime.now(timezone.utc)).total_seconds()
-                    if delta_future > 86400:
-                        return False, f"Observation timestamp is in the future (> 24h): {obs_time}"
+                from apps.api.app.core.datetime_utils import parse_thaiwater_timestamp, FutureTimestampError
+                parse_thaiwater_timestamp(obs_time)
+            except FutureTimestampError as fe:
+                return False, f"SOURCE_TIMESTAMP_MUST_NOT_BE_IN_FUTURE violation: {fe}"
             except Exception as e:
                 return False, f"Invalid observation_time format: {obs_time} ({e})"
 

@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.core.database import get_db
 from apps.api.app.core.config import settings
+from apps.api.app.core.datetime_utils import BANGKOK_TZ
 from apps.api.app.core.security import (
     validate_prachin_coordinates,
     generalize_coordinates,
@@ -429,7 +430,7 @@ def get_public_overview(
         "forecast_watch_summary": zone_data["forecast"],
         "data_confidence": zone_data["confidence"],
         "data_freshness": zone_data["freshness"],
-        "last_updated": datetime.now(timezone.utc).strftime("%d ต.ค. 2569 %H:%M น."),
+        "last_updated": datetime.now(BANGKOK_TZ).strftime(f"%d ต.ค. {datetime.now(BANGKOK_TZ).year + 543} %H:%M น."),
         "why_this_area": zone_data["why"],
         "why_this_area_disclaimer": "ไม่มีข้อมูลใดในรายการนี้เพียงอย่างเดียวที่สามารถใช้ยืนยันการปนเปื้อนได้",
         "monitoring_stations_active": total_stations,
@@ -932,7 +933,7 @@ def get_public_my_area(
         forecast_watch_summary=zone_data["forecast"],
         data_confidence=zone_data["confidence"],
         data_freshness=zone_data["freshness"],
-        last_updated=datetime.now(timezone.utc).strftime("%d ต.ค. 2569 %H:%M น."),
+        last_updated=datetime.now(BANGKOK_TZ).strftime(f"%d ต.ค. {datetime.now(BANGKOK_TZ).year + 543} %H:%M น."),
         why_this_area=zone_data["why"],
         why_this_area_disclaimer="ไม่มีข้อมูลใดในรายการนี้เพียงอย่างเดียวที่สามารถใช้ยืนยันการปนเปื้อนได้",
         provenance=PublicProvenanceDTO(

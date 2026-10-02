@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from apps.api.app.core.config import settings
 from apps.api.app.core.provenance import make_provenance, DataCategory, SourceVerification, ValueNature, FreshnessStatus, GeocodingPrecision, VerificationStatus
 from apps.api.app.core.source_access import evaluate_source_access, IngestionAction
+from apps.api.app.core.datetime_utils import parse_thaiwater_timestamp, FutureTimestampError
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,16 @@ async def fetch_thaiwater_stations() -> List[Dict[str, Any]]:
                     warning_level = station_meta.get("warning_level_m") or item.get("warning_level")
                     critical_level = station_meta.get("critical_level_msl") or station_meta.get("critical_level_m") or item.get("critical_level")
                     dt_str = item.get("waterlevel_datetime")
+                    norm_obs_time = dt_str
+                    if dt_str:
+                        try:
+                            t_meta = parse_thaiwater_timestamp(dt_str)
+                            norm_obs_time = t_meta["normalized_bkk"]
+                        except FutureTimestampError as fe:
+                            logger.warning(f"ThaiWater adapter rejecting future timestamp for station {st_code}: {fe}")
+                            continue
+                        except Exception as te:
+                            logger.warning(f"ThaiWater adapter timestamp error for {st_code}: {te}")
                     
                     # Audit status strictly based on physical data validity
                     status = "STAGE_RECORDED"
@@ -100,7 +111,7 @@ async def fetch_thaiwater_stations() -> List[Dict[str, Any]]:
                         source_verification=verification,
                         url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load",
                         official_id=st_code,
-                        original_timestamp=dt_str,
+                        original_timestamp=norm_obs_time,
                         unit="meters above Mean Sea Level (m MSL)",
                         crs="EPSG:4326 (WGS84)",
                         geocoding_precision=GeocodingPrecision.OFFICIAL_COORDINATES,
@@ -133,7 +144,8 @@ async def fetch_thaiwater_stations() -> List[Dict[str, Any]]:
                         "ground_level_msl": float(ground_level) if ground_level is not None else None,
                         "warning_level_msl": float(warning_level) if warning_level is not None else None,
                         "critical_level_msl": float(critical_level) if critical_level is not None else None,
-                        "observation_time": dt_str,
+                        "observation_time": norm_obs_time,
+                        "raw_observation_time": dt_str,
                         "status": status,
                         "provenance": prov.to_dict()
                     })
@@ -210,6 +222,16 @@ async def fetch_thaiwater_rainfall() -> List[Dict[str, Any]]:
                     rain_24h = item.get("rain_24h")
                     rain_1h = item.get("rain_1h")
                     dt_str = item.get("rainfall_datetime")
+                    norm_obs_time = dt_str
+                    if dt_str:
+                        try:
+                            t_meta = parse_thaiwater_timestamp(dt_str)
+                            norm_obs_time = t_meta["normalized_bkk"]
+                        except FutureTimestampError as fe:
+                            logger.warning(f"ThaiWater rainfall adapter rejecting future timestamp for station {st_code}: {fe}")
+                            continue
+                        except Exception as te:
+                            logger.warning(f"ThaiWater rainfall adapter timestamp error for {st_code}: {te}")
                     
                     agency_meta = item.get("agency", {}) or {}
                     agency_short = agency_meta.get("agency_shortname", {}).get("th", "สสน.") if isinstance(agency_meta.get("agency_shortname"), dict) else "สสน."
@@ -223,7 +245,7 @@ async def fetch_thaiwater_rainfall() -> List[Dict[str, Any]]:
                         source_verification=SourceVerification.VERIFIED_OFFICIAL,
                         url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
                         official_id=st_code,
-                        original_timestamp=dt_str,
+                        original_timestamp=norm_obs_time,
                         unit="millimeters (mm)",
                         crs="EPSG:4326 (WGS84)",
                         geocoding_precision=GeocodingPrecision.OFFICIAL_COORDINATES,
@@ -254,7 +276,8 @@ async def fetch_thaiwater_rainfall() -> List[Dict[str, Any]]:
                         "longitude": lon_f,
                         "rain_24h_mm": float(rain_24h) if rain_24h is not None else None,
                         "rain_1h_mm": float(rain_1h) if rain_1h is not None else None,
-                        "observation_time": dt_str,
+                        "observation_time": norm_obs_time,
+                        "raw_observation_time": dt_str,
                         "agency": agency_short,
                         "status": status,
                         "provenance": prov.to_dict()

@@ -292,3 +292,53 @@ def test_section_16_scheduler_admin_status():
     assert tw_status["interval_seconds"] == 900
     assert tw_status["automated_refresh"] is True
 
+def test_timezone_and_timestamp_integrity():
+    """
+    Strict Timezone and Timestamp Integrity Audit Test:
+    Verifies that naive ThaiWater strings are interpreted as Asia/Bangkok (UTC+07:00),
+    converted to UTC, never placed in the future, and that future timestamps are rejected.
+    """
+    from apps.api.app.core.datetime_utils import parse_thaiwater_timestamp, FutureTimestampError, BANGKOK_TZ
+
+    # 1. Normal naive timestamp from ThaiWater (10 minutes in the past)
+    now_bkk = datetime.now(timezone.utc).astimezone(BANGKOK_TZ)
+    ten_min_ago = now_bkk - timedelta(minutes=10)
+    raw_str = ten_min_ago.strftime("%Y-%m-%d %H:%M")
+
+    res = parse_thaiwater_timestamp(raw_str)
+    assert res["source_timezone"] == "Asia/Bangkok (UTC+07:00)"
+    assert res["is_future"] is False
+    assert res["age_seconds"] >= 0
+    assert res["dt_utc"] <= datetime.now(timezone.utc)
+    # Check that +07:00 offset is maintained in normalized_bkk
+    assert "+07:00" in res["normalized_bkk"]
+
+    # 2. Rule: SOURCE_TIMESTAMP_MUST_NOT_BE_IN_FUTURE
+    future_bkk = now_bkk + timedelta(hours=3)
+    future_str = future_bkk.strftime("%Y-%m-%d %H:%M")
+    with pytest.raises(FutureTimestampError):
+        parse_thaiwater_timestamp(future_str)
+
+def test_scheduler_runtime_timestamp_fields(db_session):
+    """
+    Verifies that the scheduler status exposes all required timestamp audit fields:
+    source_timestamp_raw, source_timezone, normalized_timestamp_utc,
+    normalized_timestamp_asia_bangkok, retrieved_at, and data_age_seconds.
+    """
+    asyncio.run(source_scheduler.run_source_now("thaiwater_rid_runoff", db=db_session))
+    headers = {"X-Admin-Key": settings.ADMIN_API_KEY}
+    resp = client.get("/api/v1/admin/scheduler/status", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    tw_stat = data["sources"]["thaiwater_rid_runoff"]
+
+    assert tw_stat["source_timezone"] == "Asia/Bangkok (UTC+07:00)"
+    assert tw_stat["normalized_timestamp_utc"] is not None
+    assert tw_stat["normalized_timestamp_asia_bangkok"] is not None
+    assert tw_stat["retrieved_at"] is not None
+    assert tw_stat["data_age_seconds"] is not None
+    # Observation must NOT be in the future relative to retrieved_at
+    assert tw_stat["data_age_seconds"] >= -300 # Within clock drift
+    assert "+07:00" in tw_stat["normalized_timestamp_asia_bangkok"]
+
+

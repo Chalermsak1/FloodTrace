@@ -321,6 +321,11 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
         iconAnchor: [11, 11]
       });
 
+      const rawTs = (st.provenance as any)?.source_updated_at || st.last_updated;
+      const obsTimeStr = rawTs
+        ? new Date(rawTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) + ' น.'
+        : null;
+
       const marker = L.marker([st.latitude, st.longitude], { icon });
       marker.bindPopup(`
         <div style="font-family: 'Sarabun', system-ui, sans-serif; font-size: 12px; padding: 4px; min-width: 220px;">
@@ -333,6 +338,10 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
           <div style="font-size: 11px; color: #334155; margin-bottom: 2px;">
             <strong>ระดับน้ำ:</strong> ${st.water_level_msl !== null && st.water_level_msl !== undefined ? `${st.water_level_msl} ม.รทก.` : 'ไม่มีข้อมูลตรวจวัด'}
           </div>
+          ${obsTimeStr ? `
+          <div style="font-size: 11px; color: #0284C7; margin-bottom: 2px;">
+            <strong>เวลาตรวจวัด:</strong> ${obsTimeStr} (Asia/Bangkok)
+          </div>` : ''}
           <div style="font-size: 11px; color: #475569; margin-bottom: 2px;">
             <strong>อำเภอ:</strong> ${st.district} | <strong>ลุ่มน้ำ:</strong> ${st.basin}
           </div>
