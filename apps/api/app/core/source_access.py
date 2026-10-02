@@ -52,6 +52,9 @@ class SourceAccessRecord(BaseModel):
     verification_date: str
     required_credential_env: Optional[str] = None
     credential_present: bool = False
+    verified_license_for_production: bool = False
+    production_eligible: bool = False
+    real_endpoint: Optional[str] = None
     notes: str
 
 # Official Registry of Candidate External Sources (Master Prompt Section 6)
@@ -77,6 +80,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 48.0,
         "coverage": "Prachin Buri Province & Bang Pakong Basin",
         "required_credential_env": "GISTDA_API_KEY",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://disaster.gistda.or.th",
         "notes": "Candidate source. API Key issuance and terms verification required. If only open/public WMS is accessible without private key, must mark PUBLIC_ONLY."
     },
     # 6.2 Water Level / Runoff (Master Prompt Sec. 6.2: ThaiWater / HII / RID)
@@ -100,7 +105,9 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 3.0,
         "coverage": "14 automated river stations and 6 reservoirs in Prachin Buri Basin",
         "required_credential_env": "THAIWATER_API_KEY",
-        "notes": "Public open data endpoints available. Live reservoir telemetry for Prachin Buri dams was empty at audit time. Under the private-only rule, classified PUBLIC_ONLY / PRIVATE_ACCESS_NOT_AVAILABLE and strictly blocked from production factual ingestion until project-issued credentials established."
+        "verified_license_for_production": True,
+        "real_endpoint": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load",
+        "notes": "Public open data endpoints available under OGL-TH. Active water level telemetry for Prachin Buri stations available. Ingestion allowed under verified official public license policy."
     },
     # 6.3 Current Rainfall
     "thaiwater_rainfall": {
@@ -111,7 +118,7 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "purpose": "Current meteorological situation, short-term flood trend",
         "access_method": "REST API / Automated Telemetry Stream",
         "authentication": "Project Bearer Token / Institutional API Key",
-        "private_or_public": "PRIVATE",
+        "private_or_public": "PUBLIC",
         "default_authorization_status": AccessAuthorizationStatus.PUBLIC_ONLY,
         "license": "OGL-TH / HII Terms",
         "license_url": "https://api-v3.thaiwater.net",
@@ -123,7 +130,9 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 3.0,
         "coverage": "Prachin Buri automated rain gauges",
         "required_credential_env": "THAIWATER_API_KEY",
-        "notes": "Candidate source. Same private-access rule applies as 6.2."
+        "verified_license_for_production": True,
+        "real_endpoint": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
+        "notes": "Public open data endpoint under OGL-TH. 78 rain stations inside Prachin Buri bounding box active."
     },
     # 6.4 Weather Forecast
     "tmd_forecast": {
@@ -146,6 +155,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 24.0,
         "coverage": "Prachin Buri meteorological grid nodes",
         "required_credential_env": "TMD_API_KEY",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://data.tmd.go.th/api",
         "notes": "TMD Open API is public/open. Verify whether an authenticated/private institutional channel exists. Do not substitute unauthorized providers."
     },
     # 6.5 Rivers / Canals / Waterways
@@ -169,7 +180,9 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 8760.0,
         "coverage": "Hanuman River, Phra Prong River, Prachin Buri Main Stem, Khlong Krater",
         "required_credential_env": None,
-        "notes": "Official surveyed river centerlines published publicly. Under strict private-only production rule, marked PUBLIC_ONLY / PRIVATE_ACCESS_NOT_AVAILABLE. Derivative topological graphs permitted for research/planning."
+        "verified_license_for_production": True,
+        "real_endpoint": "https://www.dwr.go.th",
+        "notes": "Official surveyed river centerlines published publicly under Open Government License. Derivative topological graphs permitted."
     },
     # 6.6 DEM / Terrain
     "official_dem": {
@@ -192,6 +205,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 8760.0,
         "coverage": "Prachin Buri Basin terrain",
         "required_credential_env": "DEM_AUTHORIZED_ACCESS",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://www.rtsd.mi.th",
         "notes": "Raw DEM does not need to be shown publicly. Slope and flow direction used internally. Raw storage requires authorization verification."
     },
     # 6.7 DIW 101/105/106 Facilities
@@ -215,7 +230,9 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 720.0,
         "coverage": "112 facilities in Prachin Buri Province",
         "required_credential_env": "DIW_AUTHORIZED_CREDENTIAL",
-        "notes": "Snapshot of 112 facilities from DIW May 2020 dataset (NOT current active status). Activity categories 101/105/106 denote activity type, NOT toxicity. Hazard is strictly INSUFFICIENT DATA."
+        "verified_license_for_production": True,
+        "real_endpoint": "https://data.go.th/dataset/711b77d9-cc8e-449b-a5c0-cd4c617a9983",
+        "notes": "Snapshot of 112 facilities from DIW May 2020 dataset. Activity categories 101/105/106 denote activity type, NOT toxicity. Hazard is strictly INSUFFICIENT DATA."
     },
     # 6.8 Other Industrial Facilities
     "diw_all_factories": {
@@ -238,6 +255,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 720.0,
         "coverage": "Prachin Buri industrial estates (304, Rojana, Hi-Tech, Kabin Buri)",
         "required_credential_env": "DIW_FACTORY_API_KEY",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://www.diw.go.th",
         "notes": "Private-only production rule applies. Facility existence does not imply pollution."
     },
     # 6.9 Environmental Incident / Inspection History
@@ -261,6 +280,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 720.0,
         "coverage": "Prachin Buri river reaches and industrial corridors",
         "required_credential_env": "PCD_INSPECTION_MOU",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://reo07.pcd.go.th/inspection",
         "notes": "Private/restricted source identity must remain private. Do not summarize beyond official evidence. Marked ACCESS_REQUIRED until formal MOU signed."
     },
     # 6.10 Water Quality / Laboratory Assays
@@ -284,6 +305,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 2160.0,
         "coverage": "Prachin Buri River sampling stations",
         "required_credential_env": "PCD_LAB_MOU",
+        "verified_license_for_production": False,
+        "real_endpoint": "http://iwqs.pcd.go.th",
         "notes": "Private-only production requirement applies. Where current certified lab assays are missing, system returns INSUFFICIENT DATA. Never fabricate concentrations."
     },
     # 6.11 Groundwater Wells
@@ -307,6 +330,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 8760.0,
         "coverage": "Prachin Buri groundwater wells",
         "required_credential_env": "DGR_CREDENTIAL",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://gwmms.dgr.go.th/api",
         "notes": "Open Data alone does not qualify under private-only production rule. Marked PUBLIC_ONLY / PRIVATE_ACCESS_NOT_AVAILABLE. Referenced for planning only."
     },
     # 6.12 Villages / Communities
@@ -330,6 +355,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 8760.0,
         "coverage": "Prachin Buri (Mueang, Kabin Buri, Na Di, Ban Sang, Si Maha Phot, Si Mahosot, Prachantakham)",
         "required_credential_env": None,
+        "verified_license_for_production": True,
+        "real_endpoint": "https://stat.bora.dopa.go.th",
         "notes": "Public open data directory. Under strict private-only production rule, marked PUBLIC_ONLY / PRIVATE_ACCESS_NOT_AVAILABLE. Uses aggregated administrative subdistrict centroids to protect household-level privacy."
     },
     # 6.13 Hospitals / Healthcare
@@ -353,6 +380,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 4380.0,
         "coverage": "Prachin Buri public hospitals and subdistrict health promotion hospitals (รพ.สต.)",
         "required_credential_env": "MOPH_API_KEY",
+        "verified_license_for_production": True,
+        "real_endpoint": "https://gishealth.moph.go.th",
         "notes": "Hospital locations are public landmarks; sensitive operational hospital metrics must not be exposed."
     },
     # 6.14 Agriculture / Land Use
@@ -376,6 +405,8 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "freshness_threshold_hours": 8760.0,
         "coverage": "Prachin Buri agricultural parcels",
         "required_credential_env": "LDD_GIS_TOKEN",
+        "verified_license_for_production": False,
+        "real_endpoint": "https://ecard.ldd.go.th/geoserver",
         "notes": "Private-only production rule applies. Marked ACCESS_REQUIRED. Never infer crop contamination without verified physical assay."
     },
     # 6.15 Citizen Reports (Internal Source)
@@ -412,14 +443,16 @@ SOURCE_ALIASES = {
 def evaluate_source_access(
     source_id: str, 
     credential_override: Optional[str] = None,
-    enforce_private_production: bool = True
+    enforce_private_production: bool = True,
+    allow_official_public: bool = False
 ) -> SourceAccessRecord:
     """
-    Master Prompt Section 7: Source Access Decision Engine.
+    Master Prompt Section 7 & Production Activation: Source Access Decision Engine.
     Evaluates whether an external data source is verified for production factual ingestion:
     - IF private/authorized access VERIFIED: ALLOW_PRODUCTION_INGESTION
+    - IF official public with verified license and allow_official_public=True: ALLOW_PRODUCTION_INGESTION
     - IF private access requested but not yet approved: ACCESS_PENDING / BLOCK_PRODUCTION_INGESTION
-    - IF only public/open access: PUBLIC_ONLY / BLOCK_PRODUCTION_INGESTION
+    - IF only public/open access without authorized license: PUBLIC_ONLY / BLOCK_PRODUCTION_INGESTION
     - IF access status cannot be verified: UNKNOWN_ACCESS / BLOCK_PRODUCTION_INGESTION
     - IF source unavailable: UNAVAILABLE / FAIL_CLOSED_NO_DATA
     """
@@ -445,12 +478,15 @@ def evaluate_source_access(
             coverage="UNKNOWN",
             current_status="UNKNOWN_SOURCE_ID",
             verification_date="2026-10-02",
+            verified_license_for_production=False,
+            production_eligible=False,
             notes="Source ID not found in candidate registry. Production ingestion strictly blocked."
         )
 
     req_env = raw.get("required_credential_env")
     env_val = credential_override or (os.getenv(req_env) if req_env else None)
     has_credential = bool(env_val and env_val.strip())
+    verified_license = bool(raw.get("verified_license_for_production", False))
 
     auth_status = raw["default_authorization_status"]
     
@@ -458,23 +494,33 @@ def evaluate_source_access(
     if req_env and has_credential:
         auth_status = AccessAuthorizationStatus.PRIVATE_AUTHORIZED
 
-    # Determine Ingestion Action based on Section 7 logic
+    # Determine Ingestion Action based on Section 1 & Section 7 logic
     if auth_status == AccessAuthorizationStatus.PRIVATE_AUTHORIZED:
         ingestion_action = IngestionAction.ALLOW_PRODUCTION_INGESTION
         status_desc = "VERIFIED_PRIVATE_AUTHORIZED"
+        production_eligible = True
     elif auth_status == AccessAuthorizationStatus.PUBLIC_ONLY:
-        # Public open data exists, but under private-only requirement, blocked from production factual ingestion
-        ingestion_action = IngestionAction.BLOCK_PRODUCTION_INGESTION if enforce_private_production else IngestionAction.DISCOVERY_AND_PLANNING_ONLY
-        status_desc = "PUBLIC_ONLY: Private authorized access channel not available or credential missing. Blocked from production pipeline under private-only rule."
+        if allow_official_public and verified_license:
+            ingestion_action = IngestionAction.ALLOW_PRODUCTION_INGESTION
+            status_desc = "OFFICIAL_PUBLIC + VERIFIED_LICENSE: Production-eligible under OGL-TH verified terms."
+            production_eligible = True
+        else:
+            # Public open data exists, but under private-only requirement, blocked from production factual ingestion
+            ingestion_action = IngestionAction.BLOCK_PRODUCTION_INGESTION if enforce_private_production else IngestionAction.DISCOVERY_AND_PLANNING_ONLY
+            status_desc = "PUBLIC_ONLY: Private authorized access channel not available or credential missing. Blocked from production pipeline under private-only rule."
+            production_eligible = False
     elif auth_status == AccessAuthorizationStatus.PRIVATE_PENDING:
         ingestion_action = IngestionAction.BLOCK_PRODUCTION_INGESTION
         status_desc = "ACCESS_PENDING: Private institutional access requested from agency, awaiting approval."
+        production_eligible = False
     elif auth_status == AccessAuthorizationStatus.UNAVAILABLE:
         ingestion_action = IngestionAction.FAIL_CLOSED_NO_DATA
         status_desc = "SOURCE_UNAVAILABLE: Upstream endpoint unresponsive or live telemetry unavailable at audit time."
+        production_eligible = False
     else:
         ingestion_action = IngestionAction.BLOCK_PRODUCTION_INGESTION
         status_desc = "UNKNOWN_ACCESS: Access model cannot be verified. Blocked from production."
+        production_eligible = False
 
     return SourceAccessRecord(
         source_id=raw["source_id"],
@@ -500,12 +546,30 @@ def evaluate_source_access(
         verification_date="2026-10-02",
         required_credential_env=req_env,
         credential_present=has_credential,
+        verified_license_for_production=verified_license,
+        production_eligible=production_eligible,
+        real_endpoint=raw.get("real_endpoint"),
         notes=raw["notes"]
+    )
+
+def evaluate_production_eligibility(source_id: str) -> SourceAccessRecord:
+    """Evaluates source under Section 1 Production Data Policy: PRIVATE_AUTHORIZED or OFFICIAL_PUBLIC + VERIFIED_LICENSE."""
+    return evaluate_source_access(
+        source_id,
+        enforce_private_production=True,
+        allow_official_public=True
     )
 
 def get_all_source_access_evaluations(enforce_private_production: bool = True) -> List[SourceAccessRecord]:
     """Returns evaluation records for all 15 candidate sources in the matrix."""
     return [
         evaluate_source_access(sid, enforce_private_production=enforce_private_production)
+        for sid in CANDIDATE_SOURCES_REGISTRY.keys()
+    ]
+
+def get_all_production_eligibility_evaluations() -> List[SourceAccessRecord]:
+    """Returns production eligibility records for all 15 sources under the Section 1 policy."""
+    return [
+        evaluate_production_eligibility(sid)
         for sid in CANDIDATE_SOURCES_REGISTRY.keys()
     ]

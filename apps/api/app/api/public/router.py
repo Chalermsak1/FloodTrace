@@ -21,7 +21,7 @@ from apps.api.app.core.security import (
     sanitize_and_strip_exif_image,
     format_standard_error
 )
-from apps.api.app.models.entities import CitizenReport, WaterStation
+from apps.api.app.models.entities import CitizenReport, WaterStation, RainfallStation
 
 public_router = APIRouter(prefix="/public", tags=["FloodTrace Public Information Platform"])
 
@@ -121,6 +121,20 @@ class PublicTelemetryStationDTO(BaseModel):
     water_level_msl: Optional[float] = None
     warning_level_msl: Optional[float] = None
     critical_level_msl: Optional[float] = None
+    status: str
+    provenance: PublicProvenanceDTO
+
+class PublicRainfallStationDTO(BaseModel):
+    station_id: str
+    name_th: str
+    basin: str
+    district: str
+    subdistrict: Optional[str] = None
+    latitude: float
+    longitude: float
+    rain_24h_mm: Optional[float] = None
+    rain_1h_mm: Optional[float] = None
+    agency: Optional[str] = None
     status: str
     provenance: PublicProvenanceDTO
 
@@ -652,6 +666,39 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
                 category_th="ข้อมูลจากหน่วยงาน",
                 source_url="https://standard.thaiwater.net/",
                 source_updated_at=prov.get("original_timestamp")
+            )
+        ))
+    return results
+
+@public_router.get("/rainfall-stations", response_model=List[PublicRainfallStationDTO])
+def get_public_rainfall_stations(db: Session = Depends(get_db)):
+    """
+    Returns verified public automatic rain gauge stations across Prachin Buri.
+    Direct live telemetry from HII / ThaiWater under Open Government License Thailand (OGL-TH).
+    """
+    stations = db.query(RainfallStation).all()
+    results = []
+    for s in stations:
+        prov = s.provenance or {}
+        results.append(PublicRainfallStationDTO(
+            station_id=s.id,
+            name_th=s.name_th,
+            basin=s.basin or "ลุ่มน้ำบางปะกง",
+            district=s.district or "เมืองปราจีนบุรี",
+            subdistrict=s.subdistrict,
+            latitude=s.latitude,
+            longitude=s.longitude,
+            rain_24h_mm=s.rain_24h_mm,
+            rain_1h_mm=s.rain_1h_mm,
+            agency=s.agency or "สสน.",
+            status=s.status,
+            provenance=PublicProvenanceDTO(
+                source_agency=prov.get("source_agency", "สถาบันสารสนเทศทรัพยากรน้ำ (องค์การมหาชน) - ThaiWater"),
+                dataset_name="ข้อมูลตรวจวัดปริมาณน้ำฝนอัตโนมัติ 24 ชั่วโมง (Rainfall Telemetry)",
+                category="OFFICIAL",
+                category_th="ข้อมูลจากหน่วยงาน",
+                source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
+                source_updated_at=prov.get("original_timestamp") or s.observation_time
             )
         ))
     return results

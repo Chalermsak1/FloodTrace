@@ -8,8 +8,8 @@ import os
 
 from apps.api.app.core.config import settings
 from apps.api.app.core.database import SessionLocal, Base, engine
-from apps.api.app.models.entities import WaterStation, Reservoir, IndustrialFacility
-from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations
+from apps.api.app.models.entities import WaterStation, RainfallStation, Reservoir, IndustrialFacility
+from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations, fetch_thaiwater_rainfall
 from apps.api.app.adapters.rid import fetch_rid_reservoirs
 from apps.api.app.adapters.diw import load_diw_facilities
 
@@ -121,6 +121,30 @@ async def lifespan(app: FastAPI):
                     db.merge(st)
                 db.commit()
                 logger.info(f"Seeded {len(stations)} ThaiWater stations.")
+
+            if db.query(RainfallStation).count() == 0:
+                logger.info("Syncing initial ThaiWater rainfall stations...")
+                rain_stations = await fetch_thaiwater_rainfall()
+                for item in rain_stations:
+                    rf = RainfallStation(
+                        id=item["id"],
+                        name_th=item["name_th"],
+                        name_en=item["name_en"],
+                        basin=item["basin"],
+                        district=item["district"],
+                        subdistrict=item["subdistrict"],
+                        latitude=item["latitude"],
+                        longitude=item["longitude"],
+                        rain_24h_mm=item["rain_24h_mm"],
+                        rain_1h_mm=item["rain_1h_mm"],
+                        observation_time=item["observation_time"],
+                        agency=item["agency"],
+                        status=item["status"],
+                        provenance=item["provenance"]
+                    )
+                    db.merge(rf)
+                db.commit()
+                logger.info(f"Seeded {len(rain_stations)} ThaiWater rain stations.")
 
             if db.query(Reservoir).count() == 0:
                 logger.info("Syncing RID reservoir data...")
@@ -311,14 +335,15 @@ def readiness_check():
 @app.get("/health/sources")
 def sources_health_check():
     """
-    Master Prompt Section 23: DATA SOURCE HEALTH & CIRCUIT BREAKER MONITORING.
+    Master Prompt Section 23 & 45: DATA SOURCE HEALTH & CIRCUIT BREAKER MONITORING.
     Reports operational status across all external environmental monitoring providers.
     """
-    from apps.api.app.core.source_access import CANDIDATE_SOURCES_REGISTRY, evaluate_source_access
+    from apps.api.app.core.source_access import CANDIDATE_SOURCES_REGISTRY, evaluate_source_access, evaluate_production_eligibility
 
     sources_summary = {}
     for source_key in CANDIDATE_SOURCES_REGISTRY.keys():
         eval_result = evaluate_source_access(source_key, enforce_private_production=settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION)
+        prod_elig = evaluate_production_eligibility(source_key)
         cb = CIRCUIT_BREAKERS.get(source_key)
         
         sources_summary[source_key] = {
@@ -328,6 +353,9 @@ def sources_health_check():
             "authorization_status": eval_result.authorization_status.value,
             "ingestion_action": eval_result.ingestion_action.value,
             "production_allowed": eval_result.ingestion_action.value == "ALLOW_PRODUCTION_INGESTION",
+            "production_eligible": prod_elig.production_eligible,
+            "verified_license": prod_elig.verified_license_for_production,
+            "real_endpoint": prod_elig.real_endpoint,
             "circuit_breaker": cb.get_status() if cb else {"state": "N/A", "healthy": True}
         }
 
@@ -335,7 +363,7 @@ def sources_health_check():
         "status": "monitored",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "total_sources_evaluated": len(sources_summary),
-        "production_private_gate": "ENFORCED",
+        "production_private_gate": "ENFORCED" if settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION else "PERMISSIVE_PUBLIC",
         "sources": sources_summary
     }
 

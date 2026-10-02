@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     
     # External APIs (Real Official Data Sources)
     THAIWATER_API_URL: str = "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load"
+    THAIWATER_RAIN_API_URL: str = "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h"
     RID_RESERVOIR_API_URL: str = "https://app.rid.go.th/reservoir/api/reservoir/public"
     OPEN_METEO_API_URL: str = "https://api.open-meteo.com/v1/forecast"
     DIW_WASTE_DATASET_URL: str = "https://data.go.th/dataset/711b77d9-cc8e-449b-a5c0-cd4c617a9983/resource/a1821014-19fd-444c-8310-830f6d744849/download/101-105-106-1.csv"
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DATA_ENV: str = os.getenv("DATA_ENV", "DEVELOPMENT")
     REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION: bool = os.getenv("REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION", "false").lower() in ("true", "1")
+    ALLOW_OFFICIAL_PUBLIC_PRODUCTION: bool = os.getenv("ALLOW_OFFICIAL_PUBLIC_PRODUCTION", "true").lower() in ("true", "1")
     THAIWATER_API_KEY: str | None = os.getenv("THAIWATER_API_KEY", None)
     GISTDA_API_KEY: str | None = os.getenv("GISTDA_API_KEY", None)
     TMD_API_KEY: str | None = os.getenv("TMD_API_KEY", None)

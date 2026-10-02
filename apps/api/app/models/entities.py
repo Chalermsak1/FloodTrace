@@ -20,6 +20,25 @@ class WaterStation(Base):
     last_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     provenance = Column(JSON, nullable=False)
 
+class RainfallStation(Base):
+    __tablename__ = "rainfall_stations"
+
+    id = Column(String, primary_key=True, index=True) # Station code
+    name_th = Column(String, nullable=False)
+    name_en = Column(String, nullable=True)
+    basin = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    subdistrict = Column(String, nullable=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    rain_24h_mm = Column(Float, nullable=True) # MEASURED_FACT (mm in 24 hours)
+    rain_1h_mm = Column(Float, nullable=True)  # MEASURED_FACT (mm in 1 hour)
+    observation_time = Column(String, nullable=True)
+    agency = Column(String, nullable=True)
+    status = Column(String, default="RAINFALL_RECORDED") # RAINFALL_RECORDED, NO_DATA
+    last_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    provenance = Column(JSON, nullable=False)
+
 class Reservoir(Base):
     __tablename__ = "reservoirs"
 
