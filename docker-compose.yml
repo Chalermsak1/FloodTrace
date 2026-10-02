@@ -1,0 +1,59 @@
+services:
+  # Spatial Database: PostgreSQL 16 with PostGIS 3.4
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: floodtrace_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-floodtrace_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-floodtrace_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-floodtrace_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - floodtrace_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-floodtrace_user} -d ${POSTGRES_DB:-floodtrace_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - floodtrace_net
+
+  # FloodTrace FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: floodtrace_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-floodtrace_user}:${POSTGRES_PASSWORD:-floodtrace_secure_pass}@db:5432/${POSTGRES_DB:-floodtrace_db}
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - floodtrace_net
+
+  # FloodTrace Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: floodtrace_web
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    networks:
+      - floodtrace_net
+
+volumes:
+  floodtrace_pgdata:
+
+networks:
+  floodtrace_net:
+    driver: bridge
