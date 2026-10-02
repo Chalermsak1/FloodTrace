@@ -1,25 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { 
   Layers, 
   Search, 
   MapPin, 
-  Compass, 
   Sliders, 
   Info, 
-  Check, 
   X, 
   ChevronRight, 
   AlertCircle, 
-  ShieldCheck, 
-  Droplets, 
-  Clock, 
-  Eye, 
-  FileText,
+  ChevronDown,
+  Compass,
+  Clock,
+  Layers2,
   SlidersHorizontal,
-  ChevronDown
+  Plus,
+  Minus,
+  RotateCcw,
+  Globe,
+  Maximize2,
+  Minimize2,
+  ShieldCheck,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
-import { ContinuousMapView } from '../components/map/ContinuousMapView';
+import { 
+  MapLibreMapView, 
+  DISTRICT_CENTROIDS, 
+  AUTHENTIC_TAMBONS 
+} from '../components/map/MapLibreMapView';
 
 const PRACHIN_DISTRICTS = [
   'กบินทร์บุรี',
@@ -36,32 +45,40 @@ export const MapPage: React.FC = () => {
   const districtParam = searchParams.get('district') || 'กบินทร์บุรี';
 
   const [selectedDistrict, setSelectedDistrict] = useState<string>(districtParam);
-  const [selectedZoneData, setSelectedZoneData] = useState<any>(null);
-  const [showLayerPanel, setShowLayerPanel] = useState<boolean>(true);
-  const [showMobilePanel, setShowMobilePanel] = useState<boolean>(false);
-  const [watchZoneOpacity, setWatchZoneOpacity] = useState<number>(0.35);
+  const [selectedCellData, setSelectedCellData] = useState<any>(null);
+  const [selectedMarkerData, setSelectedMarkerData] = useState<any>(null);
+  const [showLayerPanel, setShowLayerPanel] = useState<boolean>(false);
+  const [surfaceOpacity, setSurfaceOpacity] = useState<number>(0.35);
+  const [basemap, setBasemap] = useState<'satellite' | 'streets'>('satellite');
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // GIS Data States
-  const [zones, setZones] = useState<any>(null);
-  const [floodExtent, setFloodExtent] = useState<any>(null);
-  const [forecastZones, setForecastZones] = useState<any>(null);
+  // Search & Typeahead States
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
+  const [targetCoords, setTargetCoords] = useState<[number, number] | null>(null);
+
+  // Real GIS Telemetry Data States
+  const [monitoringSurface, setMonitoringSurface] = useState<any>(null);
+  const [boundaryData, setBoundaryData] = useState<any>(null);
   const [waterways, setWaterways] = useState<any>(null);
   const [stations, setStations] = useState<any[]>([]);
+  const [rainfallStations, setRainfallStations] = useState<any[]>([]);
   const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
 
-  // Section 15: Clean Layer Toggles (Default ON vs Optional)
+  // Layer Controls (Section 13: Clean & Focused Defaults)
   const [visibleLayers, setVisibleLayers] = useState({
-    watchZones: true,     // DEFAULT ON
-    waterways: true,      // DEFAULT ON
-    stations: true,       // DEFAULT ON
-    adminLabels: true,    // DEFAULT ON (Tambon / District names)
-    forecastZones: false, // OPTIONAL
-    observations: false,  // OPTIONAL
-    floodExtent: false,   // OPTIONAL
+    monitoringSurface: true, // ANALYSIS: Monitoring Priority Surface
+    waterways: true,         // HYDROLOGY: Rivers & Canals
+    stations: true,          // HYDROLOGY: Water-level stations
+    rainfallStations: true,  // HYDROLOGY: Rainfall stations
+    observations: true,      // COMMUNITY: Citizen Reports
+    outsideMask: true,       // GEOGRAPHY: Gray outside-analysis mask
+    adminLabels: true,       // GEOGRAPHY: Geographic labels
+    roadOverlay: true        // GEOGRAPHY: Transportation roads
   });
-
-  const [showOptionalLayers, setShowOptionalLayers] = useState<boolean>(false);
 
   const toggleLayer = (key: keyof typeof visibleLayers) => {
     setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }));
@@ -73,405 +90,565 @@ export const MapPage: React.FC = () => {
     }
   }, [districtParam]);
 
-  // Fetch GIS Layers from Public API
-  useEffect(() => {
+  // Fetch Real Telemetry & Geospatial Layers from Backend API
+  const loadMapData = () => {
     setLoading(true);
     Promise.all([
-      fetch('/api/public/zones').then(r => r.json()).catch(() => null),
-      fetch('/api/public/flood-extent').then(r => r.json()).catch(() => null),
-      fetch('/api/public/forecast-zones?horizon=now').then(r => r.json()).catch(() => null),
-      fetch('/api/public/waterways').then(r => r.json()).catch(() => null),
-      fetch('/api/public/stations').then(r => r.json()).catch(() => []),
-      fetch('/api/public/observations').then(r => r.json()).catch(() => [])
-    ]).then(([zonesRes, floodRes, forecastRes, waterRes, stationsRes, obsRes]) => {
-      setZones(zonesRes);
-      setFloodExtent(floodRes);
-      setForecastZones(forecastRes);
+      fetch('/api/public/map/monitoring-priority').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/map/boundary').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/stations').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/public/rainfall-stations').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/public/observations').then(r => r.ok ? r.json() : []).catch(() => [])
+    ]).then(([surfaceRes, boundRes, waterRes, stationsRes, rainRes, obsRes]) => {
+      setMonitoringSurface(surfaceRes);
+      setBoundaryData(boundRes);
       setWaterways(waterRes);
       setStations(Array.isArray(stationsRes) ? stationsRes : []);
+      setRainfallStations(Array.isArray(rainRes) ? rainRes : []);
       setObservations(Array.isArray(obsRes) ? obsRes : []);
-      
-      if (zonesRes?.features) {
-        const found = zonesRes.features.find((f: any) => f.properties.district === selectedDistrict);
+
+      if (surfaceRes?.features && selectedDistrict) {
+        const found = surfaceRes.features.find((f: any) => f.properties.district === selectedDistrict);
         if (found) {
-          setSelectedZoneData(found.properties);
+          setSelectedCellData(found.properties);
         }
       }
+      setLastRefreshedAt(new Date());
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadMapData();
+
+    // Automated refresh every 60 seconds (Section 21)
+    const interval = setInterval(() => {
+      loadMapData();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSelectDistrict = (d: string) => {
     setSelectedDistrict(d);
-    if (zones?.features) {
-      const found = zones.features.find((f: any) => f.properties.district === d);
+    setTargetCoords(null);
+    if (monitoringSurface?.features) {
+      const found = monitoringSurface.features.find((f: any) => f.properties.district === d);
       if (found) {
-        setSelectedZoneData(found.properties);
-        setShowMobilePanel(true);
+        setSelectedCellData(found.properties);
       }
     }
   };
 
-  const handleSelectZone = (props: any) => {
-    setSelectedZoneData(props);
-    setSelectedDistrict(props.district);
-    setShowMobilePanel(true);
+  const handleSelectCell = (props: any) => {
+    setSelectedCellData(props);
+    setSelectedMarkerData(null);
+    if (props.district) {
+      setSelectedDistrict(props.district);
+    }
+    setTargetCoords(null);
   };
 
-  const getPriorityBadgeClass = (priority: string) => {
-    if (priority === 'สูงมาก') return 'bg-rose-100 text-rose-800 border-rose-200';
-    if (priority === 'สูง') return 'bg-red-50 text-red-700 border-red-200';
-    if (priority === 'ปานกลาง' || priority === 'ควรติดตาม') return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  const handleSelectMarker = (markerProps: any) => {
+    setSelectedMarkerData(markerProps);
+  };
+
+  // Search Results Filtering (Districts, Authentic Subdistricts, Waterways)
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+
+    // Match Province
+    const matchedProvince = 'ปราจีนบุรี'.includes(q) ? [{
+      type: 'province',
+      title: 'จังหวัดปราจีนบุรี',
+      subtitle: 'พื้นที่วิเคราะห์หลัก FloodTrace',
+      district: 'กบินทร์บุรี',
+      coords: [14.05, 101.55] as [number, number]
+    }] : [];
+
+    // Match Districts
+    const matchedDistricts = PRACHIN_DISTRICTS.filter(d => 
+      d.toLowerCase().includes(q) || `อำเภอ${d}`.toLowerCase().includes(q)
+    ).map(d => ({
+      type: 'district',
+      title: `อ.${d}`,
+      subtitle: `อำเภอใน จ.ปราจีนบุรี`,
+      district: d,
+      coords: DISTRICT_CENTROIDS[d]
+    }));
+
+    // Match Subdistricts
+    const matchedTambons = AUTHENTIC_TAMBONS.filter(t =>
+      t.name.toLowerCase().includes(q) || t.district.toLowerCase().includes(q)
+    ).slice(0, 5).map(t => ({
+      type: 'tambon',
+      title: t.name,
+      subtitle: `อ.${t.district} จ.ปราจีนบุรี`,
+      district: t.district,
+      coords: [t.lat, t.lng] as [number, number]
+    }));
+
+    // Match Waterways
+    const matchedWaterways = waterways?.features ? waterways.features.filter((f: any) =>
+      f.properties.name.toLowerCase().includes(q)
+    ).slice(0, 3).map((f: any) => ({
+      type: 'waterway',
+      title: f.properties.name,
+      subtitle: f.properties.type || 'ทางน้ำสายหลัก',
+      district: 'กบินทร์บุรี',
+      coords: [f.geometry.coordinates[0][1], f.geometry.coordinates[0][0]] as [number, number]
+    })) : [];
+
+    return [...matchedProvince, ...matchedDistricts, ...matchedTambons, ...matchedWaterways].slice(0, 7);
+  }, [searchQuery, waterways]);
+
+  const handleSearchResultClick = (result: any) => {
+    setSelectedDistrict(result.district);
+    setTargetCoords(result.coords);
+    setSearchQuery(result.title);
+    setIsSearchFocused(false);
+
+    if (monitoringSurface?.features) {
+      const found = monitoringSurface.features.find((f: any) => f.properties.district === result.district);
+      if (found) {
+        setSelectedCellData(found.properties);
+      }
+    }
+  };
+
+  const handleResetCamera = () => {
+    setTargetCoords([14.05, 101.55]);
+    setSelectedDistrict('กบินทร์บุรี');
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      mapContainerRef.current?.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
   };
 
   return (
-    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-4 space-y-4">
+    <div className="w-full flex flex-col space-y-2">
       
-      {/* 1. Page Header (Title + Subtitle) */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-1 border-b border-slate-200">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#063B70] tracking-tight">
-            แผนที่เฝ้าระวังความเสี่ยงการปนเปื้อน
+      {/* 1. Header Bar: Compact Navigation Context */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 bg-slate-900/90 text-white rounded-2xl backdrop-blur-md border border-slate-800 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <span>แผนที่เฝ้าระวังสิ่งแวดล้อม (Environmental Watch Map)</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-400/30">
+              ดาวเทียมสิ่งแวดล้อม
+            </span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-            ดูพื้นที่ที่ควรเฝ้าระวังจากข้อมูลสิ่งแวดล้อม การไหลของน้ำ ผลตรวจจากหน่วยงาน และรายงานจากประชาชน
-          </p>
         </div>
 
-        {/* Quick District Selector Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-xs font-semibold text-slate-400 shrink-0">เลือกอำเภอ:</span>
-          {PRACHIN_DISTRICTS.map(d => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => handleSelectDistrict(d)}
-              className={`px-2.5 py-1 rounded-xl text-xs font-medium shrink-0 transition-colors ${
-                selectedDistrict === d
-                  ? 'bg-[#063B70] text-white font-bold'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
-            >
-              {d}
-            </button>
-          ))}
+        {/* Refresh & Scope Indicators */}
+        <div className="flex items-center gap-3 text-xs text-slate-300">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+            <span>ขอบเขตการวิเคราะห์: <strong className="text-white font-semibold">จ.ปราจีนบุรี</strong></span>
+          </div>
+          <div className="hidden md:flex items-center gap-1 text-[11px] text-slate-400">
+            <Clock className="w-3 h-3 text-blue-400" />
+            <span>อัปเดตอัตโนมัติ: {lastRefreshedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
+          </div>
         </div>
       </div>
 
-      {/* 2. Main Map Canvas Container (Occupies 75-80% visual area) */}
-      <div className="relative w-full h-[620px] sm:h-[680px] lg:h-[720px] rounded-3xl overflow-hidden border border-slate-200 shadow-subtle bg-slate-900">
+      {/* 2. Full-bleed Map Canvas Container (Matching Reference Layout) */}
+      <div 
+        ref={mapContainerRef}
+        className="relative w-full h-[78vh] min-h-[580px] max-h-[880px] rounded-3xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-950"
+      >
         
-        {/* Full-bleed Leaflet Map */}
-        <ContinuousMapView
-          zones={zones}
-          floodExtent={floodExtent}
-          forecastZones={forecastZones}
+        {/* Full WebGL MapLibre Map Engine */}
+        <MapLibreMapView
+          monitoringSurface={monitoringSurface}
+          boundaryData={boundaryData}
           waterways={waterways}
           stations={stations}
+          rainfallStations={rainfallStations}
           observations={observations}
           visibleLayers={visibleLayers}
           selectedDistrict={selectedDistrict}
           onSelectDistrict={handleSelectDistrict}
-          onSelectZone={handleSelectZone}
-          watchZoneOpacity={watchZoneOpacity}
+          onSelectCell={handleSelectCell}
+          onSelectMarker={handleSelectMarker}
+          surfaceOpacity={surfaceOpacity}
+          basemap={basemap}
+          targetCoords={targetCoords}
         />
 
-        {/* Floating Compact Layer Control (Top Left) */}
-        <div className="absolute top-4 left-4 z-[400] max-w-[280px] w-full">
-          {showLayerPanel ? (
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-slate-200 shadow-xl space-y-3 animate-fadeIn text-[#073967]">
-              
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#0C65E8]" />
-                  <span className="font-bold text-xs text-[#063B70]">ชั้นข้อมูลแผนที่</span>
-                </div>
+        {/* 3. Floating Search Bar at Top (Section 11 - Visual Reference Layout) */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-30">
+          <div className="relative">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 px-3.5 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[#0C65E8] focus-within:border-transparent">
+              <Search className="w-5 h-5 text-slate-400 shrink-0 mr-2.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                placeholder="ค้นหาพื้นที่ ตำบล อำเภอ หรือจังหวัด..."
+                className="w-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none font-medium"
+              />
+              {searchQuery && (
                 <button
-                  type="button"
-                  onClick={() => setShowLayerPanel(false)}
-                  className="text-slate-400 hover:text-slate-600 text-xs p-1"
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 mr-1"
                 >
-                  ย่อ ✕
+                  <X className="w-4 h-4" />
                 </button>
-              </div>
-
-              {/* Core Default ON Layers */}
-              <div className="space-y-1.5 text-xs">
-                <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-sm bg-[#DC2626] opacity-80 inline-block"></span>
-                    <span className="font-medium text-slate-800">พื้นที่เฝ้าระวังการปนเปื้อน</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={visibleLayers.watchZones}
-                    onChange={() => toggleLayer('watchZones')}
-                    className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-1 bg-[#38BDF8] inline-block"></span>
-                    <span className="font-medium text-slate-800">แม่น้ำและคลอง</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={visibleLayers.waterways}
-                    onChange={() => toggleLayer('waterways')}
-                    className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0C65E8] inline-block"></span>
-                    <span className="font-medium text-slate-800">จุดตรวจคุณภาพน้ำ</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={visibleLayers.stations}
-                    onChange={() => toggleLayer('stations')}
-                    className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-500 font-bold">Aa</span>
-                    <span className="font-medium text-slate-800">ชื่อตำบล / อำเภอ</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={visibleLayers.adminLabels}
-                    onChange={() => toggleLayer('adminLabels')}
-                    className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                  />
-                </label>
-              </div>
-
-              {/* Opacity Slider for Watch Areas */}
-              <div className="pt-2 border-t border-slate-100">
-                <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                  <span>ความโปร่งใสของสี:</span>
-                  <span className="font-bold">{Math.round(watchZoneOpacity * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.15"
-                  max="0.65"
-                  step="0.05"
-                  value={watchZoneOpacity}
-                  onChange={(e) => setWatchZoneOpacity(parseFloat(e.target.value))}
-                  className="w-full accent-[#0C65E8] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-                />
-              </div>
-
-              {/* Optional Grouped Layers */}
-              <div className="pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowOptionalLayers(!showOptionalLayers)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-[#0C65E8] hover:underline py-1"
-                >
-                  <span>ข้อมูลเพิ่มเติม ({visibleLayers.forecastZones || visibleLayers.observations || visibleLayers.floodExtent ? 'เปิดใช้งาน' : 'ปิดอยู่'})</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showOptionalLayers ? 'rotate-180' : ''}`} />
-                </button>
-
-                {showOptionalLayers && (
-                  <div className="space-y-1.5 pt-2 text-xs">
-                    <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 border border-purple-500 border-dashed inline-block"></span>
-                        <span className="text-slate-700">แนวโน้มพื้นที่ล่วงหน้า</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={visibleLayers.forecastZones}
-                        onChange={() => toggleLayer('forecastZones')}
-                        className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                        <span className="text-slate-700">รายงานจากประชาชน</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={visibleLayers.observations}
-                        onChange={() => toggleLayer('observations')}
-                        className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 bg-blue-500 inline-block"></span>
-                        <span className="text-slate-700">พื้นที่น้ำท่วมขัง</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={visibleLayers.floodExtent}
-                        onChange={() => toggleLayer('floodExtent')}
-                        className="rounded text-[#0C65E8] focus:ring-0 w-4 h-4"
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowLayerPanel(true)}
-              className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200 shadow-md text-xs font-bold text-[#063B70] flex items-center gap-2 hover:bg-white"
-            >
-              <Layers className="w-4 h-4 text-[#0C65E8]" />
-              <span>ชั้นข้อมูล</span>
-            </button>
-          )}
-        </div>
-
-        {/* Floating Compact Legend (Bottom Left - Section 14) */}
-        <div className="absolute bottom-4 left-4 z-[400] bg-white/95 backdrop-blur-md rounded-2xl px-3.5 py-2.5 border border-slate-200 shadow-lg text-[#073967] max-w-[340px]">
-          <div className="flex items-center justify-between gap-3 mb-1.5">
-            <span className="font-bold text-xs text-[#063B70]">ระดับการเฝ้าระวัง</span>
-            <div className="group relative flex items-center">
-              <Info className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-xl leading-normal z-50">
-                ระดับสีเป็นการประเมินเพื่อการเฝ้าระวัง ไม่ใช่ผลยืนยันการปนเปื้อน
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] font-medium flex-wrap">
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#991B1B]"></span>
-              <span>สูงมาก</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]"></span>
-              <span>สูง</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D97706]"></span>
-              <span>ควรติดตาม</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></span>
-              <span>ต่ำ</span>
-            </span>
-            <span className="flex items-center gap-1 text-slate-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#64748B]"></span>
-              <span>ไม่มีข้อมูล</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Selected Area Panel (Right side ONLY when area is selected - Section 17) */}
-        {selectedZoneData && (
-          <div className="hidden lg:block absolute top-4 right-4 z-[400] w-[320px] bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200 shadow-2xl space-y-4 animate-fadeIn text-[#073967]">
-            
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  พื้นที่ที่เลือก
-                </span>
-                <h3 className="font-extrabold text-base text-[#063B70] leading-snug">
-                  {selectedZoneData.zone_name || `อำเภอ${selectedZoneData.district}`}
-                </h3>
-                <span className="text-xs text-slate-500">
-                  อ.{selectedZoneData.district} จ.ปราจีนบุรี
-                </span>
-              </div>
+              )}
               <button
-                type="button"
-                onClick={() => setSelectedZoneData(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                onClick={() => setShowLayerPanel(!showLayerPanel)}
+                title="ตัวเลือกชั้นข้อมูล"
+                className={`p-1.5 rounded-xl transition-colors ${showLayerPanel ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
               >
-                ✕
+                <SlidersHorizontal className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Current Watch Level Badge */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-600">ระดับการเฝ้าระวัง:</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getPriorityBadgeClass(selectedZoneData.verification_priority)}`}>
-                {selectedZoneData.verification_priority_label || selectedZoneData.verification_priority}
+            {/* Typeahead Search Results Dropdown */}
+            {isSearchFocused && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-40 max-h-72 overflow-y-auto divide-y divide-slate-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                {searchResults.map((res, idx) => (
+                  <button
+                    key={idx}
+                    onMouseDown={() => handleSearchResultClick(res)}
+                    className="w-full px-4 py-2.5 text-left hover:bg-blue-50/80 flex items-center justify-between transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-xl bg-blue-100 text-[#0C65E8] flex items-center justify-center shrink-0 group-hover:bg-[#0C65E8] group-hover:text-white transition-colors">
+                        <MapPin className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 group-hover:text-[#0C65E8]">
+                          {res.title}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {res.subtitle}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {res.type === 'district' ? 'อำเภอ' : res.type === 'tambon' ? 'ตำบล' : res.type === 'waterway' ? 'ทางน้ำ' : 'จังหวัด'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 4. Minimal Floating Map Controls (Top-Right, Section 12) */}
+        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+          {/* Zoom & Re-center Group */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden flex flex-col divide-y divide-slate-100">
+            <button
+              onClick={() => handleResetCamera()}
+              title="รีเซ็ตมุมมองจังหวัดปราจีนบุรี"
+              className="p-2.5 hover:bg-slate-100 text-slate-700 hover:text-[#0C65E8] transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowLayerPanel(!showLayerPanel)}
+              title="ชั้นข้อมูลแผนที่"
+              className={`p-2.5 transition-colors ${showLayerPanel ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+            >
+              <Layers2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setBasemap(basemap === 'satellite' ? 'streets' : 'satellite')}
+              title={`เปลี่ยนแผนที่ฐาน (ปัจจุบัน: ${basemap === 'satellite' ? 'ภาพถ่ายดาวเทียม' : 'แผนที่ถนน'})`}
+              className="p-2.5 hover:bg-slate-100 text-slate-700 hover:text-[#0C65E8] transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              title="เต็มจอ"
+              className="p-2.5 hover:bg-slate-100 text-slate-700 hover:text-[#0C65E8] transition-colors"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* 5. Floating Layer Control Panel (Section 13) */}
+        {showLayerPanel && (
+          <div className="absolute top-20 right-4 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 z-30 animate-in fade-in slide-in-from-right-2 duration-150 space-y-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#0C65E8]" />
+                <span className="text-xs font-bold text-slate-800">ชั้นข้อมูลแผนที่</span>
+              </div>
+              <button
+                onClick={() => setShowLayerPanel(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* ANALYSIS */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">การวิเคราะห์ความเสี่ยง</span>
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  <span>พื้นผิวระดับการเฝ้าระวัง</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.monitoringSurface}
+                  onChange={() => toggleLayer('monitoringSurface')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+
+              {/* Opacity Slider */}
+              {visibleLayers.monitoringSurface && (
+                <div className="pt-1 px-2 space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-500">
+                    <span>ความโปร่งแสงพื้นผิว</span>
+                    <span className="font-semibold">{Math.round(surfaceOpacity * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.15"
+                    max="0.65"
+                    step="0.05"
+                    value={surfaceOpacity}
+                    onChange={(e) => setSurfaceOpacity(parseFloat(e.target.value))}
+                    className="w-full accent-[#0C65E8] cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* HYDROLOGY */}
+            <div className="space-y-1.5 border-t border-slate-100 pt-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">โครงข่ายอุทกวิทยา</span>
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                  <span>แม่น้ำและลำคลองสายหลัก</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.waterways}
+                  onChange={() => toggleLayer('waterways')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                  <span>สถานีวัดระดับน้ำ (โทรมาตร)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.stations}
+                  onChange={() => toggleLayer('stations')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                  <span>สถานีวัดน้ำฝนอัตโนมัติ</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.rainfallStations}
+                  onChange={() => toggleLayer('rainfallStations')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* COMMUNITY */}
+            <div className="space-y-1.5 border-t border-slate-100 pt-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ภาคประชาชน</span>
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                  <span>รายงานข้อสังเกตชุมชน</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.observations}
+                  onChange={() => toggleLayer('observations')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* GEOGRAPHY */}
+            <div className="space-y-1.5 border-t border-slate-100 pt-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ภูมิศาสตร์และป้ายชื่อ</span>
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+                  <span>หน้ากากนอกเขตปราจีนบุรี</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.outsideMask}
+                  onChange={() => toggleLayer('outsideMask')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                  <span>ป้ายชื่อตำบลและอำเภอ</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={visibleLayers.adminLabels}
+                  onChange={() => toggleLayer('adminLabels')}
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* 6. Compact Floating Legend (Bottom-Left, Section 14 Matching Reference) */}
+        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3 max-w-[320px]">
+          <div className="text-[11px] font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+            <span>ระดับความสำคัญในการเฝ้าระวัง</span>
+            <span className="text-[9px] text-slate-400 font-normal">จ.ปราจีนบุรี</span>
+          </div>
+
+          {/* Visual Color Chips */}
+          <div className="grid grid-cols-5 gap-1 text-center mb-2">
+            <div className="flex flex-col items-center">
+              <span className="w-4 h-4 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
+              <span className="text-[9px] text-slate-600 font-medium mt-0.5">สูงมาก</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="w-4 h-4 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
+              <span className="text-[9px] text-slate-600 font-medium mt-0.5">สูง</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="w-4 h-4 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
+              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ปานกลาง</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="w-4 h-4 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
+              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ต่ำ</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="w-4 h-4 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
+              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ไม่มีข้อมูล</span>
+            </div>
+          </div>
+
+          {/* Clarification Disclaimer (Section 14 & 23) */}
+          <p className="text-[9px] text-slate-500 leading-tight border-t border-slate-100 pt-1.5">
+            พื้นที่สีแสดงระดับ Monitoring / Verification Priority จากข้อมูลที่ระบบมีในขณะนั้น ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
+          </p>
+        </div>
+
+        {/* 7. Slide-out Detail Drawer (Non-blocking, on Selected Cell or Marker) */}
+        {selectedCellData && (
+          <div className="absolute top-4 left-4 z-20 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3 animate-in fade-in slide-in-from-left-2 duration-150 max-h-[85%] overflow-y-auto">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">พื้นที่วิเคราะห์</span>
+                <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                  {selectedCellData.cell_name || `ต.${selectedCellData.subdistrict} (อ.${selectedCellData.district})`}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedCellData(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Priority Status Pill */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-xs text-slate-600">ลำดับการเฝ้าระวัง:</span>
+              <span 
+                className="text-xs font-bold px-2.5 py-1 rounded-full text-white shadow-xs"
+                style={{ backgroundColor: selectedCellData.color || '#0284c7' }}
+              >
+                {selectedCellData.priority_badge || selectedCellData.priority_level}
               </span>
             </div>
 
-            {/* Why This Area? (3-4 points) */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-800 block">ทำไมพื้นที่นี้จึงถูกเฝ้าระวัง?</span>
-              <div className="space-y-1.5 text-xs text-slate-600">
-                {(selectedZoneData.why_this_area || [
-                  '✓ อยู่ในแนวพื้นที่ที่แบบจำลองแนะนำให้ติดตาม',
-                  '✓ มีความเชื่อมโยงทางน้ำกับพื้นที่เฝ้าระวัง',
-                  '○ ยังไม่มีผลตรวจทางห้องปฏิบัติการยืนยัน'
-                ]).slice(0, 4).map((r: string, idx: number) => (
-                  <div key={idx} className="flex items-start gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <span className="text-emerald-600 font-bold shrink-0">{r.startsWith('✓') ? '✓' : '○'}</span>
-                    <span className="text-[11px] leading-relaxed">{r.replace(/^[✓○]\s*/, '')}</span>
-                  </div>
-                ))}
+            {/* Priority Score */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-slate-600">
+                <span>คะแนนความสำคัญ:</span>
+                <span className="font-bold text-slate-900">{selectedCellData.priority_score ?? '-'} / 1.00</span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${Math.min(100, Math.max(5, (selectedCellData.priority_score || 0) * 100))}%`,
+                    backgroundColor: selectedCellData.color || '#0284c7'
+                  }}
+                />
               </div>
             </div>
 
-            {/* CTA: View Area Detail */}
-            <Link
-              to={`/area-detail?district=${encodeURIComponent(selectedZoneData.district)}`}
-              className="w-full py-2.5 px-4 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl text-center transition-colors shadow-xs flex items-center justify-center gap-1.5 min-h-[44px]"
-            >
-              <span>ดูรายละเอียดพื้นที่</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
+            {/* Contributing Factors */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-700">ปัจจัยที่นำมาประมวลผล:</span>
+              <ul className="space-y-1 text-[11px] text-slate-600 pl-1">
+                {selectedCellData.contributing_factors && selectedCellData.contributing_factors.map((f: string, i: number) => (
+                  <li key={i} className="leading-snug flex items-start gap-1.5">
+                    <span className="text-[#0C65E8] shrink-0 font-bold">•</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 gap-2 text-center text-xs border-t border-slate-100 pt-2">
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-[10px] text-slate-400 block">ฝนสะสม 24 ชม.</span>
+                <span className="font-bold text-slate-800">{selectedCellData.rain_24h_mm ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : '-'}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-[10px] text-slate-400 block">รายงานชุมชน</span>
+                <span className="font-bold text-slate-800">{selectedCellData.citizen_report_count ?? 0} รายการ</span>
+              </div>
+            </div>
+
+            {/* Provenance & Action Link */}
+            <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
+              <span>ความสดใหม่: {selectedCellData.freshness || 'สดใหม่'}</span>
+              <Link 
+                to={`/my-area?district=${selectedCellData.district}`}
+                className="text-[#0C65E8] font-bold hover:underline flex items-center gap-1"
+              >
+                <span>ดูข้อมูลอำเภอ</span>
+                <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         )}
 
       </div>
-
-      {/* Mobile Selected Area Bottom Drawer / Sheet */}
-      {selectedZoneData && showMobilePanel && (
-        <div className="lg:hidden bg-white rounded-3xl p-5 border border-slate-200 shadow-xl space-y-3">
-          <div className="flex items-start justify-between border-b border-slate-100 pb-2">
-            <div>
-              <h3 className="font-extrabold text-base text-[#063B70]">
-                {selectedZoneData.zone_name || `อำเภอ${selectedZoneData.district}`}
-              </h3>
-              <span className="text-xs text-slate-500">อ.{selectedZoneData.district} จ.ปราจีนบุรี</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowMobilePanel(false)}
-              className="text-slate-400 hover:text-slate-600 p-1"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-600 font-semibold">ระดับการเฝ้าระวัง:</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getPriorityBadgeClass(selectedZoneData.verification_priority)}`}>
-              {selectedZoneData.verification_priority_label || selectedZoneData.verification_priority}
-            </span>
-          </div>
-
-          <Link
-            to={`/area-detail?district=${encodeURIComponent(selectedZoneData.district)}`}
-            className="w-full py-2.5 px-4 bg-[#0C65E8] text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 min-h-[44px]"
-          >
-            <span>ดูรายละเอียดพื้นที่ฉบับเต็ม</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
-
     </div>
   );
 };

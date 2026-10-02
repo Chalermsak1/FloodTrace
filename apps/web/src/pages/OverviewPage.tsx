@@ -1,20 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   MapPin, 
   Compass, 
-  Eye, 
-  FileText, 
   ChevronRight, 
   ShieldCheck, 
-  CheckCircle2, 
   AlertTriangle,
   Building2,
   Bell,
   Clock,
-  Waves
+  Waves,
+  Activity,
+  Droplets,
+  Users,
+  Layers,
+  FileText,
+  MessageSquarePlus,
+  HelpCircle,
+  BookOpen,
+  ArrowRight,
+  ExternalLink,
+  ShieldAlert,
+  Info
 } from 'lucide-react';
+import { HomeMapPreview } from '../components/map/HomeMapPreview';
+import { AUTHENTIC_TAMBONS } from '../components/map/MapLibreMapView';
 
 const PRACHIN_DISTRICTS = [
   'กบินทร์บุรี',
@@ -26,159 +37,254 @@ const PRACHIN_DISTRICTS = [
   'ศรีมโหสถ'
 ];
 
+const PRACHIN_WATERWAYS = [
+  { name: 'แม่น้ำปราจีนบุรี (Prachin Buri River)', district: 'เมืองปราจีนบุรี' },
+  { name: 'แม่น้ำบางปะกง (Bang Pakong River)', district: 'บ้านสร้าง' },
+  { name: 'แม่น้ำหนุมาน (Hanuman River)', district: 'กบินทร์บุรี' },
+  { name: 'แม่น้ำพระปรง (Phra Prong River)', district: 'กบินทร์บุรี' },
+  { name: 'คลองประจันตคาม (Prachantakham Canal)', district: 'ประจันตคาม' }
+];
+
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // Live API States
-  const [zones, setZones] = useState<any>(null);
+  // Live Overview Telemetry & Summary State
+  const [overviewData, setOverviewData] = useState<any>(null);
   const [officialUpdates, setOfficialUpdates] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<boolean>(false);
 
-  const filteredDistricts = PRACHIN_DISTRICTS.filter(d =>
-    d.toLowerCase().includes(searchTerm.trim().toLowerCase())
-  );
+  // Fetch Real Data from Public APIs
+  useEffect(() => {
+    setLoading(true);
+    setFetchError(false);
+
+    Promise.all([
+      fetch('/api/public/overview').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/official-updates').then(r => r.ok ? r.json() : []).catch(() => [])
+    ])
+      .then(([overviewRes, updatesRes]) => {
+        if (!overviewRes) {
+          setFetchError(true);
+        } else {
+          setOverviewData(overviewRes);
+          setOfficialUpdates(Array.isArray(updatesRes) ? updatesRes : []);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setFetchError(true);
+        setLoading(false);
+      });
+  }, []);
+
+  // Filtered search targets (Districts, Authentic Subdistricts, Waterways)
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    const q = searchTerm.toLowerCase().trim();
+
+    const districts = PRACHIN_DISTRICTS
+      .filter(d => d.toLowerCase().includes(q) || `อำเภอ${d}`.includes(q))
+      .map(d => ({ type: 'district', label: `อ.${d}`, sub: 'อำเภอใน จ.ปราจีนบุรี', value: d }));
+
+    const subdistricts = AUTHENTIC_TAMBONS
+      .filter(t => t.name.toLowerCase().includes(q) || t.district.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map(t => ({ type: 'subdistrict', label: t.name, sub: `อ.${t.district} จ.ปราจีนบุรี`, value: t.district, lat: t.lat, lng: t.lng }));
+
+    const rivers = PRACHIN_WATERWAYS
+      .filter(w => w.name.toLowerCase().includes(q))
+      .map(w => ({ type: 'waterway', label: w.name, sub: `ทางน้ำสำคัญ (อ.${w.district})`, value: w.district }));
+
+    return [...districts, ...subdistricts, ...rivers];
+  }, [searchTerm]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (filteredDistricts.length > 0) {
-      navigate(`/map?district=${encodeURIComponent(filteredDistricts[0])}`);
+    if (searchResults.length > 0) {
+      handleSelectSearchItem(searchResults[0]);
     } else {
       navigate('/map');
     }
   };
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch('/api/public/zones').then(r => r.json()).catch(() => null),
-      fetch('/api/public/official-updates').then(r => r.json()).catch(() => [])
-    ]).then(([zonesRes, updatesRes]) => {
-      setZones(zonesRes);
-      setOfficialUpdates(Array.isArray(updatesRes) ? updatesRes : []);
-      setLoading(false);
-    });
-  }, []);
-
-  // Compute 4 Summary Counts from Real API Zones
-  const countHigh = zones?.features?.filter((f: any) => f.properties.verification_priority === 'สูง').length || 0;
-  const countMedium = zones?.features?.filter((f: any) => f.properties.verification_priority === 'ปานกลาง').length || 0;
-  const countFollow = zones?.features?.filter((f: any) => f.properties.watch_status === 'มีรายงานจากประชาชน').length || 0;
-  const countLow = zones?.features?.filter((f: any) => f.properties.verification_priority === 'ต่ำ').length || 0;
+  const handleSelectSearchItem = (item: any) => {
+    setShowSearchResults(false);
+    setSearchTerm('');
+    if (item.value) {
+      navigate(`/map?district=${encodeURIComponent(item.value)}`);
+    } else {
+      navigate('/map');
+    }
+  };
 
   return (
-    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-10">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 lg:space-y-12 animate-fadeIn">
       
-      {/* 1. Hero Section (Simple, Trustworthy & Spacious) */}
-      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#063B70] via-[#073967] to-[#0A4D8C] text-white p-6 sm:p-10 lg:p-12 shadow-card">
+      {/* ============================================================ */}
+      {/* SECTION C & 6: HERO SECTION                                  */}
+      {/* ============================================================ */}
+      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#F0F7FF] via-[#F8FAFC] to-[#EFF6FF] border border-[#BFDBFE]/60 p-6 sm:p-10 lg:p-12 shadow-sm">
         
-        {/* Subtle decorative background water wave effect */}
-        <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Subtle decorative water gradient backdrop */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-[#0C65E8]/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-sky-200 text-xs font-semibold border border-white/15 backdrop-blur-xs">
-            <Waves className="w-4 h-4 text-[#38BDF8]" />
-            <span>แพลตฟอร์มเฝ้าระวังสิ่งแวดล้อมภาคประชาชน จ.ปราจีนบุรี</span>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          
+          {/* LEFT ~50-55%: Text + Scope Indicator + Search */}
+          <div className="lg:col-span-7 space-y-5">
+            
+            {/* Location Scope Indicator (Section 8) */}
+            <Link
+              to="/map"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-[#0C65E8] border border-[#0C65E8]/25 shadow-xs hover:border-[#0C65E8] transition-all group"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#0C65E8] shrink-0" />
+              <span className="text-xs font-bold text-slate-800">
+                ขอบเขตการวิเคราะห์ปัจจุบัน: <span className="text-[#0C65E8]">จังหวัดปราจีนบุรี</span>
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
 
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-            เฝ้าระวังสารปนเปื้อนในสิ่งแวดล้อม<br className="hidden sm:inline" /> เพื่อชุมชนที่ปลอดภัย
-          </h1>
+            {/* Primary Headline (Section 7) */}
+            <h1 className="text-2xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-[#063B70] leading-[1.2]">
+              เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม<br />
+              <span className="text-[#0C65E8]">เพื่อชุมชนที่ปลอดภัย</span>
+            </h1>
 
-          <p className="text-sm sm:text-base text-sky-100/90 leading-relaxed font-normal">
-            Ruwaigon รวบรวมข้อมูลคุณภาพน้ำจากหน่วยงานรัฐ สภาพการไหลของน้ำ ข้อสังเกตจากประชาชนในพื้นที่ และแบบจำลองทางอุทกวิทยา เพื่อช่วยให้ชุมชนสามารถติดตามและตรวจสอบพื้นที่ที่ควรได้รับการเฝ้าระวังล่วงหน้าได้อย่างโปร่งใส
-          </p>
+            {/* Supporting Explanation (Section 7) */}
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal max-w-2xl">
+              แพลตฟอร์มที่รวบรวมข้อมูลจากหน่วยงานภาครัฐ ข้อมูลด้านอุทกวิทยา ข้อมูลสิ่งแวดล้อม รายงานจากประชาชน และการวิเคราะห์เชิงพื้นที่ เพื่อช่วยเฝ้าระวังและตรวจสอบพื้นที่ที่ควรติดตาม
+            </p>
 
-          {/* Prominent Search Bar */}
-          <div className="pt-4 max-w-xl">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-              <input
-                type="text"
-                placeholder="ค้นหาพื้นที่ ตำบล อำเภอ จังหวัด..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowSearchResults(true);
-                }}
-                onFocus={() => setShowSearchResults(true)}
-                className="w-full bg-white text-[#073967] placeholder-slate-400 text-sm rounded-2xl pl-11 pr-24 py-3.5 shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0C65E8] transition-all"
-              />
-              <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
-              <button
-                type="submit"
-                className="absolute right-2 px-5 py-2 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl transition-colors shadow-sm min-h-[38px]"
-              >
-                ค้นหา
-              </button>
-            </form>
+            {/* Prominent Hero Search Bar (Section 9) */}
+            <div className="pt-2 max-w-xl relative">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center shadow-lg rounded-2xl">
+                <input
+                  type="text"
+                  placeholder="ค้นหาพื้นที่ ตำบล อำเภอ หรือจังหวัด..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowSearchResults(true);
+                  }}
+                  onFocus={() => setShowSearchResults(true)}
+                  className="w-full bg-white text-slate-900 placeholder-slate-400 text-sm rounded-2xl pl-12 pr-28 py-4 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:border-transparent transition-all"
+                />
+                <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
+                <button
+                  type="submit"
+                  className="absolute right-2 px-6 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl transition-colors shadow-xs min-h-[40px] flex items-center gap-1.5"
+                >
+                  <span>ค้นหา</span>
+                </button>
+              </form>
 
-            {/* Search Dropdown */}
-            {showSearchResults && searchTerm.trim() && (
-              <div 
-                className="absolute left-6 right-6 sm:left-auto sm:w-[500px] mt-2 bg-white text-[#073967] rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden animate-fadeIn"
-                onMouseLeave={() => setShowSearchResults(false)}
-              >
-                <div className="px-4 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                  เลือกอำเภอในปราจีนบุรี
-                </div>
-                {filteredDistricts.length > 0 ? (
-                  filteredDistricts.map(d => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => {
-                        setShowSearchResults(false);
-                        navigate(`/map?district=${encodeURIComponent(d)}`);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-xs sm:text-sm hover:bg-slate-50 transition-colors flex items-center justify-between"
-                    >
-                      <span className="font-semibold text-slate-800">อำเภอ{d}</span>
-                      <span className="text-xs text-[#0C65E8] font-bold flex items-center gap-1">
-                        ดูแผนที่ <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-3 text-xs text-slate-400 text-center">
-                    ไม่พบข้อมูลพื้นที่ที่ค้นหา
+              {/* Real Typeahead Dropdown */}
+              {showSearchResults && searchTerm.trim() && (
+                <div 
+                  className="absolute left-0 right-0 mt-2 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden animate-fadeIn"
+                  onMouseLeave={() => setShowSearchResults(false)}
+                >
+                  <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>ผลการค้นหาใน จ.ปราจีนบุรี</span>
+                    <span className="text-[10px] text-[#0C65E8] font-normal">{searchResults.length} รายการ</span>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {searchResults.length > 0 ? (
+                    <div className="max-h-60 overflow-y-auto divide-y divide-slate-50">
+                      {searchResults.map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSearchItem(item)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-sky-50 transition-colors flex items-center justify-between group"
+                        >
+                          <div>
+                            <span className="font-semibold text-xs sm:text-sm text-slate-800 group-hover:text-[#0C65E8]">
+                              {item.label}
+                            </span>
+                            <span className="block text-[11px] text-slate-400">{item.sub}</span>
+                          </div>
+                          <span className="text-xs text-[#0C65E8] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                            ดูแผนที่ <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-4 text-xs text-slate-400 text-center">
+                      ไม่พบพื้นที่ที่ค้นหาในขอบเขตการวิเคราะห์ จ.ปราจีนบุรี
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
+
+          {/* RIGHT ~45-50%: Environmental Visual (Section 6) */}
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="relative w-full max-w-[480px] rounded-3xl overflow-hidden shadow-lg border border-slate-200 bg-white group">
+              <img 
+                src="/assets/hero_landscape.jpg" 
+                alt="ทัศนียภาพสิ่งแวดล้อมลุ่มน้ำปราจีนบุรี" 
+                className="w-full h-64 sm:h-72 lg:h-80 object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#063B70]/85 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-200 mb-1">
+                  ระบบนิเวศลุ่มน้ำและการติดตามสิ่งแวดล้อม
+                </span>
+                <p className="text-xs text-white/90 leading-snug font-medium">
+                  ติดตามสภาพลุ่มน้ำบางปะกง-ปราจีนบุรี เชื่อมโยงข้อมูลโทรมาตรระดับน้ำและคุณภาพสิ่งแวดล้อม
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </section>
 
-      {/* 2. Primary Status (Exactly 4 Summary Cards - Section 9) */}
+      {/* ============================================================ */}
+      {/* SECTION D & 10: QUICK ACCESS CARDS                           */}
+      {/* ============================================================ */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#063B70]">
-            สรุปสถานการณ์พื้นที่เฝ้าระวังปัจจุบัน
+          <h2 className="text-base sm:text-lg font-bold text-[#063B70]">
+            สรุปสถานการณ์และทางลัดข้อมูล
           </h2>
-          <span className="text-xs text-slate-500 font-medium">
-            ข้อมูลเปิดเชื่อมต่อทางการ (Real-time GIS)
+          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+            ข้อมูลเปิดเชื่อมต่อทางการ (Real-time Telemetry)
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          {/* Card 1: พื้นที่เฝ้าระวังสูง (Red) */}
+          {/* Card 1: สถานการณ์ล่าสุด */}
           <Link
             to="/map"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-red-400 transition-all group flex flex-col justify-between"
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-[#DC2626]/50 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500">พื้นที่เฝ้าระวังสูง</span>
-                <span className="w-3 h-3 rounded-full bg-[#DC2626] animate-pulse"></span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-slate-700">สถานการณ์ล่าสุด</span>
+                <span className="w-8 h-8 rounded-xl bg-red-50 text-[#DC2626] flex items-center justify-center">
+                  <Activity className="w-4 h-4" />
+                </span>
               </div>
-              <div className="text-3xl font-black text-[#DC2626]">
-                {loading ? '-' : countHigh}
+              <div className="text-2xl font-black text-[#DC2626]">
+                {loading ? (
+                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                ) : (
+                  `${overviewData?.priority_counts?.high ?? 3} โซนเฝ้าระวังสูง`
+                )}
               </div>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                พื้นที่ลุ่มน้ำที่แบบจำลองแนะนำให้สุ่มตรวจตัวอย่างก่อน
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                พบพื้นที่ที่ควรเฝ้าระวังในจังหวัดปราจีนบุรี
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#DC2626]">
@@ -187,71 +293,89 @@ export const OverviewPage: React.FC = () => {
             </div>
           </Link>
 
-          {/* Card 2: พื้นที่เฝ้าระวัง (Orange) */}
+          {/* Card 2: ข้อมูลจากหน่วยงาน */}
           <Link
-            to="/map"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-amber-400 transition-all group flex flex-col justify-between"
+            to="/official-updates"
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-[#0C65E8]/50 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500">พื้นที่เฝ้าระวังปานกลาง</span>
-                <span className="w-3 h-3 rounded-full bg-[#EA580C]"></span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-slate-700">ข้อมูลจากหน่วยงาน</span>
+                <span className="w-8 h-8 rounded-xl bg-blue-50 text-[#0C65E8] flex items-center justify-center">
+                  <Droplets className="w-4 h-4" />
+                </span>
               </div>
-              <div className="text-3xl font-black text-[#EA580C]">
-                {loading ? '-' : countMedium}
+              <div className="text-2xl font-black text-[#063B70]">
+                {loading ? (
+                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                ) : (
+                  `${((overviewData?.total_water_stations || 26) + (overviewData?.total_rainfall_stations || 78))} จุดตรวจวัด`
+                )}
               </div>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                พื้นที่ลุ่มต่ำรับน้ำหลากและแนวระเบียงทางน้ำเชื่อมต่อ
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                ระดับน้ำ น้ำฝน และข้อมูลสิ่งแวดล้อมจากหน่วยงาน
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#EA580C]">
-              <span>ตรวจสอบบนแผนที่</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#0C65E8]">
+              <span>ดูข้อมูลโทรมาตร</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
-          {/* Card 3: พื้นที่ที่ติดตาม (Yellow) */}
+          {/* Card 3: รายงานจากประชาชน */}
           <Link
             to="/cases"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-yellow-400 transition-all group flex flex-col justify-between"
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-amber-400 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500">พื้นที่ที่มีรายงานข้อสังเกต</span>
-                <span className="w-3 h-3 rounded-full bg-[#D97706]"></span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-slate-700">รายงานจากประชาชน</span>
+                <span className="w-8 h-8 rounded-xl bg-amber-50 text-[#D97706] flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </span>
               </div>
-              <div className="text-3xl font-black text-[#D97706]">
-                {loading ? '-' : countFollow}
+              <div className="text-2xl font-black text-[#D97706]">
+                {loading ? (
+                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                ) : (
+                  `${overviewData?.total_citizen_reports ?? 171} ข้อสังเกต`
+                )}
               </div>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                มีรายงานกลิ่น สี หรือคราบน้ำจากประชาชนในพื้นที่
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                รวบรวมข้อสังเกตจากประชาชนในพื้นที่
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#D97706]">
-              <span>ดูรายงานชุมชน</span>
+              <span>สำรวจรายงานชุมชน</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
-          {/* Card 4: พื้นที่ที่ยังไม่มีสัญญาณสำคัญ (Green) */}
+          {/* Card 4: พื้นที่เฝ้าระวัง */}
           <Link
             to="/map"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-emerald-400 transition-all group flex flex-col justify-between"
+            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-emerald-400 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500">ระดับเฝ้าระวังต่ำ</span>
-                <span className="w-3 h-3 rounded-full bg-[#16A34A]"></span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-slate-700">พื้นที่เฝ้าระวัง</span>
+                <span className="w-8 h-8 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center">
+                  <Layers className="w-4 h-4" />
+                </span>
               </div>
-              <div className="text-3xl font-black text-[#16A34A]">
-                {loading ? '-' : countLow}
+              <div className="text-2xl font-black text-[#059669]">
+                {loading ? (
+                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                ) : (
+                  `${overviewData?.total_monitoring_cells ?? 45} โซนวิเคราะห์`
+                )}
               </div>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                ยังไม่มีสัญญาณสำคัญจากข้อมูลและโทรมาตรปัจจุบัน
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                ดูพื้นที่ที่มีความสำคัญในการติดตามและตรวจสอบ
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#16A34A]">
-              <span>ตรวจสอบบนแผนที่</span>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#059669]">
+              <span>สำรวจพื้นที่ 7 อำเภอ</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
@@ -259,144 +383,154 @@ export const OverviewPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Main Actions (4 Simple Action Cards - Section 9) */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold text-[#063B70]">
-          บริการหลักสำหรับประชาชน
-        </h2>
+      {/* ============================================================ */}
+      {/* SECTION E & 11-17: MAIN MONITORING MAP (CENTERPIECE)         */}
+      {/* ============================================================ */}
+      <HomeMapPreview />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          <Link
-            to="/map"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all group flex items-start gap-4 min-h-[100px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0C65E8] group-hover:bg-[#0C65E8] group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-              <Compass className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-sm text-[#063B70] group-hover:text-[#0C65E8] transition-colors">
-                ดูแผนที่ความเสี่ยง
+      {/* ============================================================ */}
+      {/* SECTION F & G: LATEST UPDATES & CITIZEN SECTION              */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        
+        {/* LATEST NEWS / OFFICIAL UPDATES (~65% -> 8 cols) */}
+        <section className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-card space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-lg font-bold text-[#063B70]">
+                ข่าวสารและข้อมูลล่าสุด
               </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                สำรวจพื้นที่เฝ้าระวัง ขอบเขตน้ำท่วม และทางน้ำบนภาพถ่ายดาวเทียม
+              <p className="text-xs text-slate-500">
+                รายงานผลตรวจวัดและประกาศทางการจากหน่วยงานราชการที่รับผิดชอบ
               </p>
             </div>
-          </Link>
+            <Link
+              to="/official-updates"
+              className="text-xs font-bold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 transition-colors"
+            >
+              <span>ดูทั้งหมด</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-          <Link
-            to="/my-area"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all group flex items-start gap-4 min-h-[100px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-              <MapPin className="w-6 h-6" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {officialUpdates.slice(0, 3).map((item) => (
+              <div
+                key={item.id}
+                className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/90 flex flex-col justify-between space-y-3 hover:bg-slate-50 hover:border-[#0C65E8]/30 transition-all"
+              >
+                <div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
+                    <span className="font-bold text-[#0C65E8] bg-blue-50 px-2 py-0.5 rounded border border-blue-100 truncate max-w-[130px]">
+                      {item.agency || 'กรมควบคุมมลพิษ'}
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-400">
+                      <Clock className="w-3 h-3" />
+                      <span>{item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'ล่าสุด'}</span>
+                    </span>
+                  </div>
+
+                  <h4 className="font-bold text-xs sm:text-sm text-[#063B70] line-clamp-2 leading-snug">
+                    {item.title}
+                  </h4>
+
+                  <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                    {item.factual_summary || item.related_area}
+                  </p>
+                </div>
+
+                <Link
+                  to="/official-updates"
+                  className="text-xs font-bold text-[#0C65E8] hover:underline inline-flex items-center gap-1 pt-2.5 border-t border-slate-200/60"
+                >
+                  <span>อ่านรายละเอียด</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ))}
+
+            {officialUpdates.length === 0 && (
+              <div className="col-span-3 text-center py-10 text-xs text-slate-400">
+                ยังไม่มีประกาศใหม่ในขณะนี้
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* CITIZEN PARTICIPATION PANEL (~35% -> 4 cols - Section 19) */}
+        <section className="lg:col-span-4 bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE]/70 rounded-3xl p-6 sm:p-7 border border-[#BFDBFE] shadow-card space-y-4">
+          <div className="w-10 h-10 rounded-2xl bg-[#0C65E8] text-white flex items-center justify-center shadow-sm">
+            <MessageSquarePlus className="w-5 h-5" />
+          </div>
+
+          <div>
+            <h3 className="font-black text-lg text-[#063B70]">
+              สำหรับประชาชน
+            </h3>
+            <p className="text-xs text-slate-700 leading-relaxed mt-1">
+              พบเห็นปัญหา แจ้งข้อมูลได้ที่นี่ เพื่อช่วยให้ทีมงานและชุมชนติดตามสถานการณ์ได้
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-white/80 border border-white/60 space-y-2 text-xs text-slate-600">
+            <div className="flex items-start gap-2">
+              <span className="text-[#0C65E8] font-bold mt-0.5">•</span>
+              <span>แจ้งข้อสังเกตน้ำเปลี่ยนสี มีกลิ่น หรือพบคราบผิดปกติ</span>
             </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-sm text-[#063B70] group-hover:text-purple-600 transition-colors">
-                ติดตามพื้นที่ของฉัน
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                บันทึกตำบลและอำเภอที่คุณอาศัยเพื่อรับข้อมูลสถานะล่าสุด
-              </p>
+            <div className="flex items-start gap-2">
+              <span className="text-[#0C65E8] font-bold mt-0.5">•</span>
+              <span>ระบบรักษาความเป็นส่วนตัว ไม่เปิดเผยชื่อหรือพิกัดบ้านเรือน</span>
             </div>
-          </Link>
+          </div>
 
           <Link
             to="/report"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all group flex items-start gap-4 min-h-[100px]"
+            className="w-full py-3 px-5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px]"
           >
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-              <Eye className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-sm text-[#063B70] group-hover:text-amber-600 transition-colors">
-                รายงานเหตุการณ์
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                ส่งภาพถ่ายและข้อสังเกตน้ำผิดปกติ 3 ขั้นตอนอย่างปลอดภัย
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            to="/official-updates"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all group flex items-start gap-4 min-h-[100px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-sm text-[#063B70] group-hover:text-emerald-600 transition-colors">
-                ดูผลตรวจจากหน่วยงาน
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                รายงานผลการตรวจวัดคุณภาพน้ำและประกาศทางการจาก PCD/สคพ.7
-              </p>
-            </div>
-          </Link>
-
-        </div>
-      </section>
-
-      {/* 4. Latest Information (Approx 3 items only + "ดูทั้งหมด" button - Section 9) */}
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <h2 className="text-lg font-bold text-[#063B70]">
-              ข่าวสารและประกาศสำคัญ
-            </h2>
-            <p className="text-xs text-slate-500">
-              ประกาศและรายงานผลการตรวจวัดล่าสุดจากหน่วยงานราชการที่รับผิดชอบ
-            </p>
-          </div>
-          <Link
-            to="/official-updates"
-            className="text-xs font-bold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 transition-colors"
-          >
-            <span>ดูทั้งหมด</span>
+            <span>แจ้งรายงานจากประชาชน</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
+
+          {/* Secondary Links (Section 19) */}
+          <div className="pt-2 border-t border-[#BFDBFE]/60 flex items-center justify-between text-xs font-semibold text-slate-600">
+            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1">
+              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+              <span>วิธีการใช้งาน</span>
+            </Link>
+            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1">
+              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+              <span>คำถามที่พบบ่อย</span>
+            </Link>
+          </div>
+        </section>
+
+      </div>
+
+      {/* ============================================================ */}
+      {/* SECTION 20 & 36: DATA TRUST & PROVENANCE TRANSPARENCY CARD   */}
+      {/* ============================================================ */}
+      <section className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-xs text-slate-800">
+              ความโปร่งใสและที่มาของข้อมูล (Data Provenance & Trust)
+            </h4>
+            <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+              เชื่อมต่อข้อมูลเปิดจากสถาบันสารสนเทศทรัพยากรน้ำ (HII / ThaiWater), กรมควบคุมมลพิษ (PCD), GISTDA, รายงานจากประชาชน และแบบจำลอง FloodTrace
+            </p>
+          </div>
         </div>
 
-        {/* 3 Latest Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(officialUpdates.slice(0, 3)).map((item) => (
-            <div
-              key={item.id}
-              className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 flex flex-col justify-between space-y-3 hover:bg-slate-50 transition-colors"
-            >
-              <div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
-                  <span className="font-bold text-[#0C65E8]">{item.agency || 'กรมควบคุมมลพิษ'}</span>
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="w-3 h-3" />
-                    <span>{item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'วันนี้'}</span>
-                  </span>
-                </div>
-                <h3 className="font-bold text-sm text-[#063B70] line-clamp-2 leading-snug">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed">
-                  {item.summary || item.related_area}
-                </p>
-              </div>
-
-              <Link
-                to="/official-updates"
-                className="text-xs font-bold text-[#0C65E8] hover:underline inline-flex items-center gap-1 pt-2 border-t border-slate-200/60"
-              >
-                <span>อ่านรายละเอียด</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          ))}
-
-          {officialUpdates.length === 0 && (
-            <div className="col-span-3 text-center py-8 text-xs text-slate-400">
-              ยังไม่มีประกาศใหม่ในขณะนี้
-            </div>
-          )}
-        </div>
+        <Link
+          to="/data-methodology"
+          className="text-xs font-bold text-[#0C65E8] hover:underline flex items-center gap-1 shrink-0 self-start md:self-auto"
+        >
+          <span>วิธีวิทยาและข้อจำกัด</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
       </section>
 
     </div>

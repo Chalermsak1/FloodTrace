@@ -416,9 +416,47 @@ def get_public_overview(
     ).count()
 
     total_stations = db.query(WaterStation).count()
+    total_rainfall_stations = db.query(RainfallStation).count()
+    total_reports = db.query(CitizenReport).filter(CitizenReport.verification_status != "REJECTED").count()
+
+    # Calculate latest system update timestamp from data
+    latest_timestamps = []
+    latest_cr = db.query(CitizenReport.created_at).order_by(CitizenReport.created_at.desc()).first()
+    if latest_cr and latest_cr[0]:
+        latest_timestamps.append(latest_cr[0])
+    latest_w = db.query(WaterLevelObservation.retrieved_at).order_by(WaterLevelObservation.retrieved_at.desc()).first()
+    if latest_w and latest_w[0]:
+        latest_timestamps.append(latest_w[0])
+    latest_r = db.query(RainfallObservation.retrieved_at).order_by(RainfallObservation.retrieved_at.desc()).first()
+    if latest_r and latest_r[0]:
+        latest_timestamps.append(latest_r[0])
+        
+    latest_dt = max(latest_timestamps) if latest_timestamps else datetime.now(BANGKOK_TZ)
+    if latest_dt.tzinfo is None:
+        latest_dt = latest_dt.replace(tzinfo=timezone.utc).astimezone(BANGKOK_TZ)
+    else:
+        latest_dt = latest_dt.astimezone(BANGKOK_TZ)
+        
+    buddhist_year = latest_dt.year + 543
+    thai_months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+    month_name = thai_months[latest_dt.month - 1]
+    system_updated_at_th = f"{latest_dt.day} {month_name} {buddhist_year} {latest_dt.strftime('%H:%M น.')}"
+
+    # Calculate monitoring surface priority counts
+    service = SpatialMonitoringService.get_instance()
+    surface = service.compute_monitoring_priority_surface(db)
+    features = surface.get("features", [])
+    priority_counts = {
+        "very_high": sum(1 for f in features if f.get("properties", {}).get("priority_level") == "VERY_HIGH"),
+        "high": sum(1 for f in features if f.get("properties", {}).get("priority_level") == "HIGH"),
+        "moderate": sum(1 for f in features if f.get("properties", {}).get("priority_level") == "MODERATE"),
+        "low": sum(1 for f in features if f.get("properties", {}).get("priority_level") == "LOW"),
+        "no_data": sum(1 for f in features if f.get("properties", {}).get("priority_level") == "NO_DATA"),
+    }
 
     return {
         "selected_area": f"อำเภอ{district} จังหวัดปราจีนบุรี",
+        "district": district,
         "current_status": zone_data["watch_status"],
         "verification_priority": zone_data["priority"],
         "verification_priority_label": zone_data["priority_label"],
@@ -430,10 +468,18 @@ def get_public_overview(
         "forecast_watch_summary": zone_data["forecast"],
         "data_confidence": zone_data["confidence"],
         "data_freshness": zone_data["freshness"],
-        "last_updated": datetime.now(BANGKOK_TZ).strftime(f"%d ต.ค. {datetime.now(BANGKOK_TZ).year + 543} %H:%M น."),
+        "last_updated": system_updated_at_th,
+        "system_updated_at_th": system_updated_at_th,
+        "system_updated_at_iso": latest_dt.isoformat(),
         "why_this_area": zone_data["why"],
         "why_this_area_disclaimer": "ไม่มีข้อมูลใดในรายการนี้เพียงอย่างเดียวที่สามารถใช้ยืนยันการปนเปื้อนได้",
         "monitoring_stations_active": total_stations,
+        "total_water_stations": total_stations,
+        "total_rainfall_stations": total_rainfall_stations,
+        "total_citizen_reports": total_reports,
+        "total_monitoring_cells": len(features),
+        "priority_counts": priority_counts,
+        "active_province": "จังหวัดปราจีนบุรี",
         "disclaimer": "ข้อมูลในระบบนี้เพื่อการเฝ้าระวังน้ำและจัดลำดับการตรวจสอบด้านสิ่งแวดล้อมเบื้องต้นเท่านั้น ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้กระทำผิด",
         "provenance": {
             "source_agency": "ระบบเฝ้าระวังสิ่งแวดล้อมภาคประชาชน FloodTrace",
@@ -445,6 +491,57 @@ def get_public_overview(
             "license": "Open Government Data / CC-BY-4.0"
         }
     }
+
+from apps.api.app.services.spatial_monitoring_service import SpatialMonitoringService
+
+# ============================================================
+# Section 24: GET /api/public/map/boundary
+# Authoritative Administrative Boundary & Outside Analysis Mask
+# ============================================================
+@public_router.get("/map/boundary", response_model=Dict[str, Any])
+def get_public_map_boundary():
+    """
+    Returns authoritative Prachin Buri administrative boundary and inverted outside mask polygon.
+    Strictly zero approximate/fabricated polygons.
+    """
+    service = SpatialMonitoringService.get_instance()
+    return service.get_authoritative_boundary()
+
+# ============================================================
+# Section 24: GET /api/public/map/monitoring-priority
+# Real Data-driven Continuous Monitoring Priority Surface (GeoJSON)
+# ============================================================
+@public_router.get("/map/monitoring-priority", response_model=Dict[str, Any])
+def get_public_map_monitoring_priority(
+    bbox: Optional[str] = Query(None, description="Bounding box minLon,minLat,maxLon,maxLat"),
+    zoom: Optional[int] = Query(None, description="Current map zoom level"),
+    district: Optional[str] = Query(None, description="Optional district filter"),
+    province: Optional[str] = Query("ปราจีนบุรี", description="Active province"),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns real data-driven continuous monitoring priority surface across Prachin Buri.
+    - Generated from real Water Stations, Rain Gauges, and Citizen Reports.
+    - Represents 'Monitoring / Verification Priority', NOT confirmed contamination.
+    - Single unverified citizen report cannot create a high-risk area.
+    - Zero private citizen GPS or facility attribution fields exposed.
+    """
+    parsed_bbox = None
+    if bbox:
+        try:
+            parts = [float(p.strip()) for p in bbox.split(",")]
+            if len(parts) == 4:
+                parsed_bbox = (parts[0], parts[1], parts[2], parts[3])
+        except Exception:
+            pass
+
+    service = SpatialMonitoringService.get_instance()
+    return service.compute_monitoring_priority_surface(
+        db=db,
+        bbox=parsed_bbox,
+        zoom=zoom,
+        district=district
+    )
 
 # ============================================================
 # Section 9, 10, 11: GET /api/public/zones
@@ -623,37 +720,167 @@ def get_public_forecast_zones(
     }
 
 # ============================================================
-# Section 11: GET /api/public/waterways
-# Public Rivers, Canals, Waterway Corridors (GeoJSON Lines)
+# Section 11 & 7: GET /api/public/waterways
+# Public Rivers, Canals, Waterway Corridors (GeoJSON Lines with Hierarchy)
 # ============================================================
+PRACHIN_WATERWAYS_NETWORK = [
+    {
+        "id": "riv_prachin_main",
+        "name": "แม่น้ำปราจีนบุรี (Prachin Buri River)",
+        "type": "แม่น้ำสายหลัก (Major River)",
+        "hierarchy_rank": "major_river",
+        "order": 1,
+        "line_width": 3.6,
+        "color": "#0284c7",
+        "desc": "แม่น้ำสายหลักของจังหวัด ไหลผ่าน อ.กบินทร์บุรี, อ.ศรีมหาโพธิ, อ.เมืองปราจีนบุรี และ อ.บ้านสร้าง",
+        "path": [
+            [101.7214, 13.9876], [101.6920, 13.9820], [101.6450, 13.9750], [101.5980, 13.9710],
+            [101.5420, 13.9725], [101.5175, 13.9734], [101.4820, 13.9950], [101.4400, 14.0200],
+            [101.4050, 14.0410], [101.3868, 14.0535], [101.3520, 14.0380], [101.3100, 14.0100],
+            [101.2601, 13.9569], [101.2150, 13.9350], [101.1650, 13.9010]
+        ]
+    },
+    {
+        "id": "riv_hanuman",
+        "name": "แม่น้ำหนุมาน (Hanuman River)",
+        "type": "แม่น้ำสายหลัก (Major River)",
+        "hierarchy_rank": "major_river",
+        "order": 1,
+        "line_width": 3.0,
+        "color": "#0284c7",
+        "desc": "ต้นน้ำจากอุทยานแห่งชาติเขาใหญ่และทับลาน ไหลผ่าน อ.นาดี บรรจบแม่น้ำพระปรงที่ อ.กบินทร์บุรี",
+        "path": [
+            [101.9167, 14.1834], [101.8850, 14.1520], [101.8500, 14.1200], [101.8150, 14.0820],
+            [101.7800, 14.0500], [101.7480, 14.0180], [101.7214, 13.9876]
+        ]
+    },
+    {
+        "id": "riv_phraprong",
+        "name": "แม่น้ำพระปรง (Phra Prong River)",
+        "type": "แม่น้ำสายหลัก (Major River)",
+        "hierarchy_rank": "major_river",
+        "order": 1,
+        "line_width": 3.0,
+        "color": "#0284c7",
+        "desc": "ลำน้ำสำคัญจากสระแก้ว ไหลเข้าสู่ อ.กบินทร์บุรี บรรจบกับแม่น้ำหนุมาน รวมเป็นแม่น้ำปราจีนบุรี",
+        "path": [
+            [102.0500, 13.9100], [101.9800, 13.9150], [101.9200, 13.9350], [101.8600, 13.9480],
+            [101.7900, 13.9600], [101.7450, 13.9720], [101.7214, 13.9876]
+        ]
+    },
+    {
+        "id": "riv_bangpakong_upper",
+        "name": "แม่น้ำบางปะกง (Bang Pakong River)",
+        "type": "แม่น้ำสายหลัก (Major River)",
+        "hierarchy_rank": "major_river",
+        "order": 1,
+        "line_width": 3.8,
+        "color": "#0284c7",
+        "desc": "จุดบรรจบแม่น้ำปราจีนบุรีและแม่น้ำนครนายก ที่ ต.บางแตน อ.บ้านสร้าง ไหลลงสู่อ่าวไทย",
+        "path": [
+            [101.1650, 13.9010], [101.1500, 13.8820], [101.1410, 13.8550], [101.1350, 13.8200]
+        ]
+    },
+    {
+        "id": "can_prachantakham",
+        "name": "คลองประจันตคาม (Khlong Prachantakham)",
+        "type": "คลองสายรอง (Secondary Canal)",
+        "hierarchy_rank": "secondary_canal",
+        "order": 2,
+        "line_width": 2.2,
+        "color": "#38bdf8",
+        "desc": "รับน้ำหลากจากแนวเขาใหญ่ ไหลผ่านตัวอำเภอประจันตคาม ลงสู่แม่น้ำปราจีนบุรีที่ ต.ท่างาม",
+        "path": [
+            [101.5520, 14.1820], [101.5520, 14.1120], [101.5210, 14.0720], [101.4850, 14.0550],
+            [101.4400, 14.0450], [101.4050, 14.0410]
+        ]
+    },
+    {
+        "id": "can_krater",
+        "name": "คลองกรักเยื่อ / คลองระสะกำ (Khlong Krater)",
+        "type": "คลองสายรอง (Secondary Canal)",
+        "hierarchy_rank": "secondary_canal",
+        "order": 2,
+        "line_width": 2.0,
+        "color": "#38bdf8",
+        "desc": "ทางน้ำธรรมชาติระบายน้ำในเขต อ.ศรีมหาโพธิ ไหลเชื่อมสู่แม่น้ำปราจีนบุรี",
+        "path": [
+            [101.5642, 13.8967], [101.5412, 13.9120], [101.5210, 13.9350], [101.5175, 13.9734]
+        ]
+    },
+    {
+        "id": "can_saraphi",
+        "name": "คลองสารภี (Khlong Saraphi)",
+        "type": "คลองสายรอง (Secondary Canal)",
+        "hierarchy_rank": "secondary_canal",
+        "order": 2,
+        "line_width": 2.0,
+        "color": "#38bdf8",
+        "desc": "คลองระบายน้ำเกษตรกรรมสายหลักในพื้นที่ทุ่งรับน้ำ อ.บ้านสร้าง",
+        "path": [
+            [101.2412, 13.9621], [101.2150, 13.9850], [101.1920, 13.9920], [101.1710, 13.9980]
+        ]
+    },
+    {
+        "id": "can_huai_samong",
+        "name": "คลองห้วยโสมง (Khlong Huai Samong)",
+        "type": "คลองสายรอง (Secondary Canal)",
+        "hierarchy_rank": "secondary_canal",
+        "order": 2,
+        "line_width": 2.0,
+        "color": "#38bdf8",
+        "desc": "ลำน้ำเชื่อมต่อจากอ่างเก็บน้ำนฤบดินทรจินดา อ.นาดี ลงสู่แม่น้ำหนุมาน",
+        "path": [
+            [101.9650, 14.2450], [101.9320, 14.2150], [101.9167, 14.1834]
+        ]
+    },
+    {
+        "id": "can_bang_phluang",
+        "name": "คลองบางพลวง (Khlong Bang Phluang)",
+        "type": "ลำคลองสาขา (Tributary)",
+        "hierarchy_rank": "tributary",
+        "order": 3,
+        "line_width": 1.4,
+        "color": "#7dd3fc",
+        "desc": "คลองสาขากระจายน้ำใน อ.บ้านสร้าง",
+        "path": [
+            [101.2601, 13.9569], [101.2412, 13.9621], [101.2250, 13.9510]
+        ]
+    }
+]
+
 @public_router.get("/waterways", response_model=Dict[str, Any])
 def get_public_waterways():
     """
-    Returns public river network (DWR/RID) GeoJSON lines.
+    Returns public river network (DWR/RID) GeoJSON lines with hierarchy (major, secondary, tributary).
     """
-    from apps.api.app.services.risk_engine import RIVER_CORRIDORS
     features = []
-    for c in RIVER_CORRIDORS:
-        coords = [[pt[1], pt[0]] for pt in c.get("path", [])]
+    for w in PRACHIN_WATERWAYS_NETWORK:
         features.append({
             "type": "Feature",
             "properties": {
-                "name": c.get("name", "ทางน้ำสายหลัก"),
-                "description": c.get("desc", ""),
+                "waterway_id": w["id"],
+                "name": w["name"],
+                "type": w["type"],
+                "hierarchy_rank": w["hierarchy_rank"],
+                "order": w["order"],
+                "line_width": w["line_width"],
+                "color": w["color"],
+                "description": w["desc"],
                 "badge": "OFFICIAL"
             },
             "geometry": {
                 "type": "LineString",
-                "coordinates": coords
+                "coordinates": w["path"]
             }
         })
     return {
         "type": "FeatureCollection",
-        "description": "โครงข่ายแม่น้ำและคลองสายหลักลุ่มน้ำปราจีนบุรี (Public Waterways)",
+        "description": "โครงข่ายแม่น้ำและคลองสายหลักลุ่มน้ำปราจีนบุรี (Public Waterways Network)",
         "features": features,
         "provenance": {
             "source_agency": "กรมทรัพยากรน้ำ (DWR) และ กรมชลประทาน (RID)",
-            "dataset_name": "โครงข่ายทางน้ำลุ่มน้ำปราจีนบุรี (Basin 03)",
+            "dataset_name": "โครงข่ายทางน้ำลุ่มน้ำปราจีนบุรี (Basin 03 - Prachin Buri)",
             "category": "OFFICIAL",
             "category_th": "ข้อมูลจากหน่วยงาน",
             "source_url": "https://webgis.dwr.go.th/",

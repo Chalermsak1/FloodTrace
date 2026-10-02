@@ -17,7 +17,8 @@ import {
   FileWarning,
   TrendingUp,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  Clock
 } from 'lucide-react';
 
 const PRACHIN_DISTRICTS = [
@@ -54,6 +55,19 @@ export const AppLayout: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [latestSystemUpdate, setLatestSystemUpdate] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/public/overview')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.system_updated_at_th) {
+          setLatestSystemUpdate(data.system_updated_at_th);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const filteredDistricts = PRACHIN_DISTRICTS.filter(d =>
     d.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
@@ -65,20 +79,21 @@ export const AppLayout: React.FC = () => {
     navigate(`/overview?district=${encodeURIComponent(district)}`);
   };
 
-  // Primary Navigation according to Section 7
+  // Primary Navigation according to Section 5
   const primaryNavLinks = [
     { to: '/overview', label: 'หน้าหลัก', icon: LayoutDashboard },
-    { to: '/map', label: 'แผนที่ความเสี่ยง', icon: Map },
-    { to: '/my-area', label: 'พื้นที่ของฉัน', icon: Compass },
-    { to: '/cases', label: 'รายงานจากประชาชน', icon: FileWarning },
-    { to: '/official-updates', label: 'ข้อมูลจากหน่วยงาน', icon: Bell },
+    { to: '/map', label: 'แผนที่', icon: Map },
+    { to: '/official-updates', label: 'ข้อมูล', icon: Bell },
+    { to: '/cases', label: 'รายงาน', icon: FileWarning },
+    { to: '/about', label: 'เกี่ยวกับเรา', icon: Info },
   ];
 
   // Secondary items for wide desktop / dropdown for compact desktop
   const secondaryNavLinks = [
+    { to: '/my-area', label: 'พื้นที่ของฉัน', icon: Compass },
     { to: '/forecast', label: 'แนวโน้มและการคาดการณ์', icon: TrendingUp },
     { to: '/knowledge', label: 'ความรู้และคำแนะนำ', icon: BookOpen },
-    { to: '/about', label: 'เกี่ยวกับระบบ', icon: Info },
+    { to: '/data-methodology', label: 'วิธีวิทยาและข้อจำกัด', icon: ShieldCheck },
   ];
 
   const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks];
@@ -86,28 +101,32 @@ export const AppLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967]">
       
-      {/* 1. Legal & Purpose Disclaimer Banner */}
+      {/* 1. Legal & Purpose Top Information Bar (Section 4) */}
       <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className="bg-[#04274B] text-sky-100 text-xs px-4 py-2 border-b border-[#063B70]">
         <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="inline-block px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold text-[10px] shrink-0 border border-amber-400/30">
-              ข้อจำกัดทางกฎหมาย
-            </span>
-            <span className="text-[11px] sm:text-xs text-sky-200">
-              Ruwaigon เป็นแพลตฟอร์มเฝ้าระวังการปนเปื้อนในสิ่งแวดล้อมและจัดลำดับการตรวจสอบเพื่อชุมชน ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ได้ระบุความรับผิดทางกฎหมายของผู้ใด
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-[11px] sm:text-xs text-sky-100 font-medium">
+              ข้อมูลจากหน่วยงานภาครัฐ ข้อมูลจากภาคประชาชน และการวิเคราะห์เชิงพื้นที่ เพื่อการเฝ้าระวังและลดความเสี่ยงด้านสิ่งแวดล้อม
             </span>
           </div>
-          <Link 
-            to="/data-methodology" 
-            className="text-[11px] text-sky-300 hover:text-white underline shrink-0 flex items-center gap-1 font-medium"
-          >
-            <span>อ่านวิธีวิทยาและข้อจำกัด</span>
-            <ChevronRight className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-4 shrink-0">
+            <span className="text-[11px] text-sky-300 flex items-center gap-1.5 font-medium">
+              <Clock className="w-3.5 h-3.5 text-sky-400" />
+              <span>{latestSystemUpdate ? `อัปเดตล่าสุด ${latestSystemUpdate}` : 'ตรวจสอบเวลาการอัปเดตล่าสุด'}</span>
+            </span>
+            <Link 
+              to="/data-methodology" 
+              className="text-[11px] text-sky-300 hover:text-white underline hidden md:flex items-center gap-1 font-medium"
+            >
+              <span>ข้อจำกัดทางกฎหมาย</span>
+              <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </aside>
 
-      {/* 2. Main Navigation Header */}
+      {/* 2. Main Navigation Header (Section 5) */}
       <header className="sticky top-0 z-40 w-full bg-[#063B70] text-white shadow-md border-b border-[#0C65E8]/30">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 sm:h-[70px] flex items-center justify-between gap-2 sm:gap-4">
           
@@ -121,13 +140,13 @@ export const AppLayout: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-white leading-none">Ruwaigon</span>
+                <span className="text-xl font-black tracking-tight text-white leading-none">FloodTrace</span>
                 <span className="text-[10px] font-semibold bg-white/15 text-sky-100 px-2 py-0.5 rounded-full border border-white/20">
-                  ระวังก่อน
+                  Ruwaigon
                 </span>
               </div>
               <p className="text-[11px] text-sky-200/90 font-medium leading-tight mt-0.5 line-clamp-1">
-                เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย
+                ระบบติดตามคุณภาพสิ่งแวดล้อมและน้ำท่วม
               </p>
             </div>
           </Link>
@@ -235,16 +254,16 @@ export const AppLayout: React.FC = () => {
               >
                 <input
                   type="text"
-                  placeholder="ค้นหาพื้นที่ ตำบล อำเภอ..."
+                  placeholder="ค้นหาพื้นที่ ตำบล อำเภอ หรือจังหวัด..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     setShowSearchResults(true);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className="w-32 sm:w-44 lg:w-52 bg-white/10 border border-white/20 text-white placeholder-white/60 text-xs rounded-xl pl-7 pr-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[38px]"
+                  className="w-36 sm:w-52 lg:w-64 bg-white/10 border border-white/20 text-white placeholder-white/60 text-xs rounded-xl pl-8 pr-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[38px]"
                 />
-                <Search className="w-3.5 h-3.5 text-white/60 absolute left-2 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-white/60 absolute left-2.5 pointer-events-none" />
               </form>
 
               {/* Autocomplete Dropdown */}
