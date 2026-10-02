@@ -499,3 +499,23 @@ def get_audit_logs(limit: int = 50, db: Session = Depends(get_db)):
         }
         for l in logs
     ]
+
+@router.get("/scheduler/status")
+def get_scheduler_status():
+    """
+    Master Prompt Section 15 & 16:
+    Returns live automated background scheduler status, source health, and intervals.
+    """
+    from apps.api.app.core.scheduler import source_scheduler
+    return source_scheduler.get_status()
+
+@router.post("/scheduler/trigger/{source_id}")
+async def trigger_scheduler_source(source_id: str, db: Session = Depends(get_db)):
+    """
+    Master Prompt Section 15 & 16:
+    Manually triggers an immediate automated ingestion run for a source through the scheduler.
+    """
+    from apps.api.app.core.scheduler import source_scheduler
+    result = await source_scheduler.run_source_now(source_id, db=db)
+    return result
+

@@ -148,7 +148,7 @@ export const OverviewPage: React.FC = () => {
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
                 <span>สถานีตรวจวัดพร้อมใช้งาน</span>
-                <span className="font-semibold text-emerald-600">6 สถานีหลัก</span>
+                <span className="font-semibold text-emerald-600">{data.monitoring_stations_active ? `${data.monitoring_stations_active} สถานี` : 'พร้อมใช้งาน'}</span>
               </div>
             </div>
 

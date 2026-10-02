@@ -331,7 +331,7 @@ export const ContinuousMapView: React.FC<ContinuousMapViewProps> = ({
             </span>
           </div>
           <div style="font-size: 11px; color: #334155; margin-bottom: 2px;">
-            <strong>ระดับน้ำ:</strong> ${st.water_level_msl !== null ? `${st.water_level_msl} ม.รทก.` : 'ปกติ'}
+            <strong>ระดับน้ำ:</strong> ${st.water_level_msl !== null && st.water_level_msl !== undefined ? `${st.water_level_msl} ม.รทก.` : 'ไม่มีข้อมูลตรวจวัด'}
           </div>
           <div style="font-size: 11px; color: #475569; margin-bottom: 2px;">
             <strong>อำเภอ:</strong> ${st.district} | <strong>ลุ่มน้ำ:</strong> ${st.basin}

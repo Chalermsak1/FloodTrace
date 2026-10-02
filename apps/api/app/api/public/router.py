@@ -7,7 +7,7 @@ Master Architecture & Safety-by-Design Compliance:
 - Standardized legal-safe Thai terminology
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Header
 from pydantic import BaseModel, Field
@@ -21,7 +21,8 @@ from apps.api.app.core.security import (
     sanitize_and_strip_exif_image,
     format_standard_error
 )
-from apps.api.app.models.entities import CitizenReport, WaterStation, RainfallStation
+from apps.api.app.models.entities import CitizenReport, WaterStation, RainfallStation, WaterLevelObservation, RainfallObservation
+
 
 public_router = APIRouter(prefix="/public", tags=["FloodTrace Public Information Platform"])
 
@@ -138,7 +139,32 @@ class PublicRainfallStationDTO(BaseModel):
     status: str
     provenance: PublicProvenanceDTO
 
+class HistoricalObservationDTO(BaseModel):
+    id: str
+    station_id: str
+    value: Optional[float] = None
+    unit: str
+    source_timestamp: Optional[str] = None
+    retrieved_at: str
+    source_name: str
+    organization: str
+    dataset: str
+    data_classification: str
+    freshness_status: str
+    ingestion_mode: str
+
+class StationHistoryResponseDTO(BaseModel):
+    station_id: str
+    station_name: str
+    station_type: str # WATER_LEVEL or RAINFALL
+    time_range: str # 24h, 7d, 30d
+    total_records: int
+    latest_timestamp: Optional[str] = None
+    observations: List[HistoricalObservationDTO]
+    provenance: PublicProvenanceDTO
+
 # ============================================================
+
 # Section 9 & 10: Continuous GeoJSON Geometry (Sub-Basin Polygons)
 # No circles, no facility centroids, no source arrows
 # ============================================================
@@ -397,8 +423,8 @@ def get_public_overview(
         "verification_priority_label": zone_data["priority_label"],
         "verification_priority_explanation": "ระดับนี้ใช้สำหรับจัดลำดับพื้นที่ที่ควรได้รับการตรวจสอบเพิ่มเติม ไม่ใช่การยืนยันว่ามีการปนเปื้อน",
         "flood_status": zone_data["flood_status"],
-        "community_observation_count": obs_count if obs_count > 0 else zone_data["obs_count"],
-        "community_observation_summary": f"มีรายงานข้อสังเกตจากประชาชนในพื้นที่ {obs_count if obs_count > 0 else zone_data['obs_count']} จุด (อยู่ระหว่างเฝ้าระวัง)",
+        "community_observation_count": obs_count,
+        "community_observation_summary": f"มีรายงานข้อสังเกตจากประชาชนในพื้นที่ {obs_count} จุด (อยู่ระหว่างเฝ้าระวัง)" if obs_count > 0 else "ยังไม่มีรายงานข้อสังเกตจากประชาชนในพื้นที่นี้",
         "official_sampling_status": zone_data["sampling"],
         "forecast_watch_summary": zone_data["forecast"],
         "data_confidence": zone_data["confidence"],
@@ -406,7 +432,7 @@ def get_public_overview(
         "last_updated": datetime.now(timezone.utc).strftime("%d ต.ค. 2569 %H:%M น."),
         "why_this_area": zone_data["why"],
         "why_this_area_disclaimer": "ไม่มีข้อมูลใดในรายการนี้เพียงอย่างเดียวที่สามารถใช้ยืนยันการปนเปื้อนได้",
-        "monitoring_stations_active": total_stations if total_stations > 0 else 6,
+        "monitoring_stations_active": total_stations,
         "disclaimer": "ข้อมูลในระบบนี้เพื่อการเฝ้าระวังน้ำและจัดลำดับการตรวจสอบด้านสิ่งแวดล้อมเบื้องต้นเท่านั้น ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้กระทำผิด",
         "provenance": {
             "source_agency": "ระบบเฝ้าระวังสิ่งแวดล้อมภาคประชาชน FloodTrace",
@@ -703,10 +729,165 @@ def get_public_rainfall_stations(db: Session = Depends(get_db)):
         ))
     return results
 
+@public_router.get("/stations/{station_id}/history", response_model=StationHistoryResponseDTO)
+def get_station_water_level_history(
+    station_id: str,
+    range: str = Query("24h", pattern="^(24h|7d|30d)$", description="ช่วงเวลาย้อนหลัง: 24h, 7d, หรือ 30d"),
+    db: Session = Depends(get_db)
+):
+    """
+    Master Prompt Section 18:
+    Returns historical time-series telemetry observations for a water level station.
+    Never overwrites historical records. Supports 24H, 7D, 30D.
+    """
+    st = db.query(WaterStation).filter(WaterStation.id == station_id).first()
+    if not st:
+        raise HTTPException(status_code=404, detail="Station not found")
+
+    now = datetime.now(timezone.utc)
+    delta_days = 1 if range == "24h" else (7 if range == "7d" else 30)
+    cutoff = now - timedelta(days=delta_days)
+
+    records = db.query(WaterLevelObservation).filter(
+        WaterLevelObservation.station_id == station_id,
+        WaterLevelObservation.source_timestamp >= cutoff
+    ).order_by(WaterLevelObservation.source_timestamp.desc()).all()
+
+    obs_dtos = []
+    if records:
+        for r in records:
+            obs_dtos.append(HistoricalObservationDTO(
+                id=r.id,
+                station_id=r.station_id,
+                value=r.water_level_msl,
+                unit="m MSL",
+                source_timestamp=r.source_timestamp.isoformat() if r.source_timestamp else None,
+                retrieved_at=r.retrieved_at.isoformat() if r.retrieved_at else now.isoformat(),
+                source_name=r.source_name,
+                organization=r.organization,
+                dataset=r.dataset,
+                data_classification=r.data_classification,
+                freshness_status=r.freshness_status,
+                ingestion_mode=r.ingestion_mode
+            ))
+    elif st.water_level_msl is not None:
+        obs_dtos.append(HistoricalObservationDTO(
+            id=f"current_{st.id}",
+            station_id=st.id,
+            value=st.water_level_msl,
+            unit="m MSL",
+            source_timestamp=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
+            retrieved_at=now.isoformat(),
+            source_name="ThaiWater",
+            organization="HII / RID",
+            dataset="waterlevel_load",
+            data_classification="HIGH_FREQUENCY",
+            freshness_status="FRESH",
+            ingestion_mode="EXTERNAL_API"
+        ))
+
+    latest_ts = obs_dtos[0].source_timestamp if obs_dtos else None
+
+    return StationHistoryResponseDTO(
+        station_id=st.id,
+        station_name=st.name_th,
+        station_type="WATER_LEVEL",
+        time_range=range,
+        total_records=len(obs_dtos),
+        latest_timestamp=latest_ts,
+        observations=obs_dtos,
+        provenance=PublicProvenanceDTO(
+            source_agency="สสน. / กรมชลประทาน (ThaiWater / RID)",
+            dataset_name="อนุกรมเวลาระดับน้ำโทรมาตร (Water Level Time-Series)",
+            category="OFFICIAL",
+            category_th="ข้อมูลจากหน่วยงาน",
+            source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load",
+            source_updated_at=latest_ts
+        )
+    )
+
+@public_router.get("/rainfall/{station_id}/history", response_model=StationHistoryResponseDTO)
+def get_station_rainfall_history(
+    station_id: str,
+    range: str = Query("24h", pattern="^(24h|7d|30d)$", description="ช่วงเวลาย้อนหลัง: 24h, 7d, หรือ 30d"),
+    db: Session = Depends(get_db)
+):
+    """
+    Master Prompt Section 18:
+    Returns historical time-series telemetry observations for a rainfall station.
+    Never overwrites historical records. Supports 24H, 7D, 30D.
+    """
+    st = db.query(RainfallStation).filter(RainfallStation.id == station_id).first()
+    if not st:
+        raise HTTPException(status_code=404, detail="Station not found")
+
+    now = datetime.now(timezone.utc)
+    delta_days = 1 if range == "24h" else (7 if range == "7d" else 30)
+    cutoff = now - timedelta(days=delta_days)
+
+    records = db.query(RainfallObservation).filter(
+        RainfallObservation.station_id == station_id,
+        RainfallObservation.source_timestamp >= cutoff
+    ).order_by(RainfallObservation.source_timestamp.desc()).all()
+
+    obs_dtos = []
+    if records:
+        for r in records:
+            obs_dtos.append(HistoricalObservationDTO(
+                id=r.id,
+                station_id=r.station_id,
+                value=r.rain_24h_mm,
+                unit="mm",
+                source_timestamp=r.source_timestamp.isoformat() if r.source_timestamp else None,
+                retrieved_at=r.retrieved_at.isoformat() if r.retrieved_at else now.isoformat(),
+                source_name=r.source_name,
+                organization=r.organization,
+                dataset=r.dataset,
+                data_classification=r.data_classification,
+                freshness_status=r.freshness_status,
+                ingestion_mode=r.ingestion_mode
+            ))
+    elif st.rain_24h_mm is not None:
+        obs_dtos.append(HistoricalObservationDTO(
+            id=f"current_{st.id}",
+            station_id=st.id,
+            value=st.rain_24h_mm,
+            unit="mm",
+            source_timestamp=st.observation_time or now.isoformat(),
+            retrieved_at=now.isoformat(),
+            source_name="ThaiWater",
+            organization="HII / TMD",
+            dataset="rain_24h",
+            data_classification="HIGH_FREQUENCY",
+            freshness_status="FRESH",
+            ingestion_mode="EXTERNAL_API"
+        ))
+
+    latest_ts = obs_dtos[0].source_timestamp if obs_dtos else None
+
+    return StationHistoryResponseDTO(
+        station_id=st.id,
+        station_name=st.name_th,
+        station_type="RAINFALL",
+        time_range=range,
+        total_records=len(obs_dtos),
+        latest_timestamp=latest_ts,
+        observations=obs_dtos,
+        provenance=PublicProvenanceDTO(
+            source_agency="สสน. / กรมอุตุนิยมวิทยา (ThaiWater / TMD)",
+            dataset_name="อนุกรมเวลาปริมาณน้ำฝน (Rainfall Time-Series)",
+            category="OFFICIAL",
+            category_th="ข้อมูลจากหน่วยงาน",
+            source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
+            source_updated_at=latest_ts
+        )
+    )
+
 # ============================================================
 # Section 14: GET /api/public/my-area
 # My Area Watch Query
 # ============================================================
+
 @public_router.get("/my-area", response_model=PublicAreaSummaryDTO)
 def get_public_my_area(
     district: str = Query(..., description="อำเภอ เช่น กบินทร์บุรี, เมืองปราจีนบุรี, ศรีมหาโพธิ"),

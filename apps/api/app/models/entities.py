@@ -219,3 +219,51 @@ class SecurityAuditLog(Base):
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     ip_address = Column(String, nullable=True)
 
+class WaterLevelObservation(Base):
+    """
+    Historical time-series telemetry observation for water level stations (Master Spec Section 18 & 22).
+    Never overwrites historical records. Tracks 24H, 7D, 30D trends.
+    """
+    __tablename__ = "water_level_observations"
+
+    id = Column(String, primary_key=True, index=True) # UUID or composite
+    station_id = Column(String, index=True, nullable=False)
+    water_level_msl = Column(Float, nullable=True) # MEASURED_FACT (meters MSL)
+    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True)
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    source_name = Column(String, default="ThaiWater", nullable=False)
+    organization = Column(String, default="HII / RID", nullable=False)
+    dataset = Column(String, default="waterlevel_load", nullable=False)
+    record_id = Column(String, nullable=False)
+    access_status = Column(String, default="OPEN_PUBLIC", nullable=False)
+    license_status = Column(String, default="OGL-TH", nullable=False)
+    data_classification = Column(String, default="HIGH_FREQUENCY", nullable=False)
+    freshness_status = Column(String, default="FRESH", nullable=False)
+    ingestion_mode = Column(String, default="EXTERNAL_API", nullable=False) # EXTERNAL_API, LOCAL_IMPORT
+    provenance = Column(JSON, nullable=False)
+
+class RainfallObservation(Base):
+    """
+    Historical time-series telemetry observation for rainfall stations (Master Spec Section 18 & 22).
+    Never overwrites historical records. Tracks 24H, 7D, 30D trends.
+    """
+    __tablename__ = "rainfall_observations"
+
+    id = Column(String, primary_key=True, index=True) # UUID or composite
+    station_id = Column(String, index=True, nullable=False)
+    rain_24h_mm = Column(Float, nullable=True) # MEASURED_FACT (mm)
+    rain_1h_mm = Column(Float, nullable=True)
+    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True)
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    source_name = Column(String, default="ThaiWater", nullable=False)
+    organization = Column(String, default="HII / TMD", nullable=False)
+    dataset = Column(String, default="rain_24h", nullable=False)
+    record_id = Column(String, nullable=False)
+    access_status = Column(String, default="OPEN_PUBLIC", nullable=False)
+    license_status = Column(String, default="OGL-TH", nullable=False)
+    data_classification = Column(String, default="HIGH_FREQUENCY", nullable=False)
+    freshness_status = Column(String, default="FRESH", nullable=False)
+    ingestion_mode = Column(String, default="EXTERNAL_API", nullable=False) # EXTERNAL_API, LOCAL_IMPORT
+    provenance = Column(JSON, nullable=False)
+
+

@@ -4,7 +4,7 @@
 
 [![System Status](https://img.shields.io/badge/Status-Internal%20Test-blue.svg)](#17-current-project-status)
 [![Production Readiness](https://img.shields.io/badge/Production-Not%20Ready%20(Gated)-orange.svg)](#17-current-project-status)
-[![Tests](https://img.shields.io/badge/Tests-76%2F76%20Passed-brightgreen.svg)](#16-testing)
+[![Tests](https://img.shields.io/badge/Tests-91%2F91%20Passed-brightgreen.svg)](#16-testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -181,24 +181,31 @@ To eliminate ambiguity, FloodTrace classifies every piece of information into ex
 
 ## 7. Data Sources
 
-FloodTrace is architected with modular adapters to ingest and normalize data across official organizations:
+FloodTrace is architected with modular adapters to ingest and normalize data across official organizations. Following the **Final Production Truth Audit**, the platform enforces strict criteria distinguishing real external APIs from local reference imports:
 
-| Source Category | Organizations Architected For | Status in Current Build |
-|---|---|---|
-| **Satellite Flood Extent** | GISTDA (Disaster Portal) | Planned Integration / Gated |
-| **Water Telemetry & Reservoirs** | ThaiWater / HII, Royal Irrigation Department (RID) | Planned Integration / Gated |
-| **Weather & Rainfall Forecasts** | Thai Meteorological Department (TMD) | Planned Integration / Gated |
-| **Environmental Quality & Samples** | Pollution Control Department (PCD), REO7 | Planned Integration / Gated |
-| **Topography & Elevation** | Department of Water Resources (DWR), LDD | Planned Integration / Gated |
-| **Industrial Classifications** | Department of Industrial Works (DIW) | Planned Integration / Gated |
-| **Citizen Field Reports** | FloodTrace Community Observation Network | **Active (Internal Source)** |
+| Source ID | Source Category | Ingestion Mode | Refresh Cadence | Production Status |
+|---|---|---|---|---|
+| `thaiwater_rid_runoff` | Water Telemetry (สสน. / RID) | `EXTERNAL_API` | Automated (15m) | **PRODUCTION_ACTIVE** |
+| `thaiwater_rainfall` | 24h Rainfall Telemetry (สสน.) | `EXTERNAL_API` | Automated (15m) | **PRODUCTION_ACTIVE** |
+| `dwr_waterways` | Hydrographic River Network (DWR) | `LOCAL_IMPORT` | Static Reference | **PRODUCTION_REFERENCE** |
+| `diw_industrial_waste` | Hazardous Waste Facilities (DIW 2020) | `LOCAL_IMPORT` | Historical Baseline | **PRODUCTION_REFERENCE** |
+| `dopa_villages` | Registered Villages (DOPA) | `LOCAL_IMPORT` | Static Reference | **PRODUCTION_REFERENCE** |
+| `moph_hospitals` | Health Centers / Hospitals (MOPH) | `LOCAL_IMPORT` | Static Reference | **PRODUCTION_REFERENCE** |
+| `gistda_disaster` | Satellite Radar Flood Extent (GISTDA) | None | Blocked (Pending API) | **PRODUCTION_BLOCKED** |
+| `tmd_forecast` | Weather & Radar Forecasts (TMD) | None | Blocked (Pending API) | **PRODUCTION_BLOCKED** |
+| `official_dem` | High-Resolution DEM (LDD / DWR) | None | Blocked (Restricted) | **PRODUCTION_BLOCKED** |
+| `diw_all_factories` | All Industrial Facilities (DIW) | None | Blocked (Restricted) | **PRODUCTION_BLOCKED** |
+| `pcd_reo7_inspection` | Environmental Inspections (REO7) | None | Blocked (Restricted) | **PRODUCTION_BLOCKED** |
+| `pcd_water_quality` | Surface Water Quality Lab Assays (PCD) | None | Blocked (Pending API) | **PRODUCTION_BLOCKED** |
+| `dgr_groundwater` | Groundwater Monitoring Wells (DGR) | None | Blocked (Restricted) | **PRODUCTION_BLOCKED** |
+| `ldd_landuse` | Land Use Classifications (LDD) | None | Blocked (Restricted) | **PRODUCTION_BLOCKED** |
+| `floodtrace_citizen` | Citizen Field Observations | `INTERNAL` | Continuous | **Active (Internal Source)** |
 
-> ### ⚠️ Critical Status Notice
-> Under current project policy (`REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True`):
-> - **External private-authorized production sources = 0**
-> - **Internal active source = 1 (`floodtrace_citizen`)**
-> 
-> All 14 external candidate sources remain gated until official inter-agency data sharing agreements and API credentials are provided. Synthetic or unverified data is strictly blocked from the production pipeline.
+> ### ⚠️ Strict Truth Rule: `LOCAL_IMPORT != EXTERNAL_API`
+> - **Total External Sources = 14**
+> - **Real External API Integrations = 2** (`thaiwater_rid_runoff`, `thaiwater_rainfall` — automatically refreshed every 15 min by `SourceScheduler`).
+> - **Reference-Only Production Datasets = 4** (`dwr_waterways`, `diw_industrial_waste` [May 2020], `dopa_villages`, `moph_hospitals` — loaded from verified official files; `AUTOMATED_REFRESH = FALSE`).
+> - **Blocked Sources = 8** (Awaiting formal agency data-sharing agreements or credentials. No synthetic data is generated).
 
 ---
 
@@ -418,11 +425,18 @@ PYTHONPATH=. .venv/bin/pytest apps/api/tests/ -v
 
 **Verified Test Results**:
 ```text
-======================== 76 passed, 3 warnings in 2.10s ========================
+======================== 91 passed, 3 warnings in 2.96s ========================
 ```
+- **Automated Refresh & Truth Tests**: 8 dedicated tests validating `SourceScheduler`, circuit breaker trips, deduplication, time-series history preservation (`24h`, `7d`, `30d`), and truthful fail-closed responses.
 - **Public API Sanitization Tests**: 16 dedicated test cases recursively verifying zero exposure of factory IDs, exact GPS, or reporter identities.
 - **Reliability & Resilience Tests**: Circuit breaker trips, request ID tracing, idempotency deduplication, and rate limiting enforcement.
 - **Fail-Closed Security Tests**: Rejection of unauthorized production data and unreviewed claims.
+
+### Run Source Verification Script
+
+```bash
+python3 scripts/verify_all_sources.py
+```
 
 ### Run Frontend Verification Build
 
@@ -443,15 +457,18 @@ cd apps/web && npm run build
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     FLOODTRACE PLATFORM                     │
+│                 FINAL PRODUCTION TRUTH AUDIT                │
 ├──────────────────────────┬──────────────────────────────────┤
 │ System Environment:      │ LOCAL_DEVELOPMENT / INTERNAL_TEST│
-│ Production Status:       │ NOT READY (Intentionally Gated)  │
+│ Production Status:       │ PARTIALLY_ACTIVE_TRUTH_GATED     │
 ├──────────────────────────┼──────────────────────────────────┤
-│ External Candidate Sources: 14                              │
-│ Private-Authorized Sources: 0 (Pending Agency Agreements)   │
-│ Active Internal Sources:  │ 1 (Citizen Observation Network)  │
+│ Total External Sources:  │ 14                               │
+│ Real External API Sources│ 2 (Automated Ingestion, 15m)     │
+│ Production Reference:    │ 4 (Stored Official Reference)    │
+│ Blocked External Sources:│ 8 (Pending Agency Access / Keys) │
+│ Active Internal Sources: │ 1 (Citizen Observation Network)  │
 ├──────────────────────────┼──────────────────────────────────┤
-│ Automated Test Coverage: │ 76 / 76 PASSED (100%)            │
+│ Automated Test Coverage: │ 91 / 91 PASSED (100%)            │
 │ Frontend Production Build:│ PASSED (0 Errors)               │
 │ Load Benchmark (Stress): │ 150 / 150 Successful (>250 rps)  │
 │ Database Restore Drill:  │ PASSED (0.94s observed)          │
