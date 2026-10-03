@@ -8,7 +8,12 @@ const fs = require('fs');
 const path = require('path');
 
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BASE_URL = process.env.PUBLIC_URL || 'https://president-catalogue-lab-results.trycloudflare.com';
+// Ephemeral Quick Tunnel URLs change on every restart — never hardcode them.
+const BASE_URL = process.env.PUBLIC_URL;
+if (!BASE_URL) {
+  console.error('PUBLIC_URL env var is required (e.g. PUBLIC_URL=https://<current>.trycloudflare.com)');
+  process.exit(2);
+}
 const ARTIFACT_DIR = '/Users/chalermsak/.gemini/antigravity-ide/brain/f2fb2dc0-9581-43e9-a7ae-581ec36b846d';
 
 async function sleep(ms) {

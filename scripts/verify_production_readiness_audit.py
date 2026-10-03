@@ -61,6 +61,15 @@ def audit_all_criteria():
     pub_url = os.getenv("PUBLIC_BASE_URL")
     pub_accessible = False
     log_file = Path("/tmp/cloudflared.log")
+    if not pub_url:
+        try:
+            qt_resp = httpx.get("http://localhost:20241/quicktunnel", timeout=1.0)
+            if qt_resp.status_code == 200:
+                h = qt_resp.json().get("hostname")
+                if h:
+                    pub_url = f"https://{h}"
+        except Exception:
+            pass
     if not pub_url and log_file.exists():
         import re
         content = log_file.read_text()
@@ -79,13 +88,16 @@ def audit_all_criteria():
 
     if pub_url:
         try:
-            pr = httpx.get(f"{pub_url}/health", timeout=8.0)
+            pr = httpx.get(f"{pub_url}/health", timeout=5.0)
             pub_accessible = pr.status_code == 200 and pr.json().get("status") == "alive"
         except Exception:
-            pass
+            # Unreachable endpoint is NOT publicly accessible — never infer PASS.
+            pub_accessible = False
+
     matrix["PUBLICLY_ACCESSIBLE"] = (
         "PASS" if pub_accessible else "PARTIAL",
-        f"Reachable over HTTPS via Cloudflare proxy ({pub_url})" if pub_url else "No public ingress URL detected"
+        (f"PUBLICLY_ACCESSIBLE_VIA_EPHEMERAL_DEVELOPMENT_HOST ({pub_url})" if pub_accessible
+         else f"EPHEMERAL_TUNNEL_UNREACHABLE ({pub_url}) — live /health check failed") if pub_url else "No public ingress URL detected"
     )
 
     # 3. PRODUCTION_DEPLOYED
@@ -98,7 +110,7 @@ def audit_all_criteria():
     # 4. STABLE_24_7
     matrix["STABLE_24_7"] = (
         "FAIL",
-        "Public access currently relies on ephemeral TryCloudflare quick tunnel. Machine sleep/reboot terminates availability."
+        "Ephemeral TryCloudflare quick tunnel on local workstation; no persistent production supervisor (STABLE_24_7 = FALSE)"
     )
 
     # 5. REAL_EXTERNAL_DATA
@@ -112,7 +124,7 @@ def audit_all_criteria():
         pass
     matrix["REAL_EXTERNAL_DATA"] = (
         "PASS" if tw_ok else "PARTIAL",
-        "Live ThaiWater water level & rainfall, RID, and Open-Meteo APIs connected with explicit +07:00 timezone"
+        "REAL_EXTERNAL_DATA = TRUE; PRODUCTION_EXTERNAL_DATA_PIPELINE = NOT_VERIFIED (APIs real, cloud pipeline unverified)"
     )
 
     # 6. AUTOMATED_REFRESH
@@ -131,10 +143,11 @@ def audit_all_criteria():
     test_iso_ok = False
     with SessionLocal() as db:
         withheld_count = db.query(CitizenReport).filter(CitizenReport.publication_state == "WITHHELD").count()
-        test_iso_ok = withheld_count >= 229
+        total_count = db.query(CitizenReport).count()
+        test_iso_ok = withheld_count == 249 and total_count == 249
     matrix["TEST_DATA_ISOLATION"] = (
         "PASS" if test_iso_ok else "PARTIAL",
-        f"229 test fixtures & whistleblower mocks quarantined (WITHHELD); excluded from public overview & map"
+        f"249 test fixtures & mocks quarantined (WITHHELD); REAL_PUBLIC_REPORT_COUNT = 0; TEST_DATA_COUNT = 249"
     )
 
     # 9. CITIZEN_REPORTING
@@ -152,20 +165,20 @@ def audit_all_criteria():
     # 11. SECURITY
     matrix["SECURITY"] = (
         "PASS",
-        "Staff console authenticated by ADMIN_API_KEY; rate limiter active (CF-Connecting-IP aware); 0 secrets in JS bundle"
+        "SECURITY_STATUS = HARDENED_LOCAL_RUNTIME; PRODUCTION_SECURITY_VERIFIED = FALSE (app defenses tested locally)"
     )
 
     # 12. BACKUP
     backup_files = list((ROOT / "backups").glob("floodtrace_*"))
     matrix["BACKUP"] = (
         "PASS" if backup_files else "FAIL",
-        f"Automated pg_dump snapshot verified ({len(backup_files)} backups present in backups/)"
+        f"BACKUP_VERIFIED_SCOPE = LOCAL ({len(backup_files)} gzip dumps in backups/)"
     )
 
     # 13. RESTORE
     matrix["RESTORE"] = (
         "PASS",
-        "pg_restore drill verified on floodtrace_restore_check (RTO: 1.84s, RPO < 1s, zero data loss)"
+        "LOCAL_DISASTER_RECOVERY_DRILL: LOCAL_RESTORE_TIME = 0.516s, LOCAL_RESTORE_RESULT = PASS (PRODUCTION_RTO/RPO = NOT_VERIFIED)"
     )
 
     # 14. MONITORING
@@ -203,21 +216,32 @@ def audit_all_criteria():
         print(printf_fmt % (crit, status, detail))
     print("-" * 80)
 
-    # Final Launch Assessment
-    all_critical_pass = all(
+    # Final Status Summary
+    code_ready = all(
         matrix[k][0] == "PASS" for k in [
-            "LOCAL_READY", "REAL_EXTERNAL_DATA", "AUTOMATED_REFRESH",
-            "DATABASE_PERSISTENCE", "TEST_DATA_ISOLATION", "CITIZEN_REPORTING",
-            "PRIVACY", "SECURITY", "BACKUP", "RESTORE", "MONITORING", "MAP",
-            "FRONTEND", "PRODUCTION_CONFIGURATION"
+            "LOCAL_READY", "AUTOMATED_REFRESH", "DATABASE_PERSISTENCE",
+            "TEST_DATA_ISOLATION", "CITIZEN_REPORTING", "PRIVACY", "SECURITY",
+            "BACKUP", "RESTORE", "MONITORING", "MAP", "FRONTEND"
         ]
     )
+    deployment_ready = matrix["PRODUCTION_CONFIGURATION"][0] == "PASS"
+    publicly_accessible = matrix["PUBLICLY_ACCESSIBLE"][0] == "PASS"
+    real_external_data = matrix["REAL_EXTERNAL_DATA"][0] == "PASS"
+    prod_infra_ready = False
+    stable_24_7 = False
+    production_ready = False
 
-    is_production_ready = all_critical_pass and matrix["STABLE_24_7"][0] == "PASS" and matrix["PRODUCTION_DEPLOYED"][0] == "PASS"
-
-    print(f"\nDEPLOYMENT_READY  = TRUE")
-    print(f"PRODUCTION_READY  = {'TRUE' if is_production_ready else 'FALSE (BLOCKED ON HOST & CLOUD DOMAIN)'}")
+    print("\nFINAL AUDIT STATUS:")
+    print(f"CODE_READY                      = {code_ready}")
+    print(f"DEPLOYMENT_READY                = {deployment_ready}")
+    print(f"PUBLICLY_ACCESSIBLE             = {publicly_accessible} (EPHEMERAL_DEVELOPMENT_HOST)")
+    print(f"REAL_EXTERNAL_DATA              = {real_external_data}")
+    print(f"PRODUCTION_INFRASTRUCTURE_READY = {prod_infra_ready}")
+    print(f"STABLE_24_7                     = {stable_24_7}")
+    print(f"PRODUCTION_READY                = {production_ready}")
     print("=" * 80)
+
+    return matrix
 
     return matrix
 

@@ -14,16 +14,58 @@
 
 This audit assesses whether the FloodTrace system is ready for genuine 24/7 public production launch. In strict compliance with the **Never Fake Readiness** standard, this report evaluates system components using empirical verification, real network requests, database forensics, and security testing.
 
+### Launch Status Definitions
+- **`CODE_READY`**: Repository implementation, data schemas, API contracts, and regression suites verified.
+- **`DEPLOYMENT_READY`**: Production deployment package (Docker Compose, Caddy SSL, systemd units, bootstrap scripts) verified.
+- **`PUBLICLY_ACCESSIBLE`**: Current system is reachable from the public Internet (via ephemeral Quick Tunnel).
+- **`REAL_EXTERNAL_DATA`**: Verified live external HTTP source requests return real telemetry (HII ThaiWater, RID, Open-Meteo).
+- **`PRODUCTION_INFRASTRUCTURE_READY`**: Permanent production host, dedicated registered domain, and hardened network exist.
+- **`STABLE_24_7`**: Persistent unattended production runtime has been empirically verified across reboots and network drops.
+- **`PRODUCTION_READY`**: All required production conditions, infrastructure, security, and SLAs are empirically verified.
+
 ### Master Launch Readiness Gate
 | Verification Dimension | Status | Empirical Rationale |
 |:---|:---:|:---|
-| **LOCAL_READY** | **PASS** | 118/118 automated tests passing, local PostgreSQL 18 persistent, API & SPA running synchronously. |
-| **PUBLICLY_ACCESSIBLE** | **PASS** | Live public accessibility verified over HTTPS via Cloudflare edge proxy (`https://president-catalogue-lab-results.trycloudflare.com`). |
-| **PRODUCTION_DEPLOYED** | **PARTIAL** | Core application, static assets, and database schemas are containerized and production-ready; however, the active instance is hosted on a macOS development workstation rather than a hardened remote cloud VPS. |
-| **STABLE_24_7** | **FAIL** | Public access currently relies on an ephemeral Cloudflare Quick Tunnel (`trycloudflare.com`) which will disconnect on machine sleep, process restart, or reboot. Persistent process supervisor is not running on the host OS. |
-| **REAL_DATA_VERIFIED** | **PASS** | Verified live external connections to HII ThaiWater (808 national water level stations, 4,800 rain stations; 27 water & 77 rain stations active in Prachin Buri) and Open-Meteo with explicit `+07:00` (Asia/Bangkok) timezone normalization. |
-| **REAL_USER_DATA_VERIFIED** | **PARTIAL** | Pre-audit genuine public report count is exactly **0**. 19 records were generated during live end-to-end audit testing; 229 non-production test fixtures and mock records have been identified and safely quarantined. |
-| **PRODUCTION_READY** | **FALSE** | System cannot be declared 100% production-ready until human actions provide a permanent registered domain, Named Tunnel credentials, and a dedicated VPS/cloud server. |
+| **CODE_READY** | **TRUE** | 135/135 automated tests passing, strict schema types, zero unhandled exceptions, parameterized SQL queries. |
+| **DEPLOYMENT_READY** | **TRUE** | Complete production deployment bundle in `deploy/production/` (Compose, Caddy SSL, Systemd, UFW bootstrap). |
+| **PUBLICLY_ACCESSIBLE** | **INTERMITTENT (FALSE at re-audit)** | **PUBLICLY_ACCESSIBLE_VIA_EPHEMERAL_DEVELOPMENT_HOST** — Reachable over HTTPS via Quick Tunnel at 2026-10-03T13:10Z (4/4 external checks PASS, §18). At truth re-audit 2026-10-03T14:33Z: `cloudflared` PID 8302 alive but `/ready` = 503 with `readyConnections: 0`; hostname no longer resolves (DNS empty via 1.1.1.1); `/health` → connection failure. This illustrates the ephemeral nature of the current ingress. |
+| **PERMANENT_DOMAIN** | **FALSE** | Bound to temporary TryCloudflare quick tunnel; permanent custom domain awaiting human purchase and DNS mapping. |
+| **NAMED_TUNNEL** | **FALSE** | Running ephemeral Quick Tunnel; Named Tunnel credentials (`~/.cloudflared/cert.pem` / token) await human Cloudflare account provisioning. |
+| **PRODUCTION_HOST** | **FALSE** | Active server is a local development workstation (`Darwin 27.0.0 arm64`); hardened Ubuntu 24.04 LTS host awaits human server provisioning. |
+| **PRODUCTION_INFRASTRUCTURE_READY** | **FALSE** | No remote production host, persistent cloud network, or permanent domain currently provisioned. |
+| **STABLE_24_7** | **FALSE** | Host workstation lacks 24/7 power, cloud redundancy, and persistent OS process supervisor. |
+| **REAL_EXTERNAL_DATA** | **TRUE** | Verified live telemetry from HII ThaiWater (27 water level & 77 rain stations in Prachin Buri), RID 7 reservoirs, and Open-Meteo. |
+| **PRODUCTION_EXTERNAL_DATA_PIPELINE** | **NOT_VERIFIED** | Source APIs are real, but production cloud pipeline runtime has not been tested on a production server. |
+| **AUTOMATED_REFRESH** | **TRUE** | 15-minute background ingestion scheduler operational with circuit breakers and non-blocking retry handling. |
+| **REAL_PUBLIC_REPORT_COUNT** | **0** | Verified 0 un-moderated or un-quarantined reports in public view; all test and audit submissions safely quarantined. |
+| **TEST_DATA_COUNT** | **249** | All 249 test fixtures, whistleblower mocks, and audit test submissions strictly quarantined (`publication_state=WITHHELD`). |
+| **SECURITY_STATUS** | **HARDENED_LOCAL_RUNTIME** | Local application defenses hardened (rate limiting, PII suppression, 401 on unauthorized admin, parameterized queries). |
+| **PRODUCTION_SECURITY_VERIFIED** | **FALSE** | Production host OS, UFW firewall, cloud network policies, and remote TLS termination have not been tested on a production server. |
+| **BACKUP_VERIFIED** | **TRUE** | **BACKUP_VERIFIED_SCOPE = LOCAL** — `pg_dump` + gzip verified locally in `backups/` (`floodtrace_backup_20261003_125727Z.sql.gz`, 196KB). |
+| **RESTORE_VERIFIED** | **TRUE** | **RESTORE_VERIFIED_SCOPE = LOCAL** — Local drill into isolated db `floodtrace_restore_check` executed in 0.516s with 100% table and PostGIS parity. |
+| **PRODUCTION_RTO** | **NOT_VERIFIED** | True production recovery time objective has not been measured on production hardware. |
+| **PRODUCTION_RPO** | **NOT_VERIFIED** | True production recovery point objective has not been measured under production WAL archiving. |
+| **PRODUCTION_READY** | **FALSE** | System cannot be declared production-ready until human actions provide a permanent domain, Named Tunnel credentials, and a dedicated Ubuntu 24.04 VPS. |
+
+### Evidence Scope Matrix
+This matrix explicitly differentiates capabilities verified on the local development workstation versus verified on real production infrastructure:
+
+| Capability | Verified On Local | Verified On Production | Status |
+|:---|:---:|:---:|:---:|
+| **Application Logic & Endpoints** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Real External Data Feeds** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Scheduler Automation** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Database Persistence & Schemas** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Security Controls (App Layer)** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Database Backup** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Database Restore** | **YES** | **NO** | **LOCAL_ONLY** |
+| **Public HTTPS Ingress** | **YES** | **NO** | **EPHEMERAL** |
+| **24/7 Uptime & Supervision** | **NO** | **NO** | **NOT_VERIFIED** |
+| **Permanent Custom Domain** | **NO** | **NO** | **NOT_VERIFIED** |
+| **Cloudflare Named Tunnel** | **NO** | **NO** | **NOT_VERIFIED** |
+| **Dedicated Production VPS** | **NO** | **NO** | **NOT_VERIFIED** |
+
+
 
 ---
 
@@ -100,7 +142,12 @@ The system was evaluated against simulated service and dependency failures:
 
 ## 5. Real External Data Truth Audit
 
+> **Evidence Scope Notice:**
+> - **`REAL_EXTERNAL_DATA = TRUE`**: Direct live external network requests were executed against official government and meteorological APIs, receiving genuine real-time telemetry.
+> - **`PRODUCTION_EXTERNAL_DATA_PIPELINE = NOT_VERIFIED`**: While source APIs are genuine, the automated ingestion pipeline has only executed on the local development workstation, not on a dedicated production cloud host.
+
 Every data source in FloodTrace was queried live to determine access status, latency, license, and freshness:
+
 
 | Source Name | Source Type | Real External URL / Endpoint | HTTP Status | Response Latency | Freshness / Data Timestamp | License Status | System Classification |
 |:---|:---|:---|:---:|:---:|:---:|:---:|:---:|
@@ -159,20 +206,22 @@ A direct live verification of ThaiWater data returned:
 ## 8. Database Data Truth & Test Quarantine
 
 ### Database Breakdown
-Forensic analysis of the production database (`floodtrace_db`) revealed **248 CitizenReport records**:
+Forensic analysis of the database (`floodtrace_db`) revealed **249 CitizenReport records**:
 
 | Classification | Count | Origin | Action Taken | Public Exposure Status |
 |:---|:---:|:---|:---:|:---:|
 | **AUTOMATED_TEST_FIXTURE** | 143 | Pytest runs (`Somchai Test`, `Citizen Idempotency Test`) | **Quarantined** (`publication_state=WITHHELD`) | **EXCLUDED** |
 | **WHISTLEBLOWER_MOCK** | 80 | Synthetic test fixtures (`Classified Whistleblower 99`) | **Quarantined** (`publication_state=WITHHELD`) | **EXCLUDED** |
 | **TEST_DEMO** | 1 | Seed fixture (`citizen observation`) | **Quarantined** (`publication_state=WITHHELD`) | **EXCLUDED** |
-| **AUDIT_SUBMISSION** | 5 | Pre-launch test submissions (`ตรวจสอบความพร้อม`) | **Quarantined** (`publication_state=WITHHELD`) | **EXCLUDED** |
-| **PRODUCTION_REAL** | 19 | Live browser E2E verification reports | Preserved as verified observation tests | Active in system |
+| **AUDIT_SUBMISSION** | 25 | Pre-launch & E2E audit test reports (`PRODUCTION_AUDIT_TEST`, `FT-2026-7FB9CB`) | **Quarantined** (`publication_state=WITHHELD`) | **EXCLUDED** |
+| **PRODUCTION_REAL** | 0 | Genuine organic public citizen reports | None submitted yet | **COUNT = 0** |
 
 ### Strict Truth Declaration:
-- **REAL_PUBLIC_REPORT_COUNT = 0** prior to our audit verification tests.
-- Total raw database rows (248) are **never** reported as genuine public engagement.
+- **REAL_PUBLIC_REPORT_COUNT = 0**: Zero genuine public user reports have been submitted. All test and audit submissions are strictly quarantined.
+- **TEST_DATA_COUNT = 249**: All 249 non-production records are marked `publication_state=WITHHELD` and are excluded from public overviews, area summaries, and public observation feeds.
+- Total raw database rows (249) are **never** reported as genuine public engagement.
 - Tooling implemented: [`scripts/manage_test_data.py`](file:///Users/chalermsak/Desktop/FloodTrace/scripts/manage_test_data.py) provides `--status`, `--quarantine`, and safe guarded `--purge` (mandating `--confirm-irreversible-delete`).
+
 
 ---
 
@@ -235,17 +284,22 @@ Every public endpoint and frontend data stream was audited for privacy leakage:
 
 ## 11. Security Hardening & Vulnerability Assessment
 
+> **Evidence Scope Notice:**
+> - **`SECURITY_STATUS = HARDENED_LOCAL_RUNTIME`**: Local application-layer security controls were empirically validated (rate limiting, PII suppression, 401 on unauthorized admin, parameterized queries, sanitized error envelopes, and static bundle secret scanning).
+> - **`PRODUCTION_SECURITY_VERIFIED = FALSE`**: Local testing demonstrates code-level defenses, but does **NOT** prove production infrastructure security. Hardened Linux kernel settings, UFW firewall rules, network isolation on cloud VPS, cloud DDoS mitigation, and production TLS certificate management remain unverified until tested on a dedicated production host.
+
 ### Security Audit Matrix
-| Security Domain | Vulnerability / Check | System Defense | Status |
-|:---|:---|:---|:---:|
-| **Authentication** | Staff Console Endpoint Gate | Constant-time bearer token check against `ADMIN_API_KEY` | **PASS** |
-| **Authorization** | Role-Based Access Control | Strict hierarchy: `VIEWER` < `ANALYST` < `OFFICER` < `ADMIN` | **PASS** |
-| **CORS Policy** | Cross-Origin Header Inspection | Restricted to authorized production origins (rejects wildcard `*` with credentials) | **PASS** |
-| **Rate Limiting** | DDoS & Bruteforce Protection | 60 requests/min on report submissions; extracts real client IP via `CF-Connecting-IP` | **PASS** |
-| **SQL Injection** | Parameterized Queries | 100% SQLAlchemy ORM parameterized queries; 0 raw SQL string concats | **PASS** |
-| **Command Injection** | Shell Execution | Zero `os.system` or `subprocess.shell=True` in runtime path | **PASS** |
-| **Path Traversal** | File Uploads & Fallbacks | `os.path.basename` and `os.path.abspath` directory confinement checks | **PASS** |
-| **Information Leakage** | Exception & Error Handling | Production error handler returns standardized JSON; suppresses Python tracebacks | **PASS** |
+| Security Domain | Vulnerability / Check | System Defense | Local Status | Production Status |
+|:---|:---|:---|:---:|:---:|
+| **Authentication** | Staff Console Endpoint Gate | Constant-time bearer token check against `ADMIN_API_KEY` | **PASS** | **NOT_VERIFIED** |
+| **Authorization** | Role-Based Access Control | Strict hierarchy: `VIEWER` < `ANALYST` < `OFFICER` < `ADMIN` | **PASS** | **NOT_VERIFIED** |
+| **CORS Policy** | Cross-Origin Header Inspection | Restricted to authorized production origins (rejects wildcard `*` with credentials) | **PASS** | **NOT_VERIFIED** |
+| **Rate Limiting** | DDoS & Bruteforce Protection | 60 requests/min on report submissions; extracts real client IP via `CF-Connecting-IP` | **PASS** | **NOT_VERIFIED** |
+| **SQL Injection** | Parameterized Queries | 100% SQLAlchemy ORM parameterized queries; 0 raw SQL string concats | **PASS** | **NOT_VERIFIED** |
+| **Command Injection** | Shell Execution | Zero `os.system` or `subprocess.shell=True` in runtime path | **PASS** | **NOT_VERIFIED** |
+| **Path Traversal** | File Uploads & Fallbacks | `os.path.basename` and `os.path.abspath` directory confinement checks | **PASS** | **NOT_VERIFIED** |
+| **Information Leakage** | Exception & Error Handling | Production error handler returns standardized JSON; suppresses Python tracebacks | **PASS** | **NOT_VERIFIED** |
+
 
 ---
 
@@ -315,23 +369,48 @@ Public alerts are strictly bounded:
 
 ---
 
-## 17. Backup and Disaster Recovery Drill
+## 17. Local Disaster Recovery Drill & Backup Verification
 
-A live database disaster recovery drill was executed on the local PostgreSQL 18 instance:
+> **Evidence Scope Notice:**
+> - **`BACKUP_VERIFIED_SCOPE = LOCAL`**: Local database backup scripts (`pg_dump` piped to `gzip -9`) were verified on the local workstation.
+> - **`RESTORE_VERIFIED_SCOPE = LOCAL`**: Restore script and schema re-hydration were verified against an isolated local PostgreSQL database (`floodtrace_restore_check`).
+> - **`PRODUCTION_RTO = NOT_VERIFIED`**: True production recovery time has not been measured under production VM/disk/network constraints.
+> - **`PRODUCTION_RPO = NOT_VERIFIED`**: True production recovery point objective under automated WAL archiving and off-site replication has not been measured.
+> - **Disclaimer:** These measurements demonstrate script, archive, and schema validity, but do **NOT** represent a validated production SLA.
+
+A controlled local disaster recovery drill (`LOCAL_DISASTER_RECOVERY_DRILL`) was executed on the local PostgreSQL 18 instance into isolated database `floodtrace_restore_check`:
 
 ```bash
-# 1. Snapshot generation
-pg_dump -Fc -v -d floodtrace_db -f backups/floodtrace_db_pre_audit_20261003_161613.dump
+# 1. Local Snapshot generation
+DATABASE_URL="postgresql://chalermsak:@localhost:5432/floodtrace_db" BACKUP_DIR=backups bash scripts/production_backup.sh
+# Created: backups/floodtrace_backup_20261003_125727Z.sql.gz (196KB)
 
-# 2. Disaster recovery execution
-pg_restore -v -d floodtrace_restore_check backups/floodtrace_db_pre_audit_20261003_161613.dump
+# 2. Local Disaster recovery drill into isolated verification database
+psql -h localhost -U chalermsak -d postgres -c "DROP DATABASE IF EXISTS floodtrace_restore_check;"
+psql -h localhost -U chalermsak -d postgres -c "CREATE DATABASE floodtrace_restore_check;"
+gunzip -c backups/floodtrace_backup_20261003_125727Z.sql.gz | psql -h localhost -U chalermsak -d floodtrace_restore_check -q
 ```
 
-### Verified Disaster Recovery Metrics:
-- **Recovery Point Objective (RPO):** < 1 second (point-in-time snapshot with WAL logs)
-- **Recovery Time Objective (RTO):** 1.84 seconds (database restore duration)
-- **Backup File Integrity:** SHA-256 verified, binary format valid
-- **Data Integrity Post-Restore:** Exactly 248 citizen report records and 104 station records restored with zero data loss or foreign key violations.
+### Local Disaster Recovery Drill Results:
+- **LOCAL_RESTORE_TIME:** **0.516 seconds** (measured end-to-end local database restore duration)
+- **LOCAL_RESTORE_RESULT:** **PASS** (Zero data loss, 100% row count & schema parity in isolated restore db)
+- **PRODUCTION_RTO:** **NOT_VERIFIED** (Awaits testing on target production cloud VPS)
+- **PRODUCTION_RPO:** **NOT_VERIFIED** (Awaits testing with production WAL shipping / automated snapshots)
+- **Backup File Integrity:** Gzip archive integrity verified (`gzip -t`, 196KB)
+- **Data Integrity Post-Restore (Row Count Parity):**
+  - `water_stations`: 27 (100% Match)
+  - `rainfall_stations`: 77 (100% Match)
+  - `reservoirs`: 7 (100% Match)
+  - `industrial_facilities`: 112 (100% Match)
+  - `citizen_reports`: 249 (100% Match, all quarantined)
+  - `water_level_observations`: 812 (100% Match)
+  - `rainfall_observations`: 1115 (100% Match)
+  - `citizen_report_audit_logs`: 551 (100% Match)
+  - `security_audit_logs`: 1190 (100% Match)
+- **Spatial Schema Parity:** PostGIS 3.6 (`USE_GEOS=1 USE_PROJ=1 USE_STATS=1`) fully available in restored database.
+- **Rollback / Cleanup:** Temporary restore database cleanly dropped post-verification (`DROP DATABASE floodtrace_restore_check`). Active local database remained 100% isolated and untouched.
+
+
 
 ---
 
@@ -343,6 +422,17 @@ The system provides dedicated observability endpoints:
 - [`/liveness`](http://localhost:8001/liveness): Independent container liveness probe.
 - [`/health/metrics`](http://localhost:8001/health/metrics): Pipeline queue depth, circuit breaker states, and ingestion error counters.
 - [`/health/sources`](http://localhost:8001/health/sources): Per-source status, response times, and license information.
+
+### Live Public Availability Testing (External Repeated Checks)
+Repeated checks were executed from an external network through Cloudflare Edge PoP `BKK` (`https://president-catalogue-lab-results.trycloudflare.com`):
+
+| Check ID | UTC Timestamp | Cloudflare Ray ID | Tested Endpoints | Result | Avg Latency |
+|:---|:---|:---|:---|:---:|:---:|
+| **PUBLIC_CHECK_1** | 2026-10-03T13:10:41.809812Z | `a44c304e1f628949-BKK` | `/health`, `/overview`, `/stations`, `/observations` | **PASS (200 OK)** | 653.5 ms |
+| **PUBLIC_CHECK_2** | 2026-10-03T13:10:46.429034Z | `a44c305e1e198949-BKK` | `/health`, `/overview`, `/stations`, `/observations` | **PASS (200 OK)** | 89.8 ms |
+| **PUBLIC_CHECK_3** | 2026-10-03T13:10:48.792303Z | `a44c306cec078949-BKK` | `/health`, `/overview`, `/stations`, `/observations` | **PASS (200 OK)** | 82.0 ms |
+| **PUBLIC_CHECK_4** | 2026-10-03T13:10:51.120930Z | `a44c307aa8c38949-BKK` | `/health`, `/overview`, `/stations`, `/observations` | **PASS (200 OK)** | 54.6 ms |
+
 
 ---
 
@@ -384,24 +474,25 @@ The production frontend bundle was tested using Playwright browser automation ([
 
 | Launch Requirement | Category | Result | Evidence / Details |
 |:---|:---|:---:|:---|
-| **LOCAL_READY** | Core System | **PASS** | 135/135 backend unit & integration tests passing. Local SPA & API operational. |
-| **PUBLICLY_ACCESSIBLE** | Networking | **PASS** | Publicly accessible via Cloudflare tunnel (`https://president-catalogue-lab-results.trycloudflare.com`). |
+| **CODE_READY** | Core System | **PASS** | 135/135 backend unit & integration tests passing. Local SPA & API operational. |
+| **PUBLICLY_ACCESSIBLE** | Networking | **INTERMITTENT** | **PUBLICLY_ACCESSIBLE_VIA_EPHEMERAL_DEVELOPMENT_HOST** — Publicly accessible via Cloudflare Quick Tunnel (`https://president-catalogue-lab-results.trycloudflare.com`). |
 | **PRODUCTION_DEPLOYED** | Infrastructure | **PARTIAL** | Currently running on macOS workstation. Complete container & systemd stack authored in `deploy/production/`. |
+| **PRODUCTION_INFRASTRUCTURE_READY** | Infrastructure | **FAIL** | No dedicated Ubuntu 24.04 VPS, persistent cloud network, or permanent domain currently provisioned. |
 | **STABLE_24_7** | Infrastructure | **FAIL** | Ephemeral Quick Tunnel terminates on local process exit or machine sleep. No cloud supervisor active. |
-| **REAL_EXTERNAL_DATA_VERIFIED** | Data Quality | **PASS** | Real HTTP 200 responses from ThaiWater (808 water stations, 4,800 rain stations) and Open-Meteo. |
-| **AUTOMATED_REFRESH_VERIFIED** | Ingestion | **PASS** | 15-minute `SourceScheduler` operational; UI truthfully labeled "Automatically refreshed". |
-| **DATABASE_PERSISTENCE_VERIFIED** | Database | **PASS** | PostgreSQL 18 persistent storage; survived connection drops and restart drills. |
-| **TEST_DATA_ISOLATED** | Governance | **PASS** | 229 mock & test fixtures quarantined (`WITHHELD`); excluded from public endpoints. |
+| **REAL_EXTERNAL_DATA_VERIFIED** | Data Quality | **PASS** | Real HTTP 200 responses from ThaiWater (27 water & 77 rain stations in Prachin Buri) and Open-Meteo. (`PRODUCTION_EXTERNAL_DATA_PIPELINE = NOT_VERIFIED`). |
+| **AUTOMATED_REFRESH_VERIFIED** | Ingestion | **PASS** | 15-minute `SourceScheduler` operational locally; UI truthfully labeled "Automatically refreshed" (อัปเดตอัตโนมัติ). |
+| **DATABASE_PERSISTENCE_VERIFIED** | Database | **PASS** | PostgreSQL 18 persistent storage on NVMe SSD; survived connection drops and restart drills. |
+| **TEST_DATA_ISOLATED** | Governance | **PASS** | 249 mock, test, & audit fixtures quarantined (`WITHHELD`); excluded from public overview & map. |
 | **CITIZEN_REPORTING_VERIFIED** | Application | **PASS** | 10-state reporting workflow active; prevents auto-promotion to official status. |
 | **PRIVACY_VERIFIED** | Privacy | **PASS** | Zero PII in public APIs; 2-decimal coordinate generalization; EXIF metadata stripped. |
-| **SECURITY_VERIFIED** | Security | **PASS** | Staff RBAC enforced; rate limiting active; zero secrets in frontend JS bundle. |
-| **BACKUP_VERIFIED** | Reliability | **PASS** | Automated `pg_dump` snapshot verified (`.dump` file integrity confirmed). |
-| **RESTORE_VERIFIED** | Reliability | **PASS** | `pg_restore` drill completed on `floodtrace_restore_check` (RTO: 1.84s, 0 data loss). |
-| **MONITORING_VERIFIED** | Observability | **PASS** | `/health`, `/readiness`, `/liveness`, and `/health/metrics` endpoints active. |
+| **SECURITY_VERIFIED** | Security | **PASS** | **HARDENED_LOCAL_RUNTIME** — Staff RBAC enforced; rate limiting active; zero secrets in JS bundle (`PRODUCTION_SECURITY_VERIFIED = FALSE`). |
+| **BACKUP_VERIFIED** | Reliability | **PASS** | **BACKUP_VERIFIED_SCOPE = LOCAL** — Automated `pg_dump` snapshot verified (`floodtrace_backup_20261003_125727Z.sql.gz`, 196KB). |
+| **RESTORE_VERIFIED** | Reliability | **PASS** | **RESTORE_VERIFIED_SCOPE = LOCAL** — `LOCAL_DISASTER_RECOVERY_DRILL` completed on `floodtrace_restore_check` (Time: 0.516s; `PRODUCTION_RTO/RPO = NOT_VERIFIED`). |
+| **MONITORING_VERIFIED** | Observability | **PASS** | `/health`, `/readiness`, `/liveness`, and `/health/metrics` endpoints active locally. |
 | **FRONTEND_VERIFIED** | Usability | **PASS** | Playwright E2E browser tests passing; production Vite bundle built with 0 hardcoded secrets. |
 | **MAP_VERIFIED** | GIS / Map | **PASS** | Tile rendering, station pins, and sub-basin polygons validated; scope boundaries enforced. |
 | **PRODUCTION_CONFIGURATION** | Operations | **PASS** | Deployment package in `deploy/production/` with Caddy SSL, systemd units, and validator. |
-| **PRODUCTION_READY** | **Final Decision** | **FALSE** | **BLOCKED ON HOST & CLOUD DOMAIN (DEPLOYMENT_READY = TRUE)** |
+| **PRODUCTION_READY** | **Final Decision** | **FALSE** | **BLOCKED ON PRODUCTION INFRASTRUCTURE & DOMAIN (DEPLOYMENT_READY = TRUE)** |
 
 ---
 
@@ -413,7 +504,7 @@ The production frontend bundle was tested using Playwright browser automation ([
 2. **Insecure Configuration Enforcement:**
    - Implemented `validate_production_settings()` in [`apps/api/app/core/config.py`](file:///Users/chalermsak/Desktop/FloodTrace/apps/api/app/core/config.py) and [`scripts/validate_production_config.py`](file:///Users/chalermsak/Desktop/FloodTrace/scripts/validate_production_config.py), forcing application startup to fail if placeholder secrets, default development credentials, or localhost/quick tunnel URLs are present in production.
 3. **Test Data Isolation Permanent Protection:**
-   - Quarantined all 229 non-production fixtures (`publication_state=WITHHELD`).
+   - Quarantined all 249 non-production fixtures (`publication_state=WITHHELD`).
    - Added automated regression suite [`apps/api/tests/test_test_data_isolation_and_regression.py`](file:///Users/chalermsak/Desktop/FloodTrace/apps/api/tests/test_test_data_isolation_and_regression.py) proving test fixtures can never appear in public metrics or maps.
 4. **Timezone Regression Protection:**
    - Added automated regression suite [`apps/api/tests/test_timezone_regression_protection.py`](file:///Users/chalermsak/Desktop/FloodTrace/apps/api/tests/test_timezone_regression_protection.py) proving all timestamps are parsed in `Asia/Bangkok` (+07:00) with zero timezone-naive outputs.
@@ -443,12 +534,15 @@ The production frontend bundle was tested using Playwright browser automation ([
 To maintain absolute transparency, deployment readiness is evaluated across separate operational tiers:
 
 ```ini
-CODE_READY           = TRUE   (135/135 tests passing, zero lint/build errors, hardened endpoints)
-DEPLOYMENT_READY     = TRUE   (Complete deploy/production package, compose, Caddyfile, systemd, scripts)
-INFRASTRUCTURE_READY = FALSE  (Awaiting remote cloud VPS provisioning and domain registration)
-PUBLIC_READY         = FALSE  (Waiting on permanent domain attachment; currently on ephemeral quick tunnel)
-24_7_READY           = FALSE  (Waiting on persistent cloud process supervisor and Named Tunnel)
+CODE_READY                      = TRUE
+DEPLOYMENT_READY                = TRUE
+PUBLICLY_ACCESSIBLE             = INTERMITTENT  # TRUE at 13:10Z; FALSE at 14:33Z re-audit (Quick Tunnel 0 edge connections)
+REAL_EXTERNAL_DATA              = TRUE
+PRODUCTION_INFRASTRUCTURE_READY = FALSE
+STABLE_24_7                     = FALSE
+PRODUCTION_READY                = FALSE
 ```
+
 
 ---
 
@@ -487,6 +581,38 @@ To complete public launch, execute these 4 straightforward steps:
    # Operator Verification:
    ./deploy/production/verify.sh
    ```
+
+---
+
+## 26. Final Truth & Evidence Scope Audit Summary
+
+### WHAT IS PROVEN NOW
+- **Application Logic & Code Correctness:** 135/135 automated unit and integration tests passing (`apps/api/tests/`).
+- **Telemetry Source Live Access:** Real external HTTP 200 responses and live data retrieval from HII ThaiWater (808 national stations, 27 water level stations & 77 rainfall stations in Prachin Buri), RID (7 major reservoirs), and Open-Meteo ECMWF.
+- **Ephemeral Public Ingress (historical):** The system was reachable over public HTTPS via Cloudflare edge (`https://president-catalogue-lab-results.trycloudflare.com`) at 2026-10-03T13:10Z. At the 14:33Z re-audit the tunnel had 0 edge connections and the hostname no longer resolved — public access is **not** currently proven.
+- **Test Data Quarantine:** All 249 non-production test and audit records have `publication_state = WITHHELD` and are strictly excluded from public maps, public observation lists, summary statistics, and area counters (`REAL_PUBLIC_REPORT_COUNT = 0`, `TEST_DATA_COUNT = 249`).
+- **Zero PII Leakage:** Public APIs omit reporter identity, phone numbers, and emails; citizen report coordinates are generalized to 2 decimal places (~1.1 km); image EXIF metadata is stripped on upload.
+- **Production Packaging:** Production deployment package completed in `deploy/production/` (Docker Compose with private network, Caddy SSL configuration, systemd units, operator bootstrap script, and production configuration validator).
+
+### WHAT IS ONLY VERIFIED LOCALLY
+- **Local Application Defenses:** In-memory sliding window rate limiter, staff console RBAC (401 on missing/invalid token), and ORM parameterized queries are verified on the local Uvicorn runtime (`SECURITY_STATUS = HARDENED_LOCAL_RUNTIME`).
+- **Local Disaster Recovery Drill:** Database backup (`pg_dump` + gzip) and re-hydration into isolated database `floodtrace_restore_check` completed in 0.516s with 100% schema and row parity (`BACKUP_VERIFIED_SCOPE = LOCAL`, `RESTORE_VERIFIED_SCOPE = LOCAL`, `LOCAL_RESTORE_TIME = 0.516s`, `LOCAL_RESTORE_RESULT = PASS`).
+- **Local Background Scheduler:** 15-minute ingestion pipeline execution running in an interactive local process (`AUTOMATED_REFRESH = TRUE`).
+- **Local Frontend Serving:** Production SPA bundle served via local development servers and evaluated via local headless browser automation.
+
+### WHAT REQUIRES REAL PRODUCTION INFRASTRUCTURE
+- **Production Host Security:** Linux kernel sysctl hardening, UFW firewall rules, isolated Docker bridge network, and secure host-level permissions (`PRODUCTION_SECURITY_VERIFIED = FALSE`).
+- **Production Disaster Recovery SLA:** True multi-node recovery time and recovery point objectives under production storage, network transfer, and WAL archiving (`PRODUCTION_RTO = NOT_VERIFIED`, `PRODUCTION_RPO = NOT_VERIFIED`).
+- **Production Data Pipeline:** Ingestion pipeline running unattended under systemd/Docker restart policies on a remote cloud host (`PRODUCTION_EXTERNAL_DATA_PIPELINE = NOT_VERIFIED`).
+- **24/7 Unattended Uptime:** Persistent uptime across hardware reboots, power cycles, and network disconnects (`STABLE_24_7 = FALSE`).
+- **Organic Concurrency & Load:** Real high-volume citizen traffic and concurrent query loads across multi-day operational cycles.
+
+### WHAT REQUIRES HUMAN ACTION
+1. **Permanent Custom Domain Registration:** Purchasing and registering a permanent domain (e.g., `floodtrace.in.th`) and delegating DNS.
+2. **Dedicated Cloud VPS Server:** Provisioning a dedicated Ubuntu 24.04 LTS cloud host (DigitalOcean, AWS, GCP, Hetzner) with static IP.
+3. **Cloudflare Account & Named Tunnel Provisioning:** Generating persistent tunnel credentials (`cloudflared tunnel login` / token) to eliminate dependency on the ephemeral TryCloudflare quick tunnel.
+4. **Production Cryptographic Secrets Provisioning:** Generating unique, high-entropy secrets (`SECRET_KEY`, `ADMIN_API_KEY`, `POSTGRES_PASSWORD`) in `/opt/floodtrace/.env.production` on the production server.
+5. **Government Inter-Agency Data Partnerships (MOU):** Negotiating institutional credentials for restricted GISTDA flood extents (HTTP 403) and PCD water quality stations (HTTP 401).
 
 ---
 

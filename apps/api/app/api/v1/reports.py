@@ -60,7 +60,8 @@ def get_public_reports(
         query = query.filter(
             CitizenReport.verification_status != "TEST_DEMO",
             CitizenReport.review_status != "TEST_DEMO",
-            CitizenReport.reporter_role != "TEST/DEMO"
+            CitizenReport.reporter_role != "TEST/DEMO",
+            CitizenReport.publication_state != "WITHHELD"
         )
     if district:
         query = query.filter(CitizenReport.district.ilike(f"%{district}%"))

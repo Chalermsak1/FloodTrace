@@ -72,7 +72,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
             "font-src 'self' https://fonts.gstatic.com data:; "
             "img-src 'self' data: https: blob:; "
-            "connect-src 'self' https://api.open-meteo.com https://api-v3.thaiwater.net https://app.rid.go.th; "
+            "connect-src 'self' https://api.open-meteo.com https://api-v3.thaiwater.net https://app.rid.go.th https://server.arcgisonline.com https://*.basemaps.cartocdn.com; "
             "frame-ancestors 'none';"
         )
         return response

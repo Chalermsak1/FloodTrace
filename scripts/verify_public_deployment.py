@@ -26,7 +26,12 @@ import urllib.error
 import ssl
 from datetime import datetime
 
-PUBLIC_BASE = "https://roulette-funny-joint-scout.trycloudflare.com"
+import os
+
+# Ephemeral Quick Tunnel URLs change on every restart — never hardcode them.
+PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+if not PUBLIC_BASE:
+    sys.exit("PUBLIC_BASE_URL env var is required (e.g. https://<current>.trycloudflare.com)")
 
 STAFF_HEADERS = {
     "X-Admin-Key": "dev-admin-secret-key-change-in-prod",
