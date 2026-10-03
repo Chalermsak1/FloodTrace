@@ -127,37 +127,53 @@ export const AUTHENTIC_TAMBONS = [
   { name: 'ต.คู้ลำพัน', district: 'ศรีมโหสถ', lat: 13.8210, lng: 101.3920 }
 ];
 
-// Clean SVGs for large circular markers matching reference image
+// Standardized Unified SVG Icon System (Sections 19 & 20)
 const MARKER_ICONS = {
-  warningTriangle: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="white">
-      <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+  // Water level: water droplet
+  waterDroplet: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="white">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
     </svg>`,
-  exclamation: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="3.2" stroke-linecap="round">
-      <line x1="12" y1="5" x2="12" y2="13"></line>
-      <circle cx="12" cy="18" r="1.5" fill="white"></circle>
+  // Rainfall: rain / cloud
+  rainCloud: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+      <path d="M16 14v6"/>
+      <path d="M8 14v6"/>
+      <path d="M12 16v6"/>
     </svg>`,
-  beaker: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  // Citizen report: community / users
+  communityReport: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>`,
+  // Environmental / water quality: lab flask / beaker
+  labFlask: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/>
       <path d="M8.5 2h7"/>
       <path d="M7 16h10"/>
     </svg>`,
-  home: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>`,
-  verifiedHome: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 12 11 14 15 10"/>
-    </svg>`,
-  waterDrop: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="17" height="17" fill="white">
-      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+  // Alert / escalated event ONLY: warning triangle
+  alertTriangle: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="white">
+      <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
     </svg>`
+};
+
+// Helper to format ISO timestamps to friendly Thai display
+const formatThaiTime = (ts?: string | null) => {
+  if (!ts) return 'ไม่ระบุเวลา';
+  try {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return ts;
+    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+  } catch (_) {
+    return ts;
+  }
 };
 
 const EMPTY_GEOJSON: any = { type: 'FeatureCollection', features: [] };
@@ -524,6 +540,38 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       map.getCanvas().style.cursor = '';
     });
 
+    // Interaction: Click Outside Analysis Scope Mask (Section 13 & 85)
+    map.on('click', 'outside-mask-fill', (e) => {
+      if (popupRef.current) popupRef.current.remove();
+
+      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '280px' })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div class="p-3 font-sans space-y-1.5">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
+              <span class="text-sm font-bold text-slate-900">นอกพื้นที่วิเคราะห์</span>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed font-medium">
+              FloodTrace ให้บริการวิเคราะห์เชิงพื้นที่สำหรับจังหวัดปราจีนบุรี
+            </p>
+            <p class="text-2xs text-slate-400 pt-1 border-t border-slate-100 leading-normal">
+              พื้นที่สีเทาหมายถึงอยู่นอกขอบเขตการคำนวณของระบบ ไม่ได้หมายความว่าปลอดภัยหรือไม่มีน้ำท่วม
+            </p>
+          </div>
+        `)
+        .addTo(map);
+
+      popupRef.current = popup;
+    });
+
+    map.on('mouseenter', 'outside-mask-fill', () => {
+      map.getCanvas().style.cursor = 'help';
+    });
+    map.on('mouseleave', 'outside-mask-fill', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
     return () => {
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
@@ -581,7 +629,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     }
   }, [basemap, surfaceOpacity, visibleLayers, mapLoaded]);
 
-  // Large Circular Status Markers matching the Reference Design
+  // Unified Semantic Markers (Sections 19, 20, 21, 22, 28)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded) return;
@@ -592,33 +640,35 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     const createCircularMarkerEl = (
       bgColor: string,
       svgIcon: string,
-      countBadge?: number
+      countBadge?: number,
+      title?: string
     ) => {
       const el = document.createElement('div');
       el.className = 'group cursor-pointer relative';
-      el.style.width = '38px';
-      el.style.height = '38px';
+      el.style.width = '34px';
+      el.style.height = '34px';
       el.style.borderRadius = '50%';
       el.style.backgroundColor = bgColor;
-      el.style.border = '2.5px solid #ffffff';
-      el.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.25)';
+      el.style.border = '2px solid #ffffff';
+      el.style.boxShadow = '0 3px 10px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2)';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
       el.style.transition = 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)';
       el.innerHTML = svgIcon;
+      if (title) el.title = title;
 
       if (countBadge && countBadge > 1) {
         const badge = document.createElement('span');
         badge.innerText = `${countBadge}`;
         badge.style.position = 'absolute';
-        badge.style.top = '-5px';
-        badge.style.right = '-5px';
+        badge.style.top = '-4px';
+        badge.style.right = '-4px';
         badge.style.backgroundColor = '#0f172a';
         badge.style.color = '#ffffff';
-        badge.style.fontSize = '11px';
+        badge.style.fontSize = '10px';
         badge.style.fontWeight = '700';
-        badge.style.padding = '1px 5px';
+        badge.style.padding = '0.5px 4.5px';
         badge.style.borderRadius = '999px';
         badge.style.border = '1.5px solid #ffffff';
         badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
@@ -626,7 +676,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       }
 
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.25)';
+        el.style.transform = 'scale(1.22)';
         el.style.zIndex = '999';
       });
       el.addEventListener('mouseleave', () => {
@@ -637,18 +687,16 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       return el;
     };
 
-    // 1. Water Level Gauge Stations (Alert Red, Warning Orange, or Cyan Water Drop)
+    // 1. Water Level Gauge Stations (BLUE: #0284C7, Icon: water droplet)
     if (visibleLayers.stations && stations && stations.length > 0) {
       stations.forEach(st => {
         if (!st.latitude || !st.longitude) return;
 
-        const isCritical = st.water_level_msl && st.critical_level_msl && st.water_level_msl >= st.critical_level_msl;
-        const isWarning = st.water_level_msl && st.warning_level_msl && st.water_level_msl >= st.warning_level_msl;
+        // BLUE is standard for water level station (Section 19)
+        const bgColor = '#0284C7';
+        const icon = MARKER_ICONS.waterDroplet;
 
-        const bgColor = isCritical ? '#DC2626' : isWarning ? '#EA580C' : '#0284C7';
-        const icon = isCritical ? MARKER_ICONS.warningTriangle : isWarning ? MARKER_ICONS.exclamation : MARKER_ICONS.waterDrop;
-
-        const el = createCircularMarkerEl(bgColor, icon);
+        const el = createCircularMarkerEl(bgColor, icon, undefined, `สถานีระดับน้ำ: ${st.name_th || st.station_id}`);
 
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([st.longitude, st.latitude])
@@ -661,18 +709,23 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           new maplibregl.Popup({ offset: 16 })
             .setLngLat([st.longitude, st.latitude])
             .setHTML(`
-              <div class="p-3.5 font-sans space-y-2 min-w-[240px]">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${bgColor}"></span>
-                  <span class="text-sm font-bold text-slate-900">${st.name_th || st.station_id}</span>
+              <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wider text-sky-700">สถานีตรวจวัดระดับน้ำ</span>
+                  <span class="text-2xs px-2 py-0.5 rounded-full font-bold bg-sky-100 text-sky-800">โทรมาตร</span>
                 </div>
-                <div class="text-sm text-slate-700">
-                  ระดับน้ำปัจจุบัน: <span class="font-bold text-slate-900">${st.water_level_msl ? `${st.water_level_msl.toFixed(2)} ม.รทก.` : 'กำลังตรวจวัด'}</span>
+                <div class="text-sm font-bold text-slate-900">${st.name_th || st.station_id}</div>
+                <div class="text-xs text-slate-700 space-y-1">
+                  <div>ระดับน้ำปัจจุบัน: <strong class="text-slate-900">${st.water_level_msl != null ? `${st.water_level_msl.toFixed(2)} ม.รทก.` : 'กำลังตรวจวัด'}</strong></div>
+                  ${st.warning_level_msl ? `<div class="text-slate-600">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
+                  <div class="text-slate-500">วัดเมื่อ: <span class="text-slate-700 font-medium">${formatThaiTime(st.provenance?.source_updated_at || st.last_updated)}</span></div>
+                  <div class="text-slate-500">FloodTrace ดึงข้อมูล: <span class="text-slate-700 font-medium">${formatThaiTime(st.provenance?.floodtrace_updated_at || st.updated_at)}</span></div>
+                  <div>สถานะ: <span class="font-medium text-emerald-700">${st.status === 'ACTIVE' ? 'กำลังตรวจวัด (Fresh)' : st.status || 'ปกติ'}</span></div>
+                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">ThaiWater / ${st.provenance?.source_agency || 'กรมชลประทาน'}</span></div>
                 </div>
-                ${st.warning_level_msl ? `<div class="text-xs text-slate-600">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
-                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                  <span>${st.district ? `อ.${st.district}` : 'ปราจีนบุรี'}</span>
-                  <span class="text-emerald-700 font-semibold">โทรมาตรทางการ</span>
+                <div class="text-2xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                  <span>${st.district ? `อ.${st.district}` : 'จ.ปราจีนบุรี'}</span>
+                  <span class="text-sky-700 font-semibold">ThaiWater API</span>
                 </div>
               </div>
             `)
@@ -683,17 +736,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       });
     }
 
-    // 2. Representative Rainfall Stations (Purple Flask or Warning)
+    // 2. Rainfall Monitoring Stations (ORANGE: #EA580C, Icon: rain / cloud)
     if (visibleLayers.rainfallStations && rainfallStations && rainfallStations.length > 0) {
-      const sampledRain = rainfallStations.filter((_, i) => i % 6 === 0);
+      // Sample evenly or display based on zoom
+      const sampledRain = rainfallStations.filter((_, i) => i % 5 === 0);
       sampledRain.forEach(rs => {
         if (!rs.latitude || !rs.longitude) return;
 
+        // ORANGE is standard for rainfall station (Section 19)
+        const bgColor = '#EA580C';
+        const icon = MARKER_ICONS.rainCloud;
         const rain24 = rs.rain_24h_mm || 0;
-        const bgColor = rain24 >= 50 ? '#EA580C' : '#7C3AED';
-        const icon = rain24 >= 50 ? MARKER_ICONS.exclamation : MARKER_ICONS.beaker;
 
-        const el = createCircularMarkerEl(bgColor, icon);
+        const el = createCircularMarkerEl(bgColor, icon, undefined, `สถานีวัดน้ำฝน: ${rs.name_th || rs.station_id}`);
 
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([rs.longitude, rs.latitude])
@@ -706,17 +761,21 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           new maplibregl.Popup({ offset: 16 })
             .setLngLat([rs.longitude, rs.latitude])
             .setHTML(`
-              <div class="p-3.5 font-sans space-y-2 min-w-[240px]">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${bgColor}"></span>
-                  <span class="text-sm font-bold text-slate-900">${rs.name_th || rs.station_id}</span>
+              <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wider text-orange-700">สถานีวัดน้ำฝน</span>
+                  <span class="text-2xs px-2 py-0.5 rounded-full font-bold bg-orange-100 text-orange-800">อัตโนมัติ</span>
                 </div>
-                <div class="text-sm text-slate-700">
-                  ฝนสะสม 24 ชม.: <span class="font-bold text-slate-900">${rain24.toFixed(1)} มม.</span>
+                <div class="text-sm font-bold text-slate-900">${rs.name_th || rs.station_id}</div>
+                <div class="text-xs text-slate-700 space-y-1">
+                  <div>ฝนสะสม 24 ชั่วโมง: <strong class="text-slate-900">${rain24.toFixed(1)} มม.</strong></div>
+                  ${rs.rain_1h_mm != null ? `<div class="text-slate-600">ฝน 1 ชม. ล่าสุด: ${rs.rain_1h_mm.toFixed(1)} มม.</div>` : ''}
+                  <div class="text-slate-500">วัดเมื่อ: <span class="text-slate-700 font-medium">${formatThaiTime(rs.provenance?.source_updated_at || rs.last_updated)}</span></div>
+                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">ThaiWater / ${rs.provenance?.source_agency || rs.agency || 'สสน.'}</span></div>
                 </div>
-                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                  <span>${rs.district ? `อ.${rs.district}` : 'ปราจีนบุรี'}</span>
-                  <span class="text-indigo-700 font-semibold">สถานีวัดน้ำฝน</span>
+                <div class="text-2xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                  <span>${rs.district ? `อ.${rs.district}` : 'จ.ปราจีนบุรี'}</span>
+                  <span class="text-orange-700 font-semibold">ThaiWater API</span>
                 </div>
               </div>
             `)
@@ -727,7 +786,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       });
     }
 
-    // 3. Citizen Community Observations (Blue Home or Green Verified Home)
+    // 3. Citizen Community Observations (GREEN / TEAL: #0D9488 or #059669, Icon: community/report)
     if (visibleLayers.observations && observations && observations.length > 0) {
       const clusterMap: Record<string, { lat: number; lng: number; count: number; verified: boolean; lastObs: any }> = {};
 
@@ -748,10 +807,16 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       });
 
       Object.values(clusterMap).forEach(cluster => {
-        const bgColor = cluster.verified ? '#059669' : '#1D4ED8';
-        const icon = cluster.verified ? MARKER_ICONS.verifiedHome : MARKER_ICONS.home;
+        // GREEN / TEAL is standard for citizen report (Section 19)
+        const bgColor = cluster.verified ? '#059669' : '#0D9488';
+        const icon = MARKER_ICONS.communityReport;
 
-        const el = createCircularMarkerEl(bgColor, icon, cluster.count > 1 ? cluster.count : undefined);
+        const el = createCircularMarkerEl(
+          bgColor, 
+          icon, 
+          cluster.count > 1 ? cluster.count : undefined,
+          `รายงานชุมชน: ${cluster.lastObs.category || 'ข้อสังเกต'}`
+        );
 
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([cluster.lng, cluster.lat])
@@ -766,18 +831,24 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
-                  <span class="text-sm font-bold text-slate-900">${cluster.lastObs.category || 'ข้อสังเกตจากประชาชน'}</span>
-                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${cluster.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
-                    ${cluster.verified ? '✓ ตรวจสอบแล้ว' : 'รายงานชุมชน'}
+                  <span class="text-xs font-bold uppercase tracking-wider text-teal-700">รายงานจากประชาชน</span>
+                  <span class="text-2xs font-semibold px-2.5 py-0.5 rounded-full ${cluster.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'}">
+                    ${cluster.verified ? '✓ ยืนยันแล้ว' : 'ข้อสังเกตชุมชน'}
                   </span>
                 </div>
-                <div class="text-sm text-slate-700">
-                  พบรายงานในบริเวณนี้: <strong class="text-slate-900">${cluster.count} รายการ</strong>
+                <div class="text-sm font-bold text-slate-900">${cluster.lastObs.category_th || cluster.lastObs.category || 'รายงานข้อสังเกต'}</div>
+                <div class="text-xs text-slate-700 space-y-1">
+                  <div>ประเภท: <span class="font-medium">${cluster.lastObs.category || 'ข้อสังเกตสภาพน้ำ'}</span></div>
+                  <div>เวลาที่แจ้ง: <span class="text-slate-600">${formatThaiTime(cluster.lastObs.observed_at || cluster.lastObs.created_at)}</span></div>
+                  <div>สถานะ: <span class="font-medium text-slate-800">${cluster.verified ? 'VERIFIED_OBSERVATION' : cluster.lastObs.status || 'CITIZEN_REPORTED'}</span></div>
+                  ${cluster.count > 1 ? `<div class="text-teal-700 font-semibold pt-0.5">พบรายงานในบริเวณนี้: ${cluster.count} รายการ</div>` : ''}
                 </div>
-                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">${cluster.lastObs.description || 'มีข้อสังเกตทางสิ่งแวดล้อมในพื้นที่'}</p>
-                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                  <span>${cluster.lastObs.district ? `อ.${cluster.lastObs.district}` : 'ปราจีนบุรี'}</span>
-                  <span class="text-slate-600 font-medium">ความแม่นยำระดับตำบล</span>
+                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  ${cluster.lastObs.description || 'มีข้อสังเกตสภาพแวดล้อมในพื้นที่'}
+                </p>
+                <div class="text-2xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                  <span>${cluster.lastObs.district ? `อ.${cluster.lastObs.district}` : 'จ.ปราจีนบุรี'}</span>
+                  <span class="text-slate-500 font-medium">ความแม่นยำระดับตำบล (ปกป้องข้อมูลส่วนบุคคล)</span>
                 </div>
               </div>
             `)

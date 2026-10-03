@@ -1270,57 +1270,189 @@ def get_public_official_updates():
 @public_router.get("/provenance", response_model=Dict[str, Any])
 def get_public_provenance_catalog():
     """
-    Returns public data catalog describing all participating agencies,
-    update frequencies, and data use limitations.
+    Returns public data catalog organized according to Sections 31, 32, 33, 35:
+    - ACTIVE / AUTOMATED (ThaiWater 15-min refresh)
+    - REFERENCE (DWR, DIW May 2020 snapshot, DOPA, MOPH)
+    - BLOCKED / PENDING ACCESS (GISTDA, TMD, PCD)
     """
-    catalog = [
+    active_sources = [
         {
-            "provider": "GISTDA",
-            "agency_full": "สำนักงานพัฒนาเทคโนโลยีอวกาศและภูมิสารสนเทศ (องค์การมหาชน)",
-            "purpose": "พื้นที่น้ำท่วมขังจากดาวเทียมเรดาร์ (Sentinel-1 / THEOS)",
-            "classification": "OFFICIAL",
-            "classification_th": "ข้อมูลจากหน่วยงาน",
-            "update_frequency": "รายสัปดาห์ / หลังดาวเทียมโคจรผ่าน",
-            "terms": "GISTDA Open Data Policy",
-            "source_link": "https://disaster.gistda.or.th/"
+            "source_id": "thaiwater_rid_runoff",
+            "agency": "สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) และ กรมชลประทาน",
+            "dataset": "ระดับน้ำโทรมาตรลำน้ำปราจีนบุรี (26 สถานี)",
+            "status": "ACTIVE",
+            "status_th": "กำลังอัปเดตอัตโนมัติ",
+            "update_mode": "AUTOMATED_REFRESH",
+            "refresh_interval": "15 นาที",
+            "ingestion_mode": "REAL_EXTERNAL_API",
+            "license": "ThaiWater API Standard Terms",
+            "source_link": "https://standard.thaiwater.net/",
+            "provenance": "ดึงข้อมูลอัตโนมัติผ่าน REST API สสน. ทุก 15 นาที พร้อมตรวจสอบเวลาและแปลงเขตเวลา Asia/Bangkok"
         },
+        {
+            "source_id": "thaiwater_rainfall",
+            "agency": "สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) และ กรมอุตุนิยมวิทยา",
+            "dataset": "ปริมาณน้ำฝนสะสมอัตโนมัติ (77 สถานี)",
+            "status": "ACTIVE",
+            "status_th": "กำลังอัปเดตอัตโนมัติ",
+            "update_mode": "AUTOMATED_REFRESH",
+            "refresh_interval": "15 นาที",
+            "ingestion_mode": "REAL_EXTERNAL_API",
+            "license": "ThaiWater API Standard Terms",
+            "source_link": "https://standard.thaiwater.net/",
+            "provenance": "ดึงข้อมูลอัตโนมัติผ่าน REST API สสน. ทุก 15 นาที พร้อมตรวจสอบความสอดคล้องสถานี"
+        }
+    ]
+
+    reference_sources = [
+        {
+            "source_id": "dwr_waterways",
+            "agency": "กรมทรัพยากรน้ำ และ สำนักงานทรัพยากรน้ำแห่งชาติ",
+            "dataset": "โครงข่ายทางน้ำธรรมชาติและคลองชลประทานลุ่มน้ำปราจีนบุรี",
+            "status": "REFERENCE",
+            "status_th": "ข้อมูลอ้างอิง",
+            "update_mode": "STATIC_REFERENCE",
+            "ingestion_mode": "LOCAL_IMPORT",
+            "license": "DWR WebGIS Public Terms",
+            "source_link": "https://webgis.dwr.go.th/",
+            "provenance": "โครงข่ายเส้นทางน้ำเวกเตอร์ที่ตรวจสอบการเชื่อมโยงอุทกวิทยา"
+        },
+        {
+            "source_id": "diw_industrial_waste",
+            "agency": "กรมโรงงานอุตสาหกรรม (กรอ.) กระทรวงอุตสาหกรรม",
+            "dataset": "ข้อมูลกิจกรรมอุตสาหกรรมอ้างอิง (พฤษภาคม 2563)",
+            "status": "REFERENCE",
+            "status_th": "ข้อมูลอ้างอิงทางการ — พฤษภาคม 2563",
+            "update_mode": "HISTORICAL_SNAPSHOT",
+            "ingestion_mode": "LOCAL_IMPORT",
+            "license": "DIW Open Data Portal",
+            "source_link": "https://www.diw.go.th/",
+            "provenance": "ชุดข้อมูลประวัติทางการรอบสำรวจ พฤษภาคม 2563 จัดเก็บในชั้นวิเคราะห์ภายใน",
+            "disclaimer": "ข้อมูลกิจกรรมอุตสาหกรรมอ้างอิงรอบปี 2563 การจำแนกประเภทโรงงานเป็นกิจกรรมทางอุตสาหกรรม ไม่ใช่ระดับความเป็นพิษ และระยะใกล้เคียงไม่ได้หมายถึงการเป็นผู้ก่อเหตุหรือการปนเปื้อน"
+        },
+        {
+            "source_id": "dopa_boundaries",
+            "agency": "กรมการปกครอง กระทรวงมหาดไทย",
+            "dataset": "แนวเขตการปกครองระดับตำบลและอำเภอ จังหวัดปราจีนบุรี",
+            "status": "REFERENCE",
+            "status_th": "ข้อมูลอ้างอิง",
+            "update_mode": "STATIC_REFERENCE",
+            "ingestion_mode": "LOCAL_IMPORT",
+            "license": "DOPA GIS Data",
+            "source_link": "https://www.dopa.go.th/",
+            "provenance": "รูปแปลงขอบเขต 7 อำเภอ และ 65 ตำบล ในจังหวัดปราจีนบุรี"
+        },
+        {
+            "source_id": "moph_hospitals",
+            "agency": "กระทรวงสาธารณสุข",
+            "dataset": "พิกัดสถานพยาบาลและแหล่งรับน้ำเปราะบาง",
+            "status": "REFERENCE",
+            "status_th": "ข้อมูลอ้างอิง",
+            "update_mode": "STATIC_REFERENCE",
+            "ingestion_mode": "LOCAL_IMPORT",
+            "license": "MOPH Open Government Data",
+            "source_link": "https://opendata.moph.go.th/",
+            "provenance": "ข้อมูลพิกัดโรงพยาบาลและสุขศาลาสำหรับการประเมินความเปราะบางของพื้นที่"
+        }
+    ]
+
+    blocked_sources = [
+        {
+            "source_id": "gistda_satellite",
+            "agency": "สำนักงานพัฒนาเทคโนโลยีอวกาศและภูมิสารสนเทศ (องค์การมหาชน)",
+            "dataset": "ภาพถ่ายดาวเทียมตรวจจับพื้นที่น้ำท่วมขัง (Sentinel-1 / THEOS)",
+            "status": "BLOCKED",
+            "status_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_mode": "BLOCKED",
+            "ingestion_mode": "BLOCKED",
+            "license": "GISTDA Open Data Policy",
+            "source_link": "https://disaster.gistda.or.th/",
+            "reason": "ยังรอการอนุญาตการเข้าถึงโทเคน API ระดับการผลิต"
+        },
+        {
+            "source_id": "tmd_radar",
+            "agency": "กรมอุตุนิยมวิทยา กระทรวงดิจิทัลเพื่อเศรษฐกิจและสังคม",
+            "dataset": "เรดาร์ตรวจวัดกลุ่มฝนและแบบจำลองสภาพอากาศความละเอียดสูง",
+            "status": "BLOCKED",
+            "status_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_mode": "BLOCKED",
+            "ingestion_mode": "BLOCKED",
+            "license": "TMD Open Data Portal",
+            "source_link": "https://www.tmd.go.th/",
+            "reason": "ยังรอการเชื่อมต่อ API อัตโนมัติ"
+        },
+        {
+            "source_id": "pcd_water_quality",
+            "agency": "กรมควบคุมมลพิษ และ สำนักงานสิ่งแวดล้อมและควบคุมมลพิษที่ 7 (สคพ.7)",
+            "dataset": "ผลตรวจวัดคุณภาพน้ำผิวดินและการตรวจวิเคราะห์ทางห้องปฏิบัติการ",
+            "status": "BLOCKED",
+            "status_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_mode": "BLOCKED",
+            "ingestion_mode": "BLOCKED",
+            "license": "PCD IWIS Public Information",
+            "source_link": "https://iwis.pcd.go.th/",
+            "reason": "เป็นรายงานรายเดือน/รายไตรมาสแบบเอกสารทางการ ยังไม่มี API อัตโนมัติที่เชื่อมต่อได้"
+        }
+    ]
+
+    catalog = [
         {
             "provider": "HII / ThaiWater / RID",
             "agency_full": "สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) และ กรมชลประทาน",
             "purpose": "ระดับน้ำโทรมาตรรายชั่วโมง, ปริมาณน้ำฝน, และปริมาตรน้ำในเขื่อน",
             "classification": "OFFICIAL",
-            "classification_th": "ข้อมูลจากหน่วยงาน",
-            "update_frequency": "รายชั่วโมง (High-Frequency Telemetry)",
+            "classification_th": "ข้อมูลจากหน่วยงาน (กำลังอัปเดตอัตโนมัติ)",
+            "update_frequency": "อัปเดตอัตโนมัติทุก 15 นาที (Automated Refresh)",
             "terms": "ThaiWater API Standard Terms",
             "source_link": "https://standard.thaiwater.net/"
-        },
-        {
-            "provider": "TMD",
-            "agency_full": "กรมอุตุนิยมวิทยา กระทรวงดิจิทัลเพื่อเศรษฐกิจและสังคม",
-            "purpose": "พยากรณ์ปริมาณน้ำฝนและสภาพอากาศล่วงหน้า 24-72 ชม.",
-            "classification": "OFFICIAL",
-            "classification_th": "ข้อมูลจากหน่วยงาน",
-            "update_frequency": "รายวัน (Daily Forecast)",
-            "terms": "TMD Open Data Portal",
-            "source_link": "https://www.tmd.go.th/"
         },
         {
             "provider": "DWR / ONWR",
             "agency_full": "กรมทรัพยากรน้ำ และ สำนักงานทรัพยากรน้ำแห่งชาติ",
             "purpose": "โครงข่ายทางน้ำธรรมชาติและคลองชลประทานลุ่มน้ำปราจีนบุรี",
             "classification": "OFFICIAL",
-            "classification_th": "ข้อมูลจากหน่วยงาน",
+            "classification_th": "ข้อมูลอ้างอิง",
             "update_frequency": "อ้างอิงเชิงพื้นที่ (Static Reference)",
             "terms": "DWR WebGIS Public Terms",
             "source_link": "https://webgis.dwr.go.th/"
+        },
+        {
+            "provider": "DIW / กรอ.",
+            "agency_full": "กรมโรงงานอุตสาหกรรม กระทรวงอุตสาหกรรม",
+            "purpose": "ข้อมูลกิจกรรมอุตสาหกรรมอ้างอิง (พฤษภาคม 2563) ในชั้นวิเคราะห์ภายใน",
+            "classification": "OFFICIAL",
+            "classification_th": "ข้อมูลอ้างอิงทางการ — พฤษภาคม 2563",
+            "update_frequency": "ข้อมูลประวัติทางการ (Historical Snapshot)",
+            "terms": "DIW Open Data Portal",
+            "source_link": "https://www.diw.go.th/"
+        },
+        {
+            "provider": "GISTDA",
+            "agency_full": "สำนักงานพัฒนาเทคโนโลยีอวกาศและภูมิสารสนเทศ (องค์การมหาชน)",
+            "purpose": "พื้นที่น้ำท่วมขังจากดาวเทียมเรดาร์ (Sentinel-1 / THEOS)",
+            "classification": "OFFICIAL",
+            "classification_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_frequency": "รอการเชื่อมต่อ API อัตโนมัติ",
+            "terms": "GISTDA Open Data Policy",
+            "source_link": "https://disaster.gistda.or.th/"
+        },
+        {
+            "provider": "TMD",
+            "agency_full": "กรมอุตุนิยมวิทยา กระทรวงดิจิทัลเพื่อเศรษฐกิจและสังคม",
+            "purpose": "พยากรณ์ปริมาณน้ำฝนและสภาพอากาศล่วงหน้า",
+            "classification": "OFFICIAL",
+            "classification_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_frequency": "รอการเชื่อมต่อ API อัตโนมัติ",
+            "terms": "TMD Open Data Portal",
+            "source_link": "https://www.tmd.go.th/"
         },
         {
             "provider": "PCD / สคพ.7",
             "agency_full": "กรมควบคุมมลพิษ และ สำนักงานสิ่งแวดล้อมและควบคุมมลพิษที่ 7",
             "purpose": "ผลการตรวจวัดคุณภาพน้ำผิวดินและการตรวจสอบทางห้องปฏิบัติการ",
             "classification": "OFFICIAL",
-            "classification_th": "ข้อมูลจากหน่วยงาน",
-            "update_frequency": "รายเดือน / รายไตรมาส",
+            "classification_th": "ยังรอการอนุญาตให้เข้าถึง",
+            "update_frequency": "รายเดือน / รายไตรมาส (รอระบบ API)",
             "terms": "PCD IWIS Public Information",
             "source_link": "https://iwis.pcd.go.th/"
         },
@@ -1330,7 +1462,7 @@ def get_public_provenance_catalog():
             "purpose": "ข้อสังเกตสภาพน้ำ กลิ่น คราบน้ำ และสัตว์น้ำผิดปกติ",
             "classification": "COMMUNITY",
             "classification_th": "รายงานจากประชาชน",
-            "update_frequency": "ตามเวลาจริง (Real-time Crowd Observations)",
+            "update_frequency": "รายงานต่อเนื่อง (Crowd Observations)",
             "terms": "FloodTrace Content Policy (ลบข้อมูลส่วนบุคคลก่อนเผยแพร่)",
             "source_link": "#"
         }
@@ -1338,13 +1470,17 @@ def get_public_provenance_catalog():
 
     return {
         "title": "คลังข้อมูลและสัญญาอนุญาต (Data Catalog & Licensing)",
+        "active_sources": active_sources,
+        "reference_sources": reference_sources,
+        "blocked_sources": blocked_sources,
         "datasets": catalog,
         "methodology_summary": "น้ำท่วมขัง + อุทกวิทยา + การเชื่อมต่อทางน้ำ + ภูมิประเทศ + รายงานชุมชน + แหล่งเปราะบาง -> ลำดับความสำคัญในการตรวจสอบด้านสิ่งแวดล้อม",
         "limitations": [
             "ระบบไม่ได้ตรวจวัดสารเคมีโดยตรง การตรวจหาสารปนเปื้อนต้องกระทำโดยห้องปฏิบัติการที่ได้รับการรับรองเท่านั้น",
             "ผลจากแบบจำลองไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การชี้ตัวผู้กระทำผิด",
             "การไม่มีพื้นที่เฝ้าระวังที่กำลังใช้งาน ไม่ได้เป็นการรับประกันความปลอดภัยอย่างสมบูรณ์แบบ",
-            "รายงานจากประชาชนเป็นเพียงข้อสังเกตเบื้องต้น ไม่ถือเป็นข้อเท็จจริงยืนยันทางกฎหมาย"
+            "รายงานจากประชาชนเป็นเพียงข้อสังเกตเบื้องต้น ไม่ถือเป็นข้อเท็จจริงยืนยันทางกฎหมาย",
+            "ข้อมูลกิจกรรมอุตสาหกรรมเป็นข้อมูลอ้างอิงทางการรอบพฤษภาคม 2563 ระยะใกล้เคียงไม่ได้หมายถึงการปนเปื้อนหรือความผิด"
         ],
         "privacy_and_safety": [
             "พิกัดบ้านและข้อมูลติดต่อของผู้รายงานจะไม่ถูกเผยแพร่สู่สาธารณะโดยเด็ดขาด",

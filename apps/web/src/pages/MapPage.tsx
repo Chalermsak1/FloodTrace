@@ -526,40 +526,75 @@ export const MapPage: React.FC = () => {
           </div>
         )}
 
-        {/* 6. Compact Floating Legend (Bottom-Left, Section 14, 50.9, 50.10) */}
-        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3.5 max-w-[340px]">
-          <div className="text-xs sm:text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
-            <span>ระดับความสำคัญในการเฝ้าระวัง</span>
-            <span className="text-2xs sm:text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">จ.ปราจีนบุรี</span>
+        {/* 6. Split Map Legends (Section 23: Mandatory Split into Legend A and Legend B) */}
+        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3.5 max-w-[360px] space-y-2.5">
+          {/* Legend Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์ (Map Legends)</span>
+            <span className="text-2xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">จ.ปราจีนบุรี</span>
           </div>
 
-          {/* Visual Color Chips */}
-          <div className="grid grid-cols-5 gap-1.5 text-center mb-2.5">
-            <div className="flex flex-col items-center">
-              <span className="w-4 h-4 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
-              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">สูงมาก</span>
+          {/* LEGEND A: ระดับความสำคัญในการเฝ้าระวัง */}
+          <div className="space-y-1">
+            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
+              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
+            </span>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              <div className="flex flex-col items-center">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูงมาก</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูง</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ปานกลาง</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ต่ำ</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
+              </div>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="w-4 h-4 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
-              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">สูง</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="w-4 h-4 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
-              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ปานกลาง</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="w-4 h-4 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
-              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ต่ำ</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="w-4 h-4 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
-              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ไม่มีข้อมูล</span>
+          </div>
+
+          {/* LEGEND B: ข้อมูลบนแผนที่ */}
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
+              ข้อมูลบนแผนที่ (Map Markers)
+            </span>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#0284C7] shrink-0 border border-white shadow-xs"></span>
+                <span className="text-2xs">สถานีระดับน้ำ</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#EA580C] shrink-0 border border-white shadow-xs"></span>
+                <span className="text-2xs">สถานีวัดน้ำฝน</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#0D9488] shrink-0 border border-white shadow-xs"></span>
+                <span className="text-2xs">รายงานจากประชาชน</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#9333EA] shrink-0 border border-white shadow-xs"></span>
+                <span className="text-2xs">ข้อมูลสิ่งแวดล้อม</span>
+              </div>
+              <div className="flex items-center gap-1.5 col-span-2">
+                <span className="w-3 h-3 rounded-full bg-[#DC2626] shrink-0 border border-white shadow-xs"></span>
+                <span className="text-2xs font-medium text-rose-700">เหตุการณ์ที่อยู่ระหว่างการติดตาม (Alert)</span>
+              </div>
             </div>
           </div>
 
           {/* Clarification Disclaimer (Section 14 & 23) */}
-          <p className="text-2xs sm:text-xs text-slate-500 leading-normal border-t border-slate-100 pt-2">
-            พื้นที่สีแสดงระดับ Monitoring / Verification Priority จากข้อมูลที่ระบบมีในขณะนั้น ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
+          <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
+            พื้นที่สีแสดงระดับ Monitoring / Verification Priority ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
           </p>
         </div>
 
