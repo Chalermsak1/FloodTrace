@@ -84,3 +84,54 @@ def parse_thaiwater_timestamp(
         "age_minutes": round(age_seconds / 60.0, 2),
         "is_future": delta_seconds > CLOCK_SKEW_TOLERANCE_SECONDS
     }
+
+
+def parse_thai_datetime(raw_val: str) -> datetime:
+    """
+    Parses a naive Thai datetime string as Asia/Bangkok (+07:00).
+    """
+    res = parse_thaiwater_timestamp(raw_val, allow_future=True)
+    return res["dt_bkk"]
+
+
+def to_bangkok_iso(dt: datetime) -> str:
+    """
+    Converts any datetime to Asia/Bangkok with explicit +07:00 ISO-8601 offset.
+    """
+    if dt.tzinfo is None:
+        dt_aware = dt.replace(tzinfo=BANGKOK_TZ)
+    else:
+        dt_aware = dt.astimezone(BANGKOK_TZ)
+    return dt_aware.isoformat()
+
+
+def to_utc_datetime(dt: datetime) -> datetime:
+    """
+    Converts any datetime to UTC timezone.
+    """
+    if dt.tzinfo is None:
+        dt_aware = dt.replace(tzinfo=BANGKOK_TZ)
+    else:
+        dt_aware = dt
+    return dt_aware.astimezone(timezone.utc)
+
+
+THAI_MONTHS_SHORT = [
+    "", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+]
+
+def format_thai_display(dt: datetime) -> str:
+    """
+    Formats a datetime into Thai Buddhist Era display (e.g. 3 ต.ค. 2569 18:30 น.)
+    """
+    if dt.tzinfo is None:
+        dt_bkk = dt.replace(tzinfo=BANGKOK_TZ)
+    else:
+        dt_bkk = dt.astimezone(BANGKOK_TZ)
+    
+    buddhist_year = dt_bkk.year + 543
+    month_name = THAI_MONTHS_SHORT[dt_bkk.month]
+    time_str = dt_bkk.strftime("%H:%M")
+    return f"{dt_bkk.day} {month_name} {buddhist_year} {time_str} น."
+

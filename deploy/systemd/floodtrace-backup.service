@@ -1,0 +1,14 @@
+[Unit]
+Description=FloodTrace Daily Automated Database Backup
+After=network.target floodtrace.service
+Wants=floodtrace.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/floodtrace
+ExecStart=/bin/bash /opt/floodtrace/scripts/backup_production.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

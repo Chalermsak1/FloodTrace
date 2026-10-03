@@ -1,0 +1,112 @@
+services:
+  # Automated HTTPS Reverse Proxy (Automatic Let's Encrypt SSL/TLS)
+  caddy:
+    image: caddy:2-alpine
+    container_name: floodtrace_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN must be specified for SSL deployment}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - floodtrace_caddy_data:/data
+      - floodtrace_caddy_config:/config
+    depends_on:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - floodtrace_net
+
+  # Spatial Database: PostgreSQL 16 with PostGIS 3.4
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: floodtrace_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-floodtrace_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be explicitly provided in production}
+      POSTGRES_DB: ${POSTGRES_DB:-floodtrace_db}
+    volumes:
+      - floodtrace_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-floodtrace_user} -d ${POSTGRES_DB:-floodtrace_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - floodtrace_net
+
+  # FloodTrace FastAPI Backend
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    container_name: floodtrace_api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-floodtrace_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-floodtrace_db}
+      ENVIRONMENT: production
+      DATA_ENV: PRODUCTION
+      REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION: "false"
+      ALLOW_OFFICIAL_PUBLIC_PRODUCTION: "true"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be explicitly set in production}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY must be explicitly set in production}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://${DOMAIN:-localhost}}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-https://${DOMAIN:-localhost}}
+      ENABLE_SCHEDULER: ${ENABLE_SCHEDULER:-true}
+      THAIWATER_API_KEY: ${THAIWATER_API_KEY:-}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
+      SUBMIT_RATE_LIMIT_PER_MINUTE: ${SUBMIT_RATE_LIMIT_PER_MINUTE:-60}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-15}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-25}
+      DB_POOL_TIMEOUT: ${DB_POOL_TIMEOUT:-30}
+      DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-1800}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - floodtrace_net
+
+  # FloodTrace Web Frontend (Internal service behind Caddy)
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    container_name: floodtrace_web
+    restart: always
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - floodtrace_net
+
+volumes:
+  floodtrace_pgdata:
+    name: floodtrace_pgdata
+  floodtrace_caddy_data:
+    name: floodtrace_caddy_data
+  floodtrace_caddy_config:
+    name: floodtrace_caddy_config
+
+networks:
+  floodtrace_net:
+    name: floodtrace_net
+    driver: bridge

@@ -1,0 +1,12 @@
+[Unit]
+Description=Trigger FloodTrace Daily Automated Backup
+Requires=floodtrace-backup.service
+
+[Timer]
+# Run daily at 02:30 AM server time
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

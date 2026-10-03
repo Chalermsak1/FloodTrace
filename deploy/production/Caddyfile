@@ -1,0 +1,26 @@
+{$DOMAIN} {
+    encode gzip zstd
+
+    # Strict Production Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+        -Server
+    }
+
+    # Reverse proxy to FloodTrace Nginx Web Frontend (handles SPA and internal API routing)
+    reverse_proxy web:80 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Circuit-breaking and upstream failure handling
+        health_uri /
+        health_interval 15s
+        health_timeout 3s
+    }
+}

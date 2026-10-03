@@ -55,7 +55,10 @@ class Settings(BaseSettings):
     LEGAL_CONTACT: str = os.getenv("LEGAL_CONTACT", "NOT DESIGNATED")
     
     # Security, Auth & Upload Limits
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
     ADMIN_API_KEY: str = os.getenv("ADMIN_API_KEY", "dev-admin-secret-key-change-in-prod")
+    PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "")
+    CLOUDFLARE_TUNNEL_TOKEN: str | None = os.getenv("CLOUDFLARE_TUNNEL_TOKEN", None)
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     SUBMIT_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("SUBMIT_RATE_LIMIT_PER_MINUTE", "60"))
     MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(5 * 1024 * 1024))) # 5 MB max
@@ -74,6 +77,67 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT.lower() == "production":
             return ["https://localhost", "http://localhost"]
         return ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "*"]
+
+    def validate_production_settings(self, raise_on_error: bool = False) -> list[str]:
+        """
+        Master Prompt Section 4: Validates production settings and refuses startup with
+        placeholder, weak, or insecure configurations when ENVIRONMENT=production.
+        """
+        errors: list[str] = []
+        is_prod = self.ENVIRONMENT.lower() == "production"
+
+        if not is_prod:
+            return errors
+
+        # 1. Admin API Key Validation
+        insecure_admin_keys = {
+            "dev-admin-secret-key-change-in-prod",
+            "floodtrace_admin_production_key_change_me",
+            "admin", "password", "secret", "123456", "changeme"
+        }
+        if not self.ADMIN_API_KEY or self.ADMIN_API_KEY in insecure_admin_keys:
+            errors.append("ADMIN_API_KEY uses insecure default development value.")
+        elif "REPLACE_WITH" in self.ADMIN_API_KEY or "change-me" in self.ADMIN_API_KEY.lower():
+            errors.append("ADMIN_API_KEY contains placeholder pattern.")
+        elif len(self.ADMIN_API_KEY) < 24:
+            errors.append("ADMIN_API_KEY must be at least 24 characters in production.")
+
+        # 2. Secret Key Validation
+        insecure_secret_keys = {
+            "dev-secret-key-change-in-production",
+            "secret", "supersecret", "jwt-secret", "default_secret"
+        }
+        if not self.SECRET_KEY or self.SECRET_KEY in insecure_secret_keys:
+            errors.append("SECRET_KEY uses insecure default development value.")
+        elif "REPLACE_WITH" in self.SECRET_KEY or "change-me" in self.SECRET_KEY.lower():
+            errors.append("SECRET_KEY contains placeholder pattern.")
+        elif len(self.SECRET_KEY) < 24:
+            errors.append("SECRET_KEY must be at least 24 characters in production.")
+
+        # 3. Database URL Validation
+        insecure_db_patterns = [
+            "floodtrace_secure_pass",
+            "REPLACE_WITH",
+            "chalermsak:@"
+        ]
+        for pat in insecure_db_patterns:
+            if pat in self.DATABASE_URL:
+                errors.append(f"DATABASE_URL contains insecure default or placeholder credentials ('{pat}').")
+                break
+
+        # 4. Public Base URL Validation
+        if self.PUBLIC_BASE_URL:
+            if "trycloudflare.com" in self.PUBLIC_BASE_URL.lower():
+                errors.append("PUBLIC_BASE_URL is configured with an ephemeral Quick Tunnel ('trycloudflare.com').")
+            elif "localhost" in self.PUBLIC_BASE_URL.lower() or "127.0.0.1" in self.PUBLIC_BASE_URL:
+                errors.append("PUBLIC_BASE_URL cannot point to localhost or loopback in production.")
+
+        if errors and raise_on_error:
+            raise RuntimeError(
+                "UNSAFE PRODUCTION CONFIGURATION REFUSED:\n- " + "\n- ".join(errors)
+            )
+
+        return errors
 
     model_config = {
         "case_sensitive": True,

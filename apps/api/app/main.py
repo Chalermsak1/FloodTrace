@@ -44,6 +44,7 @@ logger = logging.getLogger("floodtrace")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing FloodTrace Prachin Buri engine...")
+    settings.validate_production_settings(raise_on_error=True)
     reconcile_database_schema(engine)
     
     # Database integrity & source gate reconciliation (Master Prompt Section 8)
