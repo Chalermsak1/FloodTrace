@@ -39,11 +39,15 @@ def run_backup_and_restore_drill():
     print("\n[Step 1/5] Inspecting live database baseline...")
     tables = [
         "water_stations",
+        "rainfall_stations",
         "reservoirs",
         "industrial_facilities",
         "citizen_reports",
-        "security_audit_logs",
-        "source_access_audits"
+        "water_level_observations",
+        "rainfall_observations",
+        "citizen_report_audit_logs",
+        "citizen_report_verifications",
+        "security_audit_logs"
     ]
     baseline_counts = {}
     for tbl in tables:

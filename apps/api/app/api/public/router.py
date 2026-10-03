@@ -1539,13 +1539,14 @@ def submit_public_report(
         )
 
     clean_desc = (payload.description or "").strip()[:500]
-    report_id = f"rpt_{uuid.uuid4().hex[:8]}"
+    report_id = f"FT-2026-{uuid.uuid4().hex[:6].upper()}"
     pub_lat, pub_lon = generalize_coordinates(payload.latitude, payload.longitude, decimals=2)
     
     new_report = CitizenReport(
         id=report_id,
         reporter_name="CITIZEN_PUBLIC",
         reporter_role="CITIZEN",
+        category=payload.category,
         exact_latitude=payload.latitude,
         exact_longitude=payload.longitude,
         latitude=pub_lat,
@@ -1560,6 +1561,7 @@ def submit_public_report(
         photo_url=payload.photo_filename,
         verification_status="UNVERIFIED",
         review_status="PENDING_REVIEW",
+        status="NEW",
         provenance={
             "source_agency": "Citizen Public Report",
             "category": "COMMUNITY",
@@ -1575,11 +1577,89 @@ def submit_public_report(
 
     return {
         "success": True,
-        "report_id": f"obs_{new_report.id}",
+        "report_id": new_report.id,
+        "tracking_code": new_report.id,
         "status": "UNVERIFIED",
+        "public_status": "รับเรื่องแล้ว",
         "message": "ส่งรายงานข้อสังเกตเรียบร้อยแล้ว ข้อมูลจะถูกจัดเก็บเป็นข้อสังเกตจากประชาชน (ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน)",
         "classification": "COMMUNITY",
         "badge": "COMMUNITY",
         "request_id": req_id,
         "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+# ============================================================
+# Section 14 & 15: Public Citizen Report Tracking
+# ============================================================
+
+@public_router.get("/reports/track/{report_id}", response_model=Dict[str, Any])
+def track_citizen_report_status(report_id: str, db: Session = Depends(get_db)):
+    """
+    Master Pre-Production Section 14 & 15:
+    Public citizen status tracking endpoint by Report ID (e.g. FT-2026-XXXXXX).
+    Exposes only public-safe status, category, district, and verification level without leaking PII or exact coordinates.
+    """
+    clean_id = report_id.strip()
+    if clean_id.startswith("obs_"):
+        clean_id = clean_id.replace("obs_", "")
+
+    report = db.query(CitizenReport).filter(
+        (CitizenReport.id == clean_id) | (CitizenReport.id == report_id)
+    ).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=404,
+            detail="ไม่พบรหัสรายงานข้อสังเกตที่ระบุในระบบ กรุณาตรวจสอบรหัสอ้างอิงอีกครั้ง"
+        )
+
+    STATUS_MAP = {
+        "NEW": ("รับเรื่องแล้ว", "ระบบได้รับรายงานข้อสังเกตของท่านเรียบร้อยแล้ว รอการคัดกรองเบื้องต้นจากเจ้าหน้าที่"),
+        "TRIAGING": ("กำลังคัดกรองเบื้องต้น", "เจ้าหน้าที่กำลังประเมินและคัดกรองข้อมูลเบื้องต้น"),
+        "ASSIGNED": ("กำลังตรวจสอบ", "มอบหมายเจ้าหน้าที่รับผิดชอบตรวจสอบข้อเท็จจริงแล้ว"),
+        "IN_REVIEW": ("กำลังตรวจสอบ", "เจ้าหน้าที่กำลังตรวจสอบหลักฐานและข้อมูลประกอบ"),
+        "NEED_MORE_INFO": ("ขอข้อมูลเพิ่มเติม", "เจ้าหน้าที่ต้องการข้อมูลหรือภาพถ่ายเพิ่มเติมเพื่อประกอบการพิจารณา"),
+        "UNDER_VERIFICATION": ("อยู่ระหว่างการตรวจสอบภาคสนาม", "อยู่ระหว่างการลงพื้นที่ตรวจสอบข้อเท็จจริงหรือตรวจสอบพยานหลักฐานประจักษ์"),
+        "VERIFIED_OBSERVATION": ("ตรวจสอบข้อสังเกตแล้ว", "เจ้าหน้าที่ตรวจสอบและยืนยันข้อสังเกตทางกายภาพตามที่ได้รับรายงานเรียบร้อยแล้ว"),
+        "ESCALATED": ("ส่งต่อเพื่อดำเนินการ", "ส่งต่อข้อมูลไปยังหน่วยงานที่เกี่ยวข้องเพื่อพิจารณาดำเนินการตามอำนาจหน้าที่"),
+        "OFFICIAL_CONFIRMED": ("ได้รับการยืนยันอย่างเป็นทางการ", "ได้รับการยืนยันจากหน่วยงานภาครัฐหรือผลตรวจทางห้องปฏิบัติการอย่างเป็นทางการ"),
+        "RESOLVED": ("ปิดเรื่อง", "การดำเนินการตรวจสอบเสร็จสิ้นสมบูรณ์"),
+        "OUT_OF_SCOPE": ("อยู่นอกพื้นที่วิเคราะห์", "พื้นที่ที่ระบุอยู่นอกขอบเขตการดำเนินงานของโครงการ"),
+        "INVALID": ("ปิดเรื่อง (ข้อมูลไม่เข้าข่าย)", "ข้อมูลที่รายงานไม่เข้าข่ายหรือไม่มีหลักฐานเพียงพอ"),
+        "DUPLICATE": ("ปิดเรื่อง (รายงานซ้ำซ้อน)", "รายงานนี้เป็นข้อมูลเหตุการณ์ซ้ำซ้อนกับเรื่องที่กำลังดำเนินการอยู่"),
+        "SPAM": ("ระงับการดำเนินการ", "รายงานไม่ตรงตามเงื่อนไขการใช้งาน"),
+        "WITHDRAWN": ("ยกเลิกคำร้อง", "ผู้รายงานขอถอนเรื่อง")
+    }
+
+    st = report.status or "NEW"
+    status_th, desc_th = STATUS_MAP.get(st, ("รับเรื่องแล้ว", "ระบบกำลังดำเนินการ"))
+
+    cat = report.category
+    if (not cat or cat == "GENERAL") and report.contamination_signs:
+        cat = report.contamination_signs[0] if isinstance(report.contamination_signs, list) else str(report.contamination_signs)
+
+    VERIF_MAP = {
+        "UNVERIFIED": "รอการตรวจสอบเบื้องต้น (Unverified)",
+        "PARTIALLY_VERIFIED": "ตรวจสอบข้อมูลประกอบเบื้องต้นแล้ว (Partially Verified)",
+        "VERIFIED_OBSERVATION": "ตรวจสอบข้อสังเกตแล้ว (Verified Observation)",
+        "OFFICIAL_CONFIRMED": "ได้รับการยืนยันอย่างเป็นทางการ (Official Confirmed)"
+    }
+    verif_th = VERIF_MAP.get(report.verification_status, "รอการตรวจสอบ")
+
+    return {
+        "success": True,
+        "report_id": report.id,
+        "category": cat or "ข้อสังเกตสภาพน้ำทั่วไป",
+        "district": report.district,
+        "subdistrict": report.subdistrict,
+        "submitted_at": report.created_at.isoformat() if report.created_at else None,
+        "created_at_human": report.created_at.strftime("%d/%m/%Y %H:%M น.") if report.created_at else "เมื่อเร็วๆ นี้",
+        "public_status": status_th,
+        "public_status_th": status_th,
+        "status_description": desc_th,
+        "public_description_th": desc_th,
+        "verification_level": report.verification_status or "UNVERIFIED",
+        "verification_level_th": verif_th,
+        "last_updated": report.created_at.isoformat() if report.created_at else None
     }

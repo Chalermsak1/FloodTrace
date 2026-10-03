@@ -1563,7 +1563,7 @@ export const AdminReportsPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    ตรวจสอบการทำงานของ Background Scheduler, Circuit Breakers, และการเชื่อมต่อแหล่งข้อมูลภายนอกแบบเรียลไทม์
+                    ตรวจสอบการทำงานของ Background Scheduler, Circuit Breakers, และการเชื่อมต่อแหล่งข้อมูลภายนอกแบบอัตโนมัติ (Automated Refresh)
                   </p>
                 </div>
                 <button
@@ -1821,7 +1821,7 @@ export const AdminReportsPage: React.FC = () => {
 
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-semibold text-slate-800">TMD — เรดาร์ตรวจวัดกลุ่มฝนแบบเรียลไทม์</div>
+                      <div className="font-semibold text-slate-800">TMD — เรดาร์ตรวจวัดกลุ่มฝนความละเอียดสูง</div>
                       <div className="text-slate-500 mt-0.5">กรมอุตุนิยมวิทยา</div>
                     </div>
                     <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">

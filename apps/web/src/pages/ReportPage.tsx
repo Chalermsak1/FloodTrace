@@ -10,7 +10,9 @@ import {
   Clock, 
   ChevronRight,
   Camera,
-  RotateCcw
+  RotateCcw,
+  Search,
+  Copy
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -51,6 +53,36 @@ export const ReportPage: React.FC = () => {
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('DRAFT');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Tracking state
+  const [activeMode, setActiveMode] = useState<'create' | 'track'>('create');
+  const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
+  const [trackingIdInput, setTrackingIdInput] = useState<string>('');
+  const [trackingResult, setTrackingResult] = useState<any | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState<boolean>(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+
+  const handleTrackReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const idToTrack = trackingIdInput.trim();
+    if (!idToTrack) return;
+    setTrackingLoading(true);
+    setTrackingError(null);
+    setTrackingResult(null);
+    try {
+      const resp = await fetch(`/api/public/reports/track/${encodeURIComponent(idToTrack)}`);
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        setTrackingResult(data);
+      } else {
+        setTrackingError(data.detail || 'ไม่พบรายงานที่ระบุ กรุณาตรวจสอบรหัสอีกครั้ง');
+      }
+    } catch (err) {
+      setTrackingError('ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
 
   // Restore draft from localStorage
   useEffect(() => {
@@ -157,7 +189,9 @@ export const ReportPage: React.FC = () => {
       const data = await res.json();
       if (res.ok && data.success) {
         setDraftStatus('SUBMITTED');
+        setSubmittedReportId(data.report_id || null);
         setResultMessage(data.message || 'ส่งรายงานเรียบร้อยแล้ว');
+        localStorage.removeItem('ruwaigon_report_draft');
         localStorage.removeItem('floodtrace_report_draft');
       } else {
         setDraftStatus('FAILED');
@@ -176,6 +210,7 @@ export const ReportPage: React.FC = () => {
     setUploadedFilename(null);
     setDeclaration(false);
     setDraftStatus('DRAFT');
+    setSubmittedReportId(null);
     setResultMessage(null);
     setErrorMessage(null);
   };
@@ -184,70 +219,224 @@ export const ReportPage: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-6">
       
       {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-3 border border-emerald-200">
-          <Eye className="w-4 h-4" />
-          ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-3 border border-emerald-200">
+            <Eye className="w-4 h-4" />
+            ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            รายงานและติดตามข้อสังเกตสภาพน้ำ
+          </h1>
+          <p className="text-sm sm:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
+            ร่วมเฝ้าระวังพื้นที่จังหวัดปราจีนบุรีโดยการรายงานข้อเท็จจริงที่พบเห็น ข้อมูลพิกัดละเอียดจะถูกจัดเก็บอย่างปลอดภัยและปัดเศษเพื่อปกป้องความเป็นส่วนตัว
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-          ส่งรายงานข้อสังเกตสภาพน้ำและสิ่งแวดล้อม
-        </h1>
-        <p className="text-sm sm:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
-          ร่วมเฝ้าระวังพื้นที่ของคุณโดยการรายงานข้อเท็จจริงที่พบเห็น ข้อมูลพิกัดละเอียดจะถูกลบออกเพื่อปกป้องความเป็นส่วนตัวของคุณ
-        </p>
 
-        {/* 3-Step Wizard Indicator */}
-        <div className="grid grid-cols-3 gap-2.5 mt-6 pt-5 border-t border-slate-100 text-sm sm:text-base font-semibold">
-          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-            step === 1 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
-          }`}>
-            1. เลือกสิ่งที่พบ
-          </div>
-          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-            step === 2 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
-          }`}>
-            2. ระบุตำแหน่ง
-          </div>
-          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-            step === 3 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
-          }`}>
-            3. ตรวจสอบและส่ง
-          </div>
+        {/* Mode Switch Tabs */}
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl max-w-md border border-slate-200/80">
+          <button
+            type="button"
+            onClick={() => setActiveMode('create')}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              activeMode === 'create'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Eye className="w-4 h-4" />
+            แจ้งข้อสังเกตใหม่
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMode('track')}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              activeMode === 'track'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Search className="w-4 h-4" />
+            ติดตามสถานะรายงาน
+          </button>
         </div>
+
+        {/* 3-Step Wizard Indicator (Only when creating report and not submitted) */}
+        {activeMode === 'create' && draftStatus !== 'SUBMITTED' && (
+          <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 text-sm sm:text-base font-semibold">
+            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
+              step === 1 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+            }`}>
+              1. เลือกสิ่งที่พบ
+            </div>
+            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
+              step === 2 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+            }`}>
+              2. ระบุตำแหน่ง
+            </div>
+            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
+              step === 3 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+            }`}>
+              3. ตรวจสอบและส่ง
+            </div>
+          </div>
+        )}
       </div>
 
-      {draftStatus === 'SUBMITTED' ? (
-        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-emerald-200 shadow-sm text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+      {/* TRACKING MODE VIEW */}
+      {activeMode === 'track' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">ค้นหาสถานะการตรวจสอบรายงาน</h2>
+            <p className="text-sm text-slate-500 mt-1">กรอกรหัสรายงาน (เช่น FT-2026-XXXXXX หรือ obs_...) เพื่อติดตามความคืบหน้า</p>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-            บันทึกรายงานข้อสังเกตเรียบร้อยแล้ว
-          </h2>
-          <p className="text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
-            {resultMessage}
-          </p>
-          <div className="p-4 bg-slate-50 rounded-2xl max-w-lg mx-auto text-sm text-slate-600 leading-relaxed text-left border border-slate-100">
-            <strong>นโยบายความโปร่งใส:</strong> ข้อมูลของคุณถูกจัดเก็บในหมวด <span className="font-bold text-amber-700">รายงานจากประชาชน (COMMUNITY)</span> ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน และพิกัดจะถูกปัดเศษระดับตำบลเพื่อปกป้องความปลอดภัยของคุณ
-          </div>
-          <div className="pt-4 flex flex-wrap justify-center gap-3">
+
+          <form onSubmit={handleTrackReport} className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={trackingIdInput}
+                onChange={(e) => setTrackingIdInput(e.target.value)}
+                placeholder="ระบุรหัสรายงาน เช่น FT-2026-A1B2C3"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:bg-white focus:border-[#0C57C7] outline-none font-mono"
+              />
+              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+            </div>
             <button
-              type="button"
-              onClick={handleReset}
-              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
+              type="submit"
+              disabled={trackingLoading || !trackingIdInput.trim()}
+              className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] disabled:bg-slate-300 text-white rounded-xl text-base font-semibold min-h-[48px] transition-colors shrink-0"
             >
-              ส่งรายงานเหตุการณ์อื่น
+              {trackingLoading ? 'กำลังตรวจสอบ...' : 'ค้นหาสถานะ'}
             </button>
-            <Link
-              to="/cases"
-              className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2"
-            >
-              ดูเหตุการณ์ที่กำลังติดตาม <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          </form>
+
+          {trackingError && (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-2xl flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>{trackingError}</span>
+            </div>
+          )}
+
+          {trackingResult && (
+            <div className="p-6 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-4">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">รหัสรายงาน</span>
+                  <span className="font-mono text-lg font-bold text-slate-900">{trackingResult.report_id}</span>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-[#0C57C7] font-semibold text-sm">
+                  <span className="w-2 h-2 rounded-full bg-[#0C57C7] animate-pulse"></span>
+                  {trackingResult.public_status_th}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-700">
+                <div>
+                  <span className="text-xs text-slate-500 block">หมวดหมู่ข้อสังเกต</span>
+                  <span className="font-semibold text-slate-900">{trackingResult.category}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 block">พื้นที่สังเกตการณ์</span>
+                  <span className="font-semibold text-slate-900">
+                    ต.{trackingResult.subdistrict || 'ในพื้นที่'} อ.{trackingResult.district || 'กบินทร์บุรี'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 block">เวลาที่แจ้งเรื่อง</span>
+                  <span className="font-semibold text-slate-900">{trackingResult.created_at_human || 'เมื่อเร็วๆ นี้'}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 block">ระดับการตรวจสอบ (Verification Level)</span>
+                  <span className="font-semibold text-slate-900">{trackingResult.verification_level_th || 'รอการตรวจสอบ'}</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-white rounded-xl border border-slate-200/60 text-sm space-y-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">คำอธิบายสถานะ</span>
+                <p className="text-slate-800 leading-relaxed font-medium">
+                  {trackingResult.public_description_th}
+                </p>
+              </div>
+
+              <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>การคุ้มครองความเป็นส่วนตัว: ไม่มีการเปิดเผยข้อมูลส่วนบุคคลหรือพิกัดที่พักอาศัยบนหน้าติดตามสถานะสาธารณะ</span>
+              </div>
+            </div>
+          )}
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+      )}
+
+      {/* CREATE REPORT VIEW */}
+      {activeMode === 'create' && (
+        <>
+          {draftStatus === 'SUBMITTED' ? (
+            <div className="bg-white rounded-3xl p-8 sm:p-10 border border-emerald-200 shadow-sm text-center space-y-5">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                บันทึกรายงานข้อสังเกตเรียบร้อยแล้ว
+              </h2>
+              <p className="text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
+                {resultMessage}
+              </p>
+
+              {submittedReportId && (
+                <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl max-w-lg mx-auto text-center space-y-2">
+                  <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider block">รหัสติดตามรายงานของคุณ</span>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-emerald-300 font-mono text-lg font-bold text-slate-900 shadow-xs">
+                    <span>{submittedReportId}</span>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(submittedReportId)}
+                      title="คัดลอกรหัส"
+                      className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-800"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    กรุณาจดจำหรือคัดลอกรหัสนี้ไว้ เพื่อใช้ติดตามสถานะการคัดกรองและการตรวจสอบข้อเท็จจริงของเจ้าหน้าที่
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTrackingIdInput(submittedReportId);
+                        setActiveMode('track');
+                        handleTrackReport({ preventDefault: () => {} } as any);
+                      }}
+                      className="text-xs font-semibold text-[#0C57C7] hover:underline inline-flex items-center gap-1"
+                    >
+                      <Search className="w-3.5 h-3.5" /> ตรวจสอบสถานะรายงานนี้ทันที
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-4 bg-slate-50 rounded-2xl max-w-lg mx-auto text-sm text-slate-600 leading-relaxed text-left border border-slate-100">
+                <strong>นโยบายความโปร่งใส:</strong> ข้อมูลของคุณถูกจัดเก็บในหมวด <span className="font-bold text-amber-700">รายงานจากประชาชน (COMMUNITY)</span> ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน และพิกัดจะถูกปัดเศษระดับตำบลเพื่อปกป้องความปลอดภัยของคุณ
+              </div>
+              <div className="pt-4 flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
+                >
+                  ส่งรายงานเหตุการณ์อื่น
+                </button>
+                <Link
+                  to="/cases"
+                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2"
+                >
+                  ดูเหตุการณ์ที่กำลังติดตาม <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
           
           {errorMessage && (
             <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-2xl flex items-center gap-2.5">
@@ -457,6 +646,8 @@ export const ReportPage: React.FC = () => {
 
         </form>
       )}
+      </>
+    )}
 
     </div>
   );

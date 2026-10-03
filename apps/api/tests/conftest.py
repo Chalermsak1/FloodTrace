@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from apps.api.app.core.config import settings
 from apps.api.app.core.database import SessionLocal
-from apps.api.app.models.entities import IndustrialFacility, WaterStation, Reservoir
+from apps.api.app.models.entities import IndustrialFacility, WaterStation, Reservoir, RainfallStation
 
 orig_env = settings.DATA_ENV
 orig_gate = settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION
@@ -33,7 +33,7 @@ def enforce_production_isolation_during_tests():
     interactively test and use the web application.
     """
     from apps.api.app.adapters.diw import load_diw_facilities
-    from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations
+    from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations, fetch_thaiwater_rainfall
     from apps.api.app.adapters.rid import fetch_rid_reservoirs
 
     settings.DATA_ENV = "PRODUCTION"
@@ -43,6 +43,7 @@ def enforce_production_isolation_during_tests():
     with SessionLocal() as db:
         db.query(IndustrialFacility).delete()
         db.query(WaterStation).delete()
+        db.query(RainfallStation).delete()
         db.query(Reservoir).delete()
         db.commit()
 
@@ -117,5 +118,24 @@ def enforce_production_isolation_during_tests():
                     provenance=item["provenance"]
                 )
                 db.merge(r)
+
+            rain_stations = asyncio.run(fetch_thaiwater_rainfall())
+            for item in rain_stations:
+                rs = RainfallStation(
+                    id=item["id"],
+                    name_th=item["name_th"],
+                    name_en=item.get("name_en"),
+                    district=item.get("district"),
+                    subdistrict=item.get("subdistrict"),
+                    latitude=item["latitude"],
+                    longitude=item["longitude"],
+                    rain_24h_mm=item.get("rain_24h_mm"),
+                    rain_1h_mm=item.get("rain_1h_mm"),
+                    observation_time=item.get("observation_time"),
+                    agency=item.get("agency"),
+                    status=item.get("status", "RAINFALL_RECORDED"),
+                    provenance=item["provenance"]
+                )
+                db.merge(rs)
 
             db.commit()
