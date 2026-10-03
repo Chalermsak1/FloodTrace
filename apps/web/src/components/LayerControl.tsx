@@ -50,7 +50,7 @@ export const LayerControl: React.FC<Props> = ({ visibleLayers, onToggleLayer, co
             Map Intelligence Layers
           </span>
         </div>
-        <span className="text-[10px] text-slate-400 font-mono">
+        <span className="text-xs text-slate-400 font-mono">
           {collapsed ? 'SHOW' : 'HIDE'}
         </span>
       </div>
@@ -65,7 +65,7 @@ export const LayerControl: React.FC<Props> = ({ visibleLayers, onToggleLayer, co
                 key={item.key}
                 type="button"
                 onClick={() => onToggleLayer(item.key)}
-                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition ${
+                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs sm:text-sm transition min-h-[38px] ${
                   isVisible 
                     ? 'bg-slate-800/80 text-white font-medium shadow-sm' 
                     : 'text-slate-400 hover:bg-slate-900/60 opacity-60'
@@ -78,11 +78,11 @@ export const LayerControl: React.FC<Props> = ({ visibleLayers, onToggleLayer, co
                 <div className="flex items-center gap-1.5 shrink-0">
                   {item.count !== undefined && (
                     item.count === 0 && (item.key === 'facilities' || item.key === 'stations' || item.key === 'reservoirs') ? (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Blocked under REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True">
+                      <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Blocked under REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True">
                         ACCESS REQ
                       </span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-900 text-slate-300 border border-slate-800">
+                      <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-slate-900 text-slate-300 border border-slate-800">
                         {item.count}
                       </span>
                     )
@@ -98,8 +98,8 @@ export const LayerControl: React.FC<Props> = ({ visibleLayers, onToggleLayer, co
           })}
 
           {/* Quick Legend Info */}
-          <div className="pt-2 px-2 pb-1 border-t border-slate-800/60 mt-2 text-[10px] text-slate-400 space-y-1">
-            <div className="font-semibold text-slate-300 uppercase tracking-wider text-[9px]">Legend</div>
+          <div className="pt-2 px-2 pb-1 border-t border-slate-800/60 mt-2 text-xs text-slate-400 space-y-1.5">
+            <div className="font-semibold text-slate-300 uppercase tracking-wider text-xs">Legend</div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shrink-0"></span>
               <span>Pulsing #1-10: Critical Risk Priority</span>

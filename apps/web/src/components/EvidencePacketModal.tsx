@@ -136,7 +136,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                 <h2 className="text-base font-bold text-white tracking-wide">
                   Environmental Verification Case Packet
                 </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
                   MASTER PROMPT SEC. 28
                 </span>
               </div>
@@ -151,13 +151,13 @@ export const EvidencePacketModal: React.FC<Props> = ({
         </div>
 
         {/* District Switcher */}
-        <div className="px-4 sm:px-5 py-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs">
+        <div className="px-4 sm:px-5 py-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs sm:text-sm">
           <div className="flex items-center gap-2">
             <span className="text-slate-400 font-semibold">Target District:</span>
             <select
               value={district}
               onChange={e => setDistrict(e.target.value)}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-white font-semibold focus:outline-none focus:border-teal-500"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-semibold focus:outline-none focus:border-teal-500 min-h-[38px]"
             >
               <option value="กบินทร์บุรี">กบินทร์บุรี (Kabin Buri)</option>
               <option value="ศรีมหาโพธิ">ศรีมหาโพธิ (Si Maha Phot)</option>
@@ -169,7 +169,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
             </select>
           </div>
           {packet && (
-            <span className="font-mono text-slate-400 text-[11px]">
+            <span className="font-mono text-slate-400 text-xs">
               Dossier ID: <strong className="text-teal-400">{packet.case_id}</strong>
             </span>
           )}
@@ -190,29 +190,29 @@ export const EvidencePacketModal: React.FC<Props> = ({
                   <ShieldCheck className="w-4 h-4" />
                   1. What We Know (Official Records & Measured Facts)
                 </div>
-                <p className="text-xs text-slate-300">{packet.what_we_know.summary}</p>
+                <p className="text-xs sm:text-sm text-slate-300">{packet.what_we_know.summary}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {(packet.what_we_know?.official_records || []).map((r, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
                         {r.data_category}
                       </span>
-                      <div className="text-slate-200 font-semibold text-[11px] mt-1">{r.source}</div>
+                      <div className="text-slate-200 font-semibold text-xs mt-1">{r.source}</div>
                       {r.registered_facilities_count !== undefined && (
-                        <div className="text-slate-400 text-[11px]">Facilities: {r.registered_facilities_count} registered in snapshot</div>
+                        <div className="text-slate-400 text-xs">Facilities: {r.registered_facilities_count} registered in snapshot</div>
                       )}
                       {r.hydrological_network && (
-                        <div className="text-slate-400 text-[11px]">Network: {r.hydrological_network}</div>
+                        <div className="text-slate-400 text-xs">Network: {r.hydrological_network}</div>
                       )}
                     </div>
                   ))}
                   {(packet.what_we_know?.measured_facts || []).map((m, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {m.data_category}
                       </span>
-                      <div className="text-slate-200 font-semibold text-[11px] mt-1">{m.source}</div>
-                      <div className="text-slate-400 text-[11px]">Active Telemetry Stations: {m.telemetry_stations_reporting} reporting</div>
+                      <div className="text-slate-200 font-semibold text-xs mt-1">{m.source}</div>
+                      <div className="text-slate-400 text-xs">Active Telemetry Stations: {m.telemetry_stations_reporting} reporting</div>
                     </div>
                   ))}
                 </div>
@@ -220,28 +220,28 @@ export const EvidencePacketModal: React.FC<Props> = ({
 
               {/* SECTION 2: WHAT WAS OBSERVED */}
               <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-sky-400 font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-sky-400 font-bold text-xs sm:text-sm uppercase tracking-wider">
                   <Eye className="w-4 h-4" />
                   2. What Was Observed (Satellite & Ground Observations)
                 </div>
-                <p className="text-xs text-slate-300">{packet.what_was_observed?.summary}</p>
+                <p className="text-xs sm:text-sm text-slate-300">{packet.what_was_observed?.summary}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {(packet.what_was_observed?.flood_observations || []).map((f, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                         {f.status}
                       </span>
-                      <div className="text-slate-200 font-semibold text-[11px] mt-1">{f.source}</div>
-                      <div className="text-slate-400 text-[11px]">{f.notes}</div>
+                      <div className="text-slate-200 font-semibold text-xs mt-1">{f.source}</div>
+                      <div className="text-slate-400 text-xs">{f.notes}</div>
                     </div>
                   ))}
                   {(packet.what_was_observed?.community_observations || []).map((c, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
                         CITIZEN_REPORTED • {c.status}
                       </span>
-                      <div className="text-slate-200 font-semibold text-[11px] mt-1">Ground Reports: {c.count} notices</div>
-                      <div className="text-slate-400 text-[11px]">{c.notes}</div>
+                      <div className="text-slate-200 font-semibold text-xs mt-1">Ground Reports: {c.count} notices</div>
+                      <div className="text-slate-400 text-xs">{c.notes}</div>
                     </div>
                   ))}
                 </div>
@@ -249,31 +249,31 @@ export const EvidencePacketModal: React.FC<Props> = ({
 
               {/* SECTION 3: WHAT THE MODEL SUGGESTS */}
               <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs sm:text-sm uppercase tracking-wider">
                   <Cpu className="w-4 h-4" />
                   3. What The Model Suggests (Deterministic & Numerical Simulations)
                 </div>
-                <p className="text-xs text-slate-300">{packet.what_the_model_suggests.summary}</p>
+                <p className="text-xs sm:text-sm text-slate-300">{packet.what_the_model_suggests.summary}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <span className="px-2 py-0.5 rounded text-2xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                       {packet.what_the_model_suggests.hydrological_connectivity.data_category}
                     </span>
-                    <div className="text-slate-200 font-semibold text-[11px] mt-1">
+                    <div className="text-slate-200 font-semibold text-xs mt-1">
                       {packet.what_the_model_suggests.hydrological_connectivity.model} ({packet.what_the_model_suggests.hydrological_connectivity.version})
                     </div>
-                    <div className="text-slate-400 text-[11px]">
+                    <div className="text-slate-400 text-xs">
                       {packet.what_the_model_suggests.hydrological_connectivity.finding}
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <span className="px-2 py-0.5 rounded text-2xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                       {packet.what_the_model_suggests.atmospheric_forecast.data_category}
                     </span>
-                    <div className="text-slate-200 font-semibold text-[11px] mt-1">
+                    <div className="text-slate-200 font-semibold text-xs mt-1">
                       {packet.what_the_model_suggests.atmospheric_forecast.model}
                     </div>
-                    <div className="text-slate-400 text-[11px]">
+                    <div className="text-slate-400 text-xs">
                       Projected 48h Precipitation: {packet.what_the_model_suggests.atmospheric_forecast.forecast_48h_precip_mm} mm
                     </div>
                   </div>
@@ -282,19 +282,19 @@ export const EvidencePacketModal: React.FC<Props> = ({
 
               {/* SECTION 4: WHAT IS UNKNOWN */}
               <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs sm:text-sm uppercase tracking-wider">
                   <HelpCircle className="w-4 h-4" />
                   4. What Is Unknown (Fail-Closed Data Gaps)
                 </div>
-                <p className="text-xs text-slate-300">{packet.what_is_unknown?.summary}</p>
-                <div className="space-y-2 text-xs">
+                <p className="text-xs sm:text-sm text-slate-300">{packet.what_is_unknown?.summary}</p>
+                <div className="space-y-2 text-xs sm:text-sm">
                   {(packet.what_is_unknown?.items || []).map((gap, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
                         <div className="font-semibold text-slate-200">{gap.gap}</div>
-                        <div className="text-slate-400 text-[11px]">{gap.explanation}</div>
+                        <div className="text-slate-400 text-xs">{gap.explanation}</div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
                         {gap.status}
                       </span>
                     </div>
@@ -304,12 +304,12 @@ export const EvidencePacketModal: React.FC<Props> = ({
 
               {/* SECTION 5: WHAT SHOULD BE VERIFIED */}
               <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-wider">
                   <CheckCircle2 className="w-4 h-4" />
                   5. What Should Be Verified (Recommended Action Plan)
                 </div>
-                <p className="text-xs text-slate-300">{packet.what_should_be_verified?.summary}</p>
-                <ul className="space-y-1.5 text-xs text-slate-300 list-disc list-inside">
+                <p className="text-xs sm:text-sm text-slate-300">{packet.what_should_be_verified?.summary}</p>
+                <ul className="space-y-1.5 text-xs sm:text-sm text-slate-300 list-disc list-inside">
                   {(packet.what_should_be_verified?.actions || []).map((act, i) => (
                     <li key={i} className="text-slate-300">{act}</li>
                   ))}
@@ -319,46 +319,46 @@ export const EvidencePacketModal: React.FC<Props> = ({
               {/* SECTION 29: OFFICIAL REFERRAL */}
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
                     <PhoneCall className="w-4 h-4 text-emerald-400" />
                     Official Reporting & Escalation Directory
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">Master Prompt Sec. 29</span>
+                  <span className="text-xs text-slate-500 font-mono">Master Prompt Sec. 29</span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-slate-400">
                   FloodTrace compiles verified evidence dossiers for referral to authorized regulatory bodies:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
                     <div className="font-semibold text-slate-200">PCD Pollution Hotline</div>
-                    <div className="text-emerald-400 font-mono font-bold">1650</div>
+                    <div className="text-emerald-400 font-mono font-bold text-sm">1650</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
                     <div className="font-semibold text-slate-200">Regional Environmental Office 7</div>
-                    <div className="text-slate-400 font-mono">037-247-190</div>
+                    <div className="text-slate-300 font-mono">037-247-190</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
                     <div className="font-semibold text-slate-200">Prachin Buri Industry Office</div>
-                    <div className="text-slate-400 font-mono">037-452-031</div>
+                    <div className="text-slate-300 font-mono">037-452-031</div>
                   </div>
                 </div>
               </div>
 
               {/* Legal Disclaimer */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 flex items-start gap-2">
                 <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                <p className="font-mono">{packet.limitations_and_disclaimer.disclaimer}</p>
+                <p className="font-mono leading-relaxed">{packet.limitations_and_disclaimer.disclaimer}</p>
               </div>
             </>
           ) : null}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-slate-800 text-xs text-slate-500">
+        <div className="flex items-center justify-between p-4 border-t border-slate-800 text-xs sm:text-sm text-slate-400">
           <span>{packet?.limitations_and_disclaimer.review_status || 'DRAFT — REQUIRES FORMAL INVESTIGATIVE REVIEW'}</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition"
+            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition min-h-[40px] flex items-center justify-center"
           >
             Close
           </button>

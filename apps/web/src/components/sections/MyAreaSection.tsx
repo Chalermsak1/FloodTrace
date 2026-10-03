@@ -48,7 +48,7 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
             <h3 className="font-bold text-base text-[#0B243D] leading-tight">
               พื้นที่ของฉัน (My Area)
             </h3>
-            <p className="text-[11px] text-[#717F8F]">
+            <p className="text-xs text-[#717F8F]">
               ติดตามพื้นที่ที่สนใจ และรับการแจ้งเตือน
             </p>
           </div>
@@ -61,7 +61,7 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
               <Home className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-[#717F8F] uppercase">บ้านของฉัน</span>
+              <span className="text-xs font-semibold text-[#717F8F] uppercase">บ้านของฉัน</span>
               {isEditing ? (
                 <div className="mt-1 flex items-center gap-1.5">
                   <select
@@ -110,8 +110,8 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[#717F8F]">สถานะพื้นที่ของคุณ</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E16434] text-white">
+              <span className="text-xs font-semibold text-[#717F8F]">สถานะพื้นที่ของคุณ</span>
+              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-[#E16434] text-white">
                 HIGH
               </span>
             </div>
@@ -130,7 +130,7 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
 
           <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#C4C7D1]/60">
             <span className="text-[#717F8F]">แนวโน้ม 3 วัน</span>
-            <span className="font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[11px]">
+            <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs">
               ข้อมูลคาดการณ์ไม่พร้อมใช้งาน
             </span>
           </div>
@@ -172,7 +172,7 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
           </button>
         </div>
 
-        <div className="text-[10px] text-[#717F8F] mt-2">
+        <div className="text-xs text-[#717F8F] mt-2">
           * ตำแหน่งที่แม่นยำของท่านจะไม่ถูกเผยแพร่สู่สาธารณะ
         </div>
       </div>

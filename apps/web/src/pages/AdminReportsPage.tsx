@@ -658,20 +658,20 @@ export const AdminReportsPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base tracking-wide">FloodTrace Staff Operations Console</span>
-                <span className="px-2 py-0.5 text-[11px] rounded bg-blue-500/30 text-blue-200 border border-blue-400/30 font-mono">
+                <span className="font-bold text-base sm:text-lg tracking-wide">FloodTrace Staff Operations Console</span>
+                <span className="px-2.5 py-0.5 text-xs rounded bg-blue-500/30 text-blue-200 border border-blue-400/30 font-mono font-semibold">
                   INTERNAL
                 </span>
               </div>
-              <p className="text-xs text-blue-200">ระบบบริหารจัดการ ตรวจสอบข้อเท็จจริง และส่งต่อรายงานจากประชาชน</p>
+              <p className="text-sm text-blue-100">ระบบบริหารจัดการ ตรวจสอบข้อเท็จจริง และส่งต่อรายงานจากประชาชน</p>
             </div>
           </div>
 
           {/* Role Switcher & Live Indicator */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-950/60 border border-blue-700/50 text-xs">
-              <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-              <span className="text-blue-100 text-[11px]">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-700/50 text-xs sm:text-sm">
+              <span className={`w-2.5 h-2.5 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+              <span className="text-blue-100 text-xs sm:text-sm font-medium">
                 {sseConnected ? 'เรียลไทม์ (SSE Connected)' : 'ออฟไลน์'}
               </span>
             </div>
@@ -715,62 +715,62 @@ export const AdminReportsPage: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 py-5 flex-1 w-full space-y-5">
-        {/* Operational Metrics Cards (Section 5 & 27) */}
+        {/* Operational Metrics Cards (Section 5, 27, 50.14) */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-medium text-slate-500">รายงานใหม่</span>
+            <span className="text-sm font-semibold text-slate-600">รายงานใหม่</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-blue-700">{summary?.new ?? '-'}</span>
-              <span className="text-[11px] text-slate-400">รายการ</span>
+              <span className="text-xs text-slate-500">รายการ</span>
             </div>
-            <div className="text-[10px] text-blue-600 mt-1">รอการคัดกรองเบื้องต้น</div>
+            <div className="text-xs text-blue-600 font-medium mt-1">รอการคัดกรองเบื้องต้น</div>
           </div>
 
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-medium text-slate-500">กำลังคัดกรอง / มอบหมาย</span>
+            <span className="text-sm font-semibold text-slate-600">กำลังคัดกรอง / มอบหมาย</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-amber-600">{(summary?.triaging ?? 0) + (summary?.assigned ?? 0)}</span>
-              <span className="text-[11px] text-slate-400">รายการ</span>
+              <span className="text-xs text-slate-500">รายการ</span>
             </div>
-            <div className="text-[10px] text-amber-600 mt-1">รอรับเรื่องตรวจสอบ</div>
+            <div className="text-xs text-amber-600 font-medium mt-1">รอรับเรื่องตรวจสอบ</div>
           </div>
 
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-medium text-slate-500">อยู่ระหว่างตรวจสอบ</span>
+            <span className="text-sm font-semibold text-slate-600">อยู่ระหว่างตรวจสอบ</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-indigo-700">{(summary?.in_review ?? 0) + (summary?.under_verification ?? 0)}</span>
-              <span className="text-[11px] text-slate-400">รายการ</span>
+              <span className="text-xs text-slate-500">รายการ</span>
             </div>
-            <div className="text-[10px] text-indigo-600 mt-1">เจ้าหน้าที่กำลังตรวจพยาน</div>
+            <div className="text-xs text-indigo-600 font-medium mt-1">เจ้าหน้าที่กำลังตรวจพยาน</div>
           </div>
 
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-medium text-slate-500">ส่งต่อหน่วยงาน</span>
+            <span className="text-sm font-semibold text-slate-600">ส่งต่อหน่วยงาน</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-rose-600">{summary?.escalated ?? '-'}</span>
-              <span className="text-[11px] text-slate-400">เรื่อง</span>
+              <span className="text-xs text-slate-500">เรื่อง</span>
             </div>
-            <div className="text-[10px] text-rose-600 mt-1">ประสานงานภายนอก</div>
+            <div className="text-xs text-rose-600 font-medium mt-1">ประสานงานภายนอก</div>
           </div>
 
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-medium text-slate-500">ยืนยันข้อสังเกตแล้ว</span>
+            <span className="text-sm font-semibold text-slate-600">ยืนยันข้อสังเกตแล้ว</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-emerald-600">{summary?.verified_observation ?? '-'}</span>
-              <span className="text-[11px] text-slate-400">จุด</span>
+              <span className="text-xs text-slate-500">จุด</span>
             </div>
-            <div className="text-[10px] text-emerald-600 mt-1">มีพยานหลักฐานประจักษ์</div>
+            <div className="text-xs text-emerald-600 font-medium mt-1">มีพยานหลักฐานประจักษ์</div>
           </div>
 
           <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between bg-blue-50/40">
-            <span className="text-xs font-medium text-slate-600">ค้างดำเนินการ (Unresolved)</span>
+            <span className="text-sm font-semibold text-slate-700">ค้างดำเนินการ (Unresolved)</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-bold text-[#063B70]">{summary?.unresolved ?? '-'}</span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-600">
                 (ด่วน {summary?.urgent_count ?? 0})
               </span>
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-600 font-medium mt-1">
               ค้างนานสุด: {summary?.oldest_unresolved_days ?? 0} วัน
             </div>
           </div>
@@ -899,33 +899,33 @@ export const AdminReportsPage: React.FC = () => {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-xs text-[#063B70]">{r.id}</span>
+                          <span className="font-mono font-bold text-sm text-[#063B70]">{r.id}</span>
                           {getPriorityBadge(r.priority)}
                         </div>
                         {getStatusBadge(r.status)}
                       </div>
 
-                      <div className="mt-1.5 text-xs font-semibold text-slate-800 line-clamp-1">
+                      <div className="mt-1.5 text-sm font-semibold text-slate-900 line-clamp-1">
                         {r.category} — {r.subdistrict}, {r.district}
                       </div>
 
-                      <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="mt-1 text-sm text-slate-600 line-clamp-2 leading-relaxed">
                         {r.description || 'ไม่มีรายละเอียดเพิ่มเติม'}
                       </p>
 
-                      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-100">
+                      <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
                         <div className="flex items-center gap-2">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-400" />
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
                             {r.submitted_at ? new Date(r.submitted_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-'}
                           </span>
                           {r.has_evidence && (
-                            <span className="text-emerald-600 flex items-center gap-0.5 font-medium">
+                            <span className="text-emerald-700 flex items-center gap-0.5 font-semibold">
                               📷 มีภาพ
                             </span>
                           )}
                         </div>
-                        <div className="font-mono text-slate-600 truncate max-w-[120px]">
+                        <div className="font-mono text-slate-700 truncate max-w-[120px]">
                           {r.assigned_to ? `👤 ${r.assigned_to}` : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
                         </div>
                       </div>
@@ -962,11 +962,11 @@ export const AdminReportsPage: React.FC = () => {
              ========================================================================= */}
           <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-[820px] flex flex-col">
             <div className="p-3 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-700" />
-                <h3 className="font-bold text-xs text-[#063B70]">แผนที่ปฏิบัติการ GIS</h3>
+                <h3 className="font-bold text-sm text-[#063B70]">แผนที่ปฏิบัติการ GIS</h3>
               </div>
-              <span className="text-[11px] text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded font-medium">
+              <span className="text-xs text-blue-700 bg-blue-100/60 px-2.5 py-0.5 rounded font-semibold">
                 ปราจีนบุรี (Basin 03)
               </span>
             </div>
@@ -975,23 +975,23 @@ export const AdminReportsPage: React.FC = () => {
               <div ref={mapContainerRef} className="w-full h-full z-0" />
               
               {/* Floating Map Legend Overlay */}
-              <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md p-2.5 rounded-lg border border-slate-200 shadow-md z-10 text-[11px] space-y-1">
-                <div className="font-bold text-slate-700 mb-1">สัญลักษณ์แผนที่</div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
-                  <span>ด่วนที่สุด (URGENT)</span>
+              <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-md z-10 text-xs space-y-1.5">
+                <div className="font-bold text-slate-800 mb-1">สัญลักษณ์แผนที่</div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-600" />
+                  <span className="font-medium text-slate-700">ด่วนที่สุด (URGENT)</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  <span>ด่วน (HIGH)</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="font-medium text-slate-700">ด่วน (HIGH)</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                  <span>ปกติ (NORMAL)</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-600" />
+                  <span className="font-medium text-slate-700">ปกติ (NORMAL)</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                  <span>ยุติเรื่องแล้ว (RESOLVED)</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-slate-400" />
+                  <span className="font-medium text-slate-700">ยุติเรื่องแล้ว (RESOLVED)</span>
                 </div>
               </div>
             </div>
@@ -1026,9 +1026,9 @@ export const AdminReportsPage: React.FC = () => {
                     {getStatusBadge(reportDetail.status)}
                   </div>
 
-                  <div className="mt-2 text-xs text-slate-600 flex items-center justify-between">
-                    <span>ผู้รับผิดชอบ: <strong>{reportDetail.assignment?.assigned_to || 'ยังไม่ระบุ'}</strong></span>
-                    <span className="text-[11px] text-slate-400">
+                  <div className="mt-2 text-sm text-slate-600 flex items-center justify-between">
+                    <span>ผู้รับผิดชอบ: <strong className="text-slate-900">{reportDetail.assignment?.assigned_to || 'ยังไม่ระบุ'}</strong></span>
+                    <span className="text-xs text-slate-500">
                       สังเกตเมื่อ: {reportDetail.original_submission?.observed_at ? new Date(reportDetail.original_submission.observed_at).toLocaleDateString('th-TH') : 'ไม่ระบุ'}
                     </span>
                   </div>
@@ -1099,36 +1099,36 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('original')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span>1. ข้อความดั้งเดิมจากประชาชน (Preserved)</span>
                       {openSections.original ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.original && (
-                      <div className="p-3 text-xs space-y-2 bg-slate-50/30">
+                      <div className="p-3.5 text-sm space-y-2.5 bg-slate-50/30">
                         <div>
-                          <span className="text-slate-400 block text-[10px]">รายละเอียดที่แจ้ง:</span>
-                          <p className="mt-0.5 text-slate-800 font-medium leading-relaxed bg-white p-2.5 rounded border border-slate-100">
+                          <span className="text-slate-500 block text-xs font-medium mb-1">รายละเอียดที่แจ้ง:</span>
+                          <p className="mt-0.5 text-slate-900 font-medium leading-relaxed bg-white p-3 rounded-xl border border-slate-200">
                             {reportDetail.original_submission?.description || 'ไม่มีข้อความระบุ'}
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                        <div className="grid grid-cols-2 gap-2 text-sm text-slate-700">
                           <div>ระดับน้ำ: <strong>{reportDetail.original_submission?.water_depth_cm ?? 0} ซม.</strong></div>
                           <div>การไหล: <strong>{reportDetail.original_submission?.water_flow_speed || '-'}</strong></div>
                         </div>
                         {reportDetail.original_submission?.contamination_signs?.length > 0 && (
                           <div>
-                            <span className="text-slate-400 block text-[10px] mb-1">ข้อสังเกตความผิดปกติ:</span>
-                            <div className="flex flex-wrap gap-1">
+                            <span className="text-slate-500 block text-xs font-medium mb-1">ข้อสังเกตความผิดปกติ:</span>
+                            <div className="flex flex-wrap gap-1.5">
                               {reportDetail.original_submission.contamination_signs.map((sign: string, idx: number) => (
-                                <span key={idx} className="px-2 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[10px]">
+                                <span key={idx} className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                                   {sign}
                                 </span>
                               ))}
                             </div>
                           </div>
                         )}
-                        <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
+                        <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
                           <span>ผู้แจ้ง: {reportDetail.original_submission?.reporter_name}</span>
                           <span>บทบาท: {reportDetail.original_submission?.reporter_role}</span>
                         </div>
@@ -1140,31 +1140,31 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('location')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span>2. พิกัดและขอบเขตพื้นที่ตรวจสอบ</span>
                       {openSections.location ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.location && (
-                      <div className="p-3 text-xs space-y-1.5">
+                      <div className="p-3.5 text-sm space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500">พื้นที่:</span>
                           <span className="font-semibold">{reportDetail.subdistrict}, {reportDetail.district}</span>
                         </div>
-                        <div className="flex items-center justify-between font-mono text-[11px]">
+                        <div className="flex items-center justify-between font-mono text-xs">
                           <span className="text-slate-500">พิกัดเปิดเผย (Public):</span>
                           <span>{reportDetail.public_latitude}, {reportDetail.public_longitude}</span>
                         </div>
                         {reportDetail.is_exact_coordinates_visible && (
-                          <div className="flex items-center justify-between font-mono text-[11px] text-blue-700 bg-blue-50 p-1.5 rounded border border-blue-200">
+                          <div className="flex items-center justify-between font-mono text-xs text-blue-700 bg-blue-50 p-2 rounded-lg border border-blue-200">
                             <span className="flex items-center gap-1 font-bold">
                               <Lock className="w-3 h-3" /> พิกัดจริง (Internal):
                             </span>
                             <span>{reportDetail.exact_latitude}, {reportDetail.exact_longitude}</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 mt-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 mt-1">
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                           <span>{systemContext?.scope_notice || 'อยู่ในพื้นที่เฝ้าระวังหลักจังหวัดปราจีนบุรี'}</span>
                         </div>
                       </div>
@@ -1191,7 +1191,7 @@ export const AdminReportsPage: React.FC = () => {
                                 className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300"
                               />
                             </div>
-                            <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <div className="flex items-center justify-between text-xs text-slate-500">
                               <span className="text-emerald-600 font-medium">✓ ลบ EXIF พิกัดส่วนบุคคลแล้ว</span>
                               <a
                                 href={reportDetail.original_submission.photo_url}
@@ -1199,7 +1199,7 @@ export const AdminReportsPage: React.FC = () => {
                                 rel="noreferrer"
                                 className="text-blue-600 hover:underline flex items-center gap-0.5"
                               >
-                                ดูภาพเต็ม <ExternalLink className="w-3 h-3" />
+                                ดูภาพเต็ม <ExternalLink className="w-3.5 h-3.5" />
                               </a>
                             </div>
                           </div>
@@ -1214,54 +1214,54 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('context')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Droplets className="w-3.5 h-3.5 text-blue-600" />
+                        <Droplets className="w-4 h-4 text-blue-600" />
                         4. ข้อมูลระบบประกอบการตรวจสอบ (System Context)
                       </span>
                       {openSections.context ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.context && (
-                      <div className="p-3 text-xs space-y-2.5">
+                      <div className="p-3.5 text-sm space-y-2.5">
                         {systemContext?.primary_water_station ? (
-                          <div className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-100 space-y-1">
+                          <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 space-y-1.5">
                             <div className="flex items-center justify-between font-bold text-[#063B70]">
-                              <span>สถานีระดับน้ำใกล้สุด:</span>
-                              <span className="text-[11px] text-blue-600 font-mono">
+                              <span className="text-sm">สถานีระดับน้ำใกล้สุด:</span>
+                              <span className="text-xs text-blue-700 font-mono font-semibold bg-blue-100 px-2 py-0.5 rounded">
                                 ห่าง {systemContext.primary_water_station.distance_km} กม.
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-700">
+                            <div className="text-sm font-semibold text-slate-800">
                               {systemContext.primary_water_station.name_th}
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-600 pt-1">
-                              <div>ระดับน้ำ: <strong>{systemContext.primary_water_station.water_level_msl ?? 'ไม่มี'} m MSL</strong></div>
-                              <div>ระดับเตือนภัย: <strong>{systemContext.primary_water_station.warning_level_msl ?? '-'} m</strong></div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 pt-1">
+                              <div>ระดับน้ำ: <strong className="text-slate-900">{systemContext.primary_water_station.water_level_msl ?? 'ไม่มี'} m MSL</strong></div>
+                              <div>ระดับเตือนภัย: <strong className="text-slate-900">{systemContext.primary_water_station.warning_level_msl ?? '-'} m</strong></div>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-slate-400 text-xs">ไม่มีสถานีระดับน้ำในระยะใกล้เคียง</div>
+                          <div className="text-slate-400 text-sm">ไม่มีสถานีระดับน้ำในระยะใกล้เคียง</div>
                         )}
 
                         {systemContext?.primary_rain_station && (
-                          <div className="p-2.5 rounded-lg bg-sky-50/60 border border-sky-100 space-y-1">
+                          <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-100 space-y-1.5">
                             <div className="flex items-center justify-between font-bold text-[#063B70]">
-                              <span>สถานีวัดน้ำฝนใกล้สุด:</span>
-                              <span className="text-[11px] text-sky-600 font-mono">
+                              <span className="text-sm">สถานีวัดน้ำฝนใกล้สุด:</span>
+                              <span className="text-xs text-sky-700 font-mono font-semibold bg-sky-100 px-2 py-0.5 rounded">
                                 ห่าง {systemContext.primary_rain_station.distance_km} กม.
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-700">
+                            <div className="text-sm font-semibold text-slate-800">
                               {systemContext.primary_rain_station.name_th}
                             </div>
-                            <div className="text-[10px] text-slate-600 pt-0.5">
-                              ฝนสะสม 24 ชม.: <strong>{systemContext.primary_rain_station.rain_24h_mm ?? 0} มม.</strong>
+                            <div className="text-xs text-slate-700 pt-0.5">
+                              ฝนสะสม 24 ชม.: <strong className="text-slate-900">{systemContext.primary_rain_station.rain_24h_mm ?? 0} มม.</strong>
                             </div>
                           </div>
                         )}
 
-                        <div className="text-[10px] text-slate-400 italic bg-slate-50 p-2 rounded border border-slate-100 leading-normal">
+                        <div className="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
                           {systemContext?.disclaimer}
                         </div>
                       </div>
@@ -1272,69 +1272,69 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('verification')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span className="flex items-center gap-1.5">
-                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                        <CheckSquare className="w-4 h-4 text-emerald-600" />
                         5. บันทึกการพิสูจน์ข้อเท็จจริง (Structured Verification)
                       </span>
                       {openSections.verification ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.verification && (
-                      <div className="p-3 text-xs space-y-2">
+                      <div className="p-3.5 text-sm space-y-3">
                         {reportDetail.verification ? (
-                          <div className="space-y-2">
+                          <div className="space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500">ผลการพิสูจน์:</span>
+                              <span className="text-slate-600">ผลการพิสูจน์:</span>
                               <span className="font-bold text-emerald-700">{reportDetail.verification.status}</span>
                             </div>
-                            <div className="flex items-center justify-between text-[11px] text-slate-500">
+                            <div className="flex items-center justify-between text-xs text-slate-500">
                               <span>วิธีตรวจสอบ: {reportDetail.verification.method}</span>
                               <span>โดย: {reportDetail.verification.verified_by}</span>
                             </div>
 
                             {reportDetail.verification.structured_assessment && (
-                              <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[11px]">
+                              <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100 text-sm">
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">สิ่งที่ผู้แจ้งระบุ:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">สิ่งที่ผู้แจ้งระบุ:</span>
                                   <span className="text-slate-800">{reportDetail.verification.structured_assessment.what_was_reported}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">สิ่งที่ประจักษ์จากพยานหลักฐาน:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">สิ่งที่ประจักษ์จากพยานหลักฐาน:</span>
                                   <span className="text-slate-800 font-medium">{reportDetail.verification.structured_assessment.what_was_observed}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">ข้อมูลระบบแสดงอะไร:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">ข้อมูลระบบแสดงอะไร:</span>
                                   <span className="text-slate-700">{reportDetail.verification.structured_assessment.what_system_data_shows}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">แบบจำลองระบุอะไร:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">แบบจำลองระบุอะไร:</span>
                                   <span className="text-slate-700">{reportDetail.verification.structured_assessment.what_model_suggests}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">สิ่งที่ยังไม่ทราบ:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">สิ่งที่ยังไม่ทราบ:</span>
                                   <span className="text-amber-800">{reportDetail.verification.structured_assessment.what_is_unknown}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400 block text-[10px]">ขั้นตอนตรวจสอบถัดไป:</span>
+                                  <span className="text-slate-500 block text-xs font-semibold mb-0.5">ขั้นตอนตรวจสอบถัดไป:</span>
                                   <span className="text-blue-800">{reportDetail.verification.structured_assessment.what_should_be_verified}</span>
                                 </div>
                               </div>
                             )}
 
                             {reportDetail.verification.official_source_evidence && (
-                              <div className="p-2 rounded bg-teal-50 border border-teal-200 text-teal-800 text-[10px]">
+                              <div className="p-2.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-xs">
                                 <strong>หลักฐานทางการ:</strong> {reportDetail.verification.official_source_evidence}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="text-slate-400 italic text-center py-2">
+                          <div className="text-slate-400 italic text-center py-2 text-sm">
                             ยังไม่มีการบันทึกการพิสูจน์ข้อเท็จจริง
                             <button
                               onClick={() => setVerifyModalOpen(true)}
                               disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
-                              className="block mx-auto mt-2 text-xs text-blue-600 font-bold hover:underline disabled:opacity-30"
+                              className="block mx-auto mt-2 text-sm text-blue-600 font-bold hover:underline disabled:opacity-30"
                             >
                               + บันทึกการพิสูจน์ข้อเท็จจริง
                             </button>
@@ -1348,31 +1348,31 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('escalation')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Send className="w-3.5 h-3.5 text-rose-600" />
+                        <Send className="w-4 h-4 text-rose-600" />
                         6. การส่งต่อหน่วยงานภายนอก (Escalation)
                       </span>
                       {openSections.escalation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.escalation && (
-                      <div className="p-3 text-xs space-y-2">
+                      <div className="p-3.5 text-sm space-y-2.5">
                         {reportDetail.escalations?.length > 0 ? (
                           reportDetail.escalations.map((esc: any) => (
-                            <div key={esc.id} className="p-2.5 rounded-lg bg-rose-50/70 border border-rose-200 space-y-1 text-[11px]">
+                            <div key={esc.id} className="p-3 rounded-xl bg-rose-50/70 border border-rose-200 space-y-1.5 text-sm">
                               <div className="flex items-center justify-between font-bold text-rose-900">
                                 <span>{esc.destination_team}</span>
-                                <span className="text-[10px] bg-rose-200/60 px-1.5 py-0.5 rounded text-rose-800">{esc.urgency}</span>
+                                <span className="text-xs bg-rose-200/80 px-2 py-0.5 rounded font-semibold text-rose-800">{esc.urgency}</span>
                               </div>
-                              <p className="text-rose-800">{esc.reason}</p>
-                              <div className="text-[10px] text-slate-400 pt-1">
+                              <p className="text-rose-800 text-sm leading-relaxed">{esc.reason}</p>
+                              <div className="text-xs text-slate-500 pt-1">
                                 ส่งโดย {esc.escalated_by} เมื่อ {new Date(esc.escalated_at).toLocaleString('th-TH')}
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="text-slate-400 italic text-center py-2">
+                          <div className="text-slate-400 italic text-center py-2 text-sm">
                             ยังไม่มีการส่งต่อไปยังหน่วยงานภายนอก
                           </div>
                         )}
@@ -1384,28 +1384,28 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('resolution')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
+                        <CheckCircle2 className="w-4 h-4 text-slate-600" />
                         7. การยุติเรื่องและข้อสรุป (Resolution)
                       </span>
                       {openSections.resolution ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.resolution && (
-                      <div className="p-3 text-xs space-y-2">
+                      <div className="p-3.5 text-sm space-y-2.5">
                         {reportDetail.resolution ? (
-                          <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-300 space-y-1">
-                            <div className="font-bold text-slate-800">
+                          <div className="p-3 rounded-xl bg-slate-100 border border-slate-300 space-y-1.5">
+                            <div className="font-bold text-slate-900 text-sm">
                               ประเภท: {reportDetail.resolution.resolution_type}
                             </div>
-                            <p className="text-slate-700">{reportDetail.resolution.resolution_summary}</p>
-                            <div className="text-[10px] text-slate-400 pt-1">
+                            <p className="text-slate-800 text-sm leading-relaxed">{reportDetail.resolution.resolution_summary}</p>
+                            <div className="text-xs text-slate-500 pt-1">
                               ยุติเรื่องโดย {reportDetail.resolution.resolved_by} เมื่อ {new Date(reportDetail.resolution.resolved_at).toLocaleString('th-TH')}
                             </div>
                           </div>
                         ) : (
-                          <div className="text-slate-400 italic text-center py-2">
+                          <div className="text-slate-400 italic text-center py-2 text-sm">
                             รายงานนี้ยังอยู่ระหว่างดำเนินการ (Unresolved)
                           </div>
                         )}
@@ -1417,31 +1417,31 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('timeline')}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-[#063B70]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                        <Clock className="w-4 h-4 text-blue-600" />
                         8. ประวัติการปฏิบัติงาน (Immutable Audit Trail)
                       </span>
                       {openSections.timeline ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                     {openSections.timeline && (
-                      <div className="p-3 text-xs space-y-2 divide-y divide-slate-100">
+                      <div className="p-3.5 text-sm space-y-2.5 divide-y divide-slate-100">
                         {auditTimeline.length === 0 ? (
-                          <div className="text-slate-400 italic text-center py-2">ไม่มีประวัติ</div>
+                          <div className="text-slate-400 italic text-center py-2 text-sm">ไม่มีประวัติ</div>
                         ) : (
                           auditTimeline.map((item) => (
-                            <div key={item.audit_id} className="pt-2 first:pt-0 space-y-0.5 text-[11px]">
+                            <div key={item.audit_id} className="pt-2.5 first:pt-0 space-y-1 text-xs">
                               <div className="flex items-center justify-between text-slate-600">
-                                <span className="font-bold text-[#063B70]">{item.action}</span>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="font-bold text-sm text-[#063B70]">{item.action}</span>
+                                <span className="text-xs text-slate-500">
                                   {new Date(item.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <div className="text-slate-500">
-                                ดำเนินการโดย: <strong>{item.actor_id}</strong> ({item.actor_role})
+                              <div className="text-slate-600">
+                                ดำเนินการโดย: <strong className="text-slate-800">{item.actor_id}</strong> ({item.actor_role})
                               </div>
-                              {item.reason && <p className="text-slate-700 italic">"{item.reason}"</p>}
+                              {item.reason && <p className="text-slate-700 italic text-xs leading-relaxed">"{item.reason}"</p>}
                             </div>
                           ))
                         )}
@@ -1472,13 +1472,13 @@ export const AdminReportsPage: React.FC = () => {
               <button onClick={() => setAssignModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3.5 text-sm">
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">เลือกเจ้าหน้าที่ผู้รับผิดชอบ:</label>
+                <label className="block text-slate-700 font-semibold mb-1.5">เลือกเจ้าหน้าที่ผู้รับผิดชอบ:</label>
                 <select
                   value={assigneeInput}
                   onChange={(e) => setAssigneeInput(e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm"
                 >
                   <option value="">-- เลือกเจ้าหน้าที่ --</option>
                   {staffUsers.map(u => (
@@ -1490,20 +1490,20 @@ export const AdminReportsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">คำแนะนำหรือคำสั่งการ:</label>
+                <label className="block text-slate-700 font-semibold mb-1.5">คำแนะนำหรือคำสั่งการ:</label>
                 <textarea
                   rows={3}
                   value={assignNoteInput}
                   onChange={(e) => setAssignNoteInput(e.target.value)}
                   placeholder="ระบุข้อแนะนำในการตรวจสอบ เช่น ให้ประสานผู้นำชุมชนเพื่อขอข้อมูลตัวอย่างน้ำ..."
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => setAssignModalOpen(false)} className="px-3 py-1.5 text-xs text-slate-600 font-medium">ยกเลิก</button>
-              <button onClick={handleAssign} className="px-4 py-1.5 bg-[#0C65E8] text-white text-xs font-bold rounded-lg hover:bg-blue-700 shadow-sm">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button onClick={() => setAssignModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 font-medium">ยกเลิก</button>
+              <button onClick={handleAssign} className="px-5 py-2 bg-[#0C65E8] text-white text-sm font-semibold rounded-xl hover:bg-blue-700 shadow-sm min-h-[40px]">
                 บันทึกการมอบหมาย
               </button>
             </div>
@@ -1514,13 +1514,13 @@ export const AdminReportsPage: React.FC = () => {
       {/* 2. Structured Verification Modal */}
       {verifyModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-5 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 my-8 max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 my-8 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between border-b pb-3 border-slate-100">
               <div>
-                <h3 className="font-bold text-base text-[#063B70] flex items-center gap-2">
+                <h3 className="font-bold text-lg text-[#063B70] flex items-center gap-2">
                   <CheckSquare className="w-5 h-5 text-emerald-600" /> บันทึกการพิสูจน์ข้อเท็จจริง
                 </h3>
-                <p className="text-[11px] text-slate-500">แยกข้อเท็จจริงระหว่างสิ่งที่รายงานกับสิ่งที่ประจักษ์</p>
+                <p className="text-xs text-slate-500 mt-0.5">แยกข้อเท็จจริงระหว่างสิ่งที่รายงานกับสิ่งที่ประจักษ์</p>
               </div>
               <button onClick={() => setVerifyModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
@@ -1573,70 +1573,70 @@ export const AdminReportsPage: React.FC = () => {
               )}
 
               {/* 6 Structured Assessment Fields */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                <span className="font-bold text-slate-700 block">เกณฑ์โครงสร้าง 6 มิติ (Mandatory Assessment):</span>
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <span className="font-bold text-slate-800 text-sm block">เกณฑ์โครงสร้าง 6 มิติ (Mandatory Assessment):</span>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">1. สิ่งที่ประชาชนรายงาน (What was reported):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">1. สิ่งที่ประชาชนรายงาน (What was reported):</label>
                   <input
                     type="text"
                     value={verReportedInput}
                     onChange={(e) => setVerReportedInput(e.target.value)}
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">2. สิ่งที่ตรวจสอบพบประจักษ์ (What was observed):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">2. สิ่งที่ตรวจสอบพบประจักษ์ (What was observed):</label>
                   <input
                     type="text"
                     value={verObservedInput}
                     onChange={(e) => setVerObservedInput(e.target.value)}
                     placeholder="เช่น พบฟองสีขาวลอยเป็นแนวยาวและมีปลาตาย 4-5 ตัว"
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">3. ข้อมูลระบบโทรมาตรแสดงอะไร (System data):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">3. ข้อมูลระบบโทรมาตรแสดงอะไร (System data):</label>
                   <input
                     type="text"
                     value={verSystemInput}
                     onChange={(e) => setVerSystemInput(e.target.value)}
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">4. แบบจำลองแนวโน้มแสดงอะไร (Model suggests):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">4. แบบจำลองแนวโน้มแสดงอะไร (Model suggests):</label>
                   <input
                     type="text"
                     value={verModelInput}
                     onChange={(e) => setVerModelInput(e.target.value)}
                     placeholder="เช่น ความเสี่ยงปานกลางในแนวคุ้งน้ำ"
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">5. สิ่งที่ยังไม่ทราบแน่ชัด (What is unknown):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">5. สิ่งที่ยังไม่ทราบแน่ชัด (What is unknown):</label>
                   <input
                     type="text"
                     value={verUnknownInput}
                     onChange={(e) => setVerUnknownInput(e.target.value)}
                     placeholder="เช่น ยังไม่ทราบชนิดสารเคมีเนื่องจากต้องรอผลตรวจแล็บ"
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 text-[11px] mb-0.5 font-medium">6. ขั้นตอนการตรวจสอบที่ควรทำต่อไป (Next action):</label>
+                  <label className="block text-slate-600 text-xs mb-1 font-semibold">6. ขั้นตอนการตรวจสอบที่ควรทำต่อไป (Next action):</label>
                   <input
                     type="text"
                     value={verActionInput}
                     onChange={(e) => setVerActionInput(e.target.value)}
                     placeholder="เช่น ส่งเจ้าหน้าที่เก็บตัวอย่างน้ำทดสอบค่า DO/BOD"
-                    className="w-full p-1.5 border border-slate-300 rounded text-xs"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-[38px]"
                   />
                 </div>
               </div>

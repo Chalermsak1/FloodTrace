@@ -136,30 +136,30 @@ export const OverviewPage: React.FC = () => {
           {/* LEFT ~50-55%: Text + Scope Indicator + Search */}
           <div className="lg:col-span-7 space-y-5">
             
-            {/* Location Scope Indicator (Section 8) */}
+            {/* Location Scope Indicator (Section 8 & 50.3) */}
             <Link
               to="/map"
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-[#0C65E8] border border-[#0C65E8]/25 shadow-xs hover:border-[#0C65E8] transition-all group"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-[#0C65E8] border border-[#0C65E8]/25 shadow-xs hover:border-[#0C65E8] transition-all group"
             >
-              <MapPin className="w-3.5 h-3.5 text-[#0C65E8] shrink-0" />
-              <span className="text-xs font-bold text-slate-800">
-                ขอบเขตการวิเคราะห์ปัจจุบัน: <span className="text-[#0C65E8]">จังหวัดปราจีนบุรี</span>
+              <MapPin className="w-4 h-4 text-[#0C65E8] shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                ขอบเขตการวิเคราะห์ปัจจุบัน: <span className="text-[#0C65E8] font-bold">จังหวัดปราจีนบุรี</span>
               </span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
 
-            {/* Primary Headline (Section 7) */}
-            <h1 className="text-2xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-[#063B70] leading-[1.2]">
+            {/* Primary Headline (Section 7 & 50.7: Desktop 40-48px, Mobile 28-34px, weight 700) */}
+            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-[#063B70] leading-[1.25] tracking-normal">
               เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม<br />
               <span className="text-[#0C65E8]">เพื่อชุมชนที่ปลอดภัย</span>
             </h1>
 
-            {/* Supporting Explanation (Section 7) */}
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal max-w-2xl">
+            {/* Supporting Explanation (Section 7 & 50.7: 16-18px, comfortable line-height, max-w-2xl) */}
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl prose-readable">
               แพลตฟอร์มที่รวบรวมข้อมูลจากหน่วยงานภาครัฐ ข้อมูลด้านอุทกวิทยา ข้อมูลสิ่งแวดล้อม รายงานจากประชาชน และการวิเคราะห์เชิงพื้นที่ เพื่อช่วยเฝ้าระวังและตรวจสอบพื้นที่ที่ควรติดตาม
             </p>
 
-            {/* Prominent Hero Search Bar (Section 9) */}
+            {/* Prominent Hero Search Bar (Section 9 & 50.12: input 16px, button 16px) */}
             <div className="pt-2 max-w-xl relative">
               <form onSubmit={handleSearchSubmit} className="relative flex items-center shadow-lg rounded-2xl">
                 <input
@@ -171,12 +171,12 @@ export const OverviewPage: React.FC = () => {
                     setShowSearchResults(true);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className="w-full bg-white text-slate-900 placeholder-slate-400 text-sm rounded-2xl pl-12 pr-28 py-4 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:border-transparent transition-all"
+                  className="w-full bg-white text-slate-900 placeholder-slate-400 text-base rounded-2xl pl-12 pr-32 py-3.5 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:border-transparent transition-all min-h-[48px]"
                 />
                 <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
                 <button
                   type="submit"
-                  className="absolute right-2 px-6 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl transition-colors shadow-xs min-h-[40px] flex items-center gap-1.5"
+                  className="absolute right-2 px-6 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-base font-semibold rounded-xl transition-colors shadow-xs min-h-[42px] flex items-center gap-1.5"
                 >
                   <span>ค้นหา</span>
                 </button>
@@ -188,9 +188,9 @@ export const OverviewPage: React.FC = () => {
                   className="absolute left-0 right-0 mt-2 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden animate-fadeIn"
                   onMouseLeave={() => setShowSearchResults(false)}
                 >
-                  <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
                     <span>ผลการค้นหาใน จ.ปราจีนบุรี</span>
-                    <span className="text-[10px] text-[#0C65E8] font-normal">{searchResults.length} รายการ</span>
+                    <span className="text-xs text-[#0C65E8] font-medium">{searchResults.length} รายการ</span>
                   </div>
 
                   {searchResults.length > 0 ? (
@@ -203,19 +203,19 @@ export const OverviewPage: React.FC = () => {
                           className="w-full text-left px-4 py-2.5 hover:bg-sky-50 transition-colors flex items-center justify-between group"
                         >
                           <div>
-                            <span className="font-semibold text-xs sm:text-sm text-slate-800 group-hover:text-[#0C65E8]">
+                            <span className="font-semibold text-sm sm:text-base text-slate-800 group-hover:text-[#0C65E8]">
                               {item.label}
                             </span>
-                            <span className="block text-[11px] text-slate-400">{item.sub}</span>
+                            <span className="block text-xs text-slate-500 mt-0.5">{item.sub}</span>
                           </div>
-                          <span className="text-xs text-[#0C65E8] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                          <span className="text-xs sm:text-sm text-[#0C65E8] font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                             ดูแผนที่ <ChevronRight className="w-3.5 h-3.5" />
                           </span>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="px-4 py-4 text-xs text-slate-400 text-center">
+                    <div className="px-4 py-4 text-sm text-slate-500 text-center">
                       ไม่พบพื้นที่ที่ค้นหาในขอบเขตการวิเคราะห์ จ.ปราจีนบุรี
                     </div>
                   )}
@@ -235,10 +235,10 @@ export const OverviewPage: React.FC = () => {
                 loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#063B70]/85 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-200 mb-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-sky-200 mb-1">
                   ระบบนิเวศลุ่มน้ำและการติดตามสิ่งแวดล้อม
                 </span>
-                <p className="text-xs text-white/90 leading-snug font-medium">
+                <p className="text-sm text-white/95 leading-relaxed font-normal">
                   ติดตามสภาพลุ่มน้ำบางปะกง-ปราจีนบุรี เชื่อมโยงข้อมูลโทรมาตรระดับน้ำและคุณภาพสิ่งแวดล้อม
                 </p>
               </div>
@@ -252,12 +252,15 @@ export const OverviewPage: React.FC = () => {
       {/* ============================================================ */}
       {/* SECTION D & 10: QUICK ACCESS CARDS                           */}
       {/* ============================================================ */}
-      <section className="space-y-3">
+      {/* ============================================================ */}
+      {/* SECTION D & 10: QUICK ACCESS CARDS (Section 50.8)            */}
+      {/* ============================================================ */}
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-bold text-[#063B70]">
+          <h2 className="text-lg sm:text-xl font-bold text-[#063B70]">
             สรุปสถานการณ์และทางลัดข้อมูล
           </h2>
-          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+          <span className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:inline">
             ข้อมูลเปิดเชื่อมต่อทางการ (Real-time Telemetry)
           </span>
         </div>
@@ -270,24 +273,24 @@ export const OverviewPage: React.FC = () => {
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-[#DC2626]/50 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-bold text-slate-700">สถานการณ์ล่าสุด</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-base font-semibold text-slate-800">สถานการณ์ล่าสุด</span>
                 <span className="w-8 h-8 rounded-xl bg-red-50 text-[#DC2626] flex items-center justify-center">
                   <Activity className="w-4 h-4" />
                 </span>
               </div>
-              <div className="text-2xl font-black text-[#DC2626]">
+              <div className="text-2xl sm:text-3xl font-bold text-[#DC2626]">
                 {loading ? (
-                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                  <span className="inline-block w-16 h-8 bg-slate-100 rounded-md animate-pulse"></span>
                 ) : (
                   `${overviewData?.priority_counts?.high ?? 3} โซนเฝ้าระวังสูง`
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
                 พบพื้นที่ที่ควรเฝ้าระวังในจังหวัดปราจีนบุรี
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#DC2626]">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#DC2626]">
               <span>ตรวจสอบบนแผนที่</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -299,24 +302,24 @@ export const OverviewPage: React.FC = () => {
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-[#0C65E8]/50 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-bold text-slate-700">ข้อมูลจากหน่วยงาน</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-base font-semibold text-slate-800">ข้อมูลจากหน่วยงาน</span>
                 <span className="w-8 h-8 rounded-xl bg-blue-50 text-[#0C65E8] flex items-center justify-center">
                   <Droplets className="w-4 h-4" />
                 </span>
               </div>
-              <div className="text-2xl font-black text-[#063B70]">
+              <div className="text-2xl sm:text-3xl font-bold text-[#063B70]">
                 {loading ? (
-                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                  <span className="inline-block w-16 h-8 bg-slate-100 rounded-md animate-pulse"></span>
                 ) : (
                   `${((overviewData?.total_water_stations || 26) + (overviewData?.total_rainfall_stations || 78))} จุดตรวจวัด`
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
                 ระดับน้ำ น้ำฝน และข้อมูลสิ่งแวดล้อมจากหน่วยงาน
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#0C65E8]">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#0C65E8]">
               <span>ดูข้อมูลโทรมาตร</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -328,24 +331,24 @@ export const OverviewPage: React.FC = () => {
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-amber-400 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-bold text-slate-700">รายงานจากประชาชน</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-base font-semibold text-slate-800">รายงานจากประชาชน</span>
                 <span className="w-8 h-8 rounded-xl bg-amber-50 text-[#D97706] flex items-center justify-center">
                   <Users className="w-4 h-4" />
                 </span>
               </div>
-              <div className="text-2xl font-black text-[#D97706]">
+              <div className="text-2xl sm:text-3xl font-bold text-[#D97706]">
                 {loading ? (
-                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                  <span className="inline-block w-16 h-8 bg-slate-100 rounded-md animate-pulse"></span>
                 ) : (
                   `${overviewData?.total_citizen_reports ?? 171} ข้อสังเกต`
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
                 รวบรวมข้อสังเกตจากประชาชนในพื้นที่
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#D97706]">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#D97706]">
               <span>สำรวจรายงานชุมชน</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -357,24 +360,24 @@ export const OverviewPage: React.FC = () => {
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-card hover:border-emerald-400 transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-bold text-slate-700">พื้นที่เฝ้าระวัง</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-base font-semibold text-slate-800">พื้นที่เฝ้าระวัง</span>
                 <span className="w-8 h-8 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center">
                   <Layers className="w-4 h-4" />
                 </span>
               </div>
-              <div className="text-2xl font-black text-[#059669]">
+              <div className="text-2xl sm:text-3xl font-bold text-[#059669]">
                 {loading ? (
-                  <span className="inline-block w-16 h-7 bg-slate-100 rounded-md animate-pulse"></span>
+                  <span className="inline-block w-16 h-8 bg-slate-100 rounded-md animate-pulse"></span>
                 ) : (
                   `${overviewData?.total_monitoring_cells ?? 45} โซนวิเคราะห์`
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
                 ดูพื้นที่ที่มีความสำคัญในการติดตามและตรวจสอบ
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#059669]">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#059669]">
               <span>สำรวจพื้นที่ 7 อำเภอ</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -397,16 +400,16 @@ export const OverviewPage: React.FC = () => {
         <section className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-card space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-[#063B70]">
+              <h3 className="text-xl sm:text-2xl font-bold text-[#063B70]">
                 ข่าวสารและข้อมูลล่าสุด
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500 mt-1">
                 รายงานผลตรวจวัดและประกาศทางการจากหน่วยงานราชการที่รับผิดชอบ
               </p>
             </div>
             <Link
               to="/official-updates"
-              className="text-xs font-bold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 transition-colors"
+              className="text-sm font-semibold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 transition-colors"
             >
               <span>ดูทั้งหมด</span>
               <ChevronRight className="w-4 h-4" />
@@ -417,31 +420,31 @@ export const OverviewPage: React.FC = () => {
             {officialUpdates.slice(0, 3).map((item) => (
               <div
                 key={item.id}
-                className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/90 flex flex-col justify-between space-y-3 hover:bg-slate-50 hover:border-[#0C65E8]/30 transition-all"
+                className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 flex flex-col justify-between space-y-3 hover:bg-slate-50 hover:border-[#0C65E8]/30 transition-all"
               >
                 <div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
-                    <span className="font-bold text-[#0C65E8] bg-blue-50 px-2 py-0.5 rounded border border-blue-100 truncate max-w-[130px]">
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span className="font-semibold text-[#0C65E8] bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100 truncate max-w-[130px]">
                       {item.agency || 'กรมควบคุมมลพิษ'}
                     </span>
-                    <span className="flex items-center gap-1 text-slate-400">
-                      <Clock className="w-3 h-3" />
+                    <span className="flex items-center gap-1 text-slate-400 font-medium">
+                      <Clock className="w-3.5 h-3.5" />
                       <span>{item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'ล่าสุด'}</span>
                     </span>
                   </div>
 
-                  <h4 className="font-bold text-xs sm:text-sm text-[#063B70] line-clamp-2 leading-snug">
+                  <h4 className="font-bold text-sm sm:text-base text-[#063B70] line-clamp-2 leading-snug">
                     {item.title}
                   </h4>
 
-                  <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                  <p className="text-sm text-slate-600 mt-2 line-clamp-3 leading-relaxed">
                     {item.factual_summary || item.related_area}
                   </p>
                 </div>
 
                 <Link
                   to="/official-updates"
-                  className="text-xs font-bold text-[#0C65E8] hover:underline inline-flex items-center gap-1 pt-2.5 border-t border-slate-200/60"
+                  className="text-sm font-semibold text-[#0C65E8] hover:underline inline-flex items-center gap-1 pt-2.5 border-t border-slate-200/60"
                 >
                   <span>อ่านรายละเอียด</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -450,55 +453,55 @@ export const OverviewPage: React.FC = () => {
             ))}
 
             {officialUpdates.length === 0 && (
-              <div className="col-span-3 text-center py-10 text-xs text-slate-400">
+              <div className="col-span-3 text-center py-10 text-sm text-slate-400">
                 ยังไม่มีประกาศใหม่ในขณะนี้
               </div>
             )}
           </div>
         </section>
 
-        {/* CITIZEN PARTICIPATION PANEL (~35% -> 4 cols - Section 19) */}
+        {/* CITIZEN PARTICIPATION PANEL (~35% -> 4 cols - Section 19 & 50.12) */}
         <section className="lg:col-span-4 bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE]/70 rounded-3xl p-6 sm:p-7 border border-[#BFDBFE] shadow-card space-y-4">
-          <div className="w-10 h-10 rounded-2xl bg-[#0C65E8] text-white flex items-center justify-center shadow-sm">
-            <MessageSquarePlus className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-[#0C65E8] text-white flex items-center justify-center shadow-sm">
+            <MessageSquarePlus className="w-6 h-6" />
           </div>
 
           <div>
-            <h3 className="font-black text-lg text-[#063B70]">
+            <h3 className="font-bold text-xl sm:text-2xl text-[#063B70]">
               สำหรับประชาชน
             </h3>
-            <p className="text-xs text-slate-700 leading-relaxed mt-1">
+            <p className="text-sm sm:text-base text-slate-700 leading-relaxed mt-1">
               พบเห็นปัญหา แจ้งข้อมูลได้ที่นี่ เพื่อช่วยให้ทีมงานและชุมชนติดตามสถานการณ์ได้
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-white/80 border border-white/60 space-y-2 text-xs text-slate-600">
-            <div className="flex items-start gap-2">
+          <div className="p-4 rounded-2xl bg-white/80 border border-white/60 space-y-2.5 text-sm text-slate-700">
+            <div className="flex items-start gap-2.5">
               <span className="text-[#0C65E8] font-bold mt-0.5">•</span>
-              <span>แจ้งข้อสังเกตน้ำเปลี่ยนสี มีกลิ่น หรือพบคราบผิดปกติ</span>
+              <span className="leading-relaxed">แจ้งข้อสังเกตน้ำเปลี่ยนสี มีกลิ่น หรือพบคราบผิดปกติ</span>
             </div>
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2.5">
               <span className="text-[#0C65E8] font-bold mt-0.5">•</span>
-              <span>ระบบรักษาความเป็นส่วนตัว ไม่เปิดเผยชื่อหรือพิกัดบ้านเรือน</span>
+              <span className="leading-relaxed">ระบบรักษาความเป็นส่วนตัว ไม่เปิดเผยชื่อหรือพิกัดบ้านเรือน</span>
             </div>
           </div>
 
           <Link
             to="/report"
-            className="w-full py-3 px-5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px]"
+            className="w-full py-3.5 px-5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-base font-semibold rounded-xl text-center flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[48px]"
           >
             <span>แจ้งรายงานจากประชาชน</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </Link>
 
           {/* Secondary Links (Section 19) */}
-          <div className="pt-2 border-t border-[#BFDBFE]/60 flex items-center justify-between text-xs font-semibold text-slate-600">
-            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+          <div className="pt-2 border-t border-[#BFDBFE]/60 flex items-center justify-between text-sm font-medium text-slate-600">
+            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4 text-slate-400" />
               <span>วิธีการใช้งาน</span>
             </Link>
-            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1">
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+            <Link to="/knowledge" className="hover:text-[#0C65E8] flex items-center gap-1.5">
+              <HelpCircle className="w-4 h-4 text-slate-400" />
               <span>คำถามที่พบบ่อย</span>
             </Link>
           </div>
@@ -511,14 +514,14 @@ export const OverviewPage: React.FC = () => {
       {/* ============================================================ */}
       <section className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-xs text-slate-800">
+            <h4 className="font-semibold text-sm sm:text-base text-slate-800">
               ความโปร่งใสและที่มาของข้อมูล (Data Provenance & Trust)
             </h4>
-            <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
               เชื่อมต่อข้อมูลเปิดจากสถาบันสารสนเทศทรัพยากรน้ำ (HII / ThaiWater), กรมควบคุมมลพิษ (PCD), GISTDA, รายงานจากประชาชน และแบบจำลอง FloodTrace
             </p>
           </div>
@@ -526,10 +529,10 @@ export const OverviewPage: React.FC = () => {
 
         <Link
           to="/data-methodology"
-          className="text-xs font-bold text-[#0C65E8] hover:underline flex items-center gap-1 shrink-0 self-start md:self-auto"
+          className="text-sm font-semibold text-[#0C65E8] hover:underline flex items-center gap-1.5 shrink-0 self-start md:self-auto"
         >
           <span>วิธีวิทยาและข้อจำกัด</span>
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-4 h-4" />
         </Link>
       </section>
 

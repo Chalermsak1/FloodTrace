@@ -45,18 +45,18 @@ export const Navbar: React.FC<Props> = ({
             <button
               onClick={onToggleMode}
               disabled={switchingMode}
-              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition ${
                 systemMode === 'DEVELOPMENT'
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                   : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
               }`}
               title="คลิกเพื่อสลับระหว่างโหมดทดสอบ (ข้อมูลจริง 112 โรงงาน) และโหมด Production Audit"
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${systemMode === 'DEVELOPMENT' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${systemMode === 'DEVELOPMENT' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
               <span>{switchingMode ? 'Switching...' : systemMode === 'DEVELOPMENT' ? '🟢 REAL DATA ACTIVE (112 Plants)' : '🔒 PROD AUDIT (Fail-Closed)'}</span>
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 hidden sm:block">
+          <p className="text-xs text-slate-400 hidden sm:block">
             Industrial Waste Sources ➔ River Flow ➔ Exposure Screening ➔ Forecast
           </p>
         </div>

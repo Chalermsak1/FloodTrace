@@ -21,7 +21,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
             <h3 className="font-bold text-base text-[#0B243D] leading-tight">
               แนวโน้มการขยายตัว (Forecast)
             </h3>
-            <p className="text-[11px] text-[#717F8F]">
+            <p className="text-xs text-[#717F8F]">
               แสดงแนวโน้มพื้นที่เฝ้าระวังล่วงหน้า 3 วัน ตามแบบจำลองที่ได้รับอนุญาต
             </p>
           </div>
@@ -41,12 +41,12 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                 <span className="text-xs font-bold text-[#0B243D]">จุดเฝ้าระวังหลัก (อ.กบินทร์บุรี)</span>
               </div>
               <div className="w-3/4 border-t-2 border-dashed border-[#5794E0] my-1 relative">
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-white px-2 py-0.5 rounded text-[10px] font-bold text-[#0C57C7] border border-[#C4C7D1]">
+                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-white px-2 py-0.5 rounded text-2xs font-bold text-[#0C57C7] border border-[#C4C7D1]">
                   ทิศทางการไหล +3 วัน
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-[#717F8F] mt-1">
-                <MapPin className="w-3 h-3 text-[#5794E0]" />
+              <div className="flex items-center gap-1.5 text-xs text-[#717F8F] mt-1">
+                <MapPin className="w-3.5 h-3.5 text-[#5794E0]" />
                 <span>แม่น้ำปราจีนบุรี → อ.ศรีมหาโพธิ → อ.เมือง</span>
               </div>
             </div>
@@ -59,12 +59,12 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                 <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
                 <span>สถานะข้อมูลคาดการณ์</span>
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">
+              <span className="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-200 text-amber-900">
                 {isForecastBlocked ? 'ACCESS REQUIRED' : 'MODELED'}
               </span>
             </div>
             
-            <p className="text-[11px] text-amber-950 leading-relaxed pt-1">
+            <p className="text-xs text-amber-950 leading-relaxed pt-1">
               {isForecastBlocked ? (
                 <>
                   <strong>แหล่งข้อมูลภายนอกถูกจำกัด:</strong> ระบบใช้งานนโยบายควบคุมความปลอดภัยในการผลิต (Production Gate) แหล่งข้อมูลพยากรณ์สาธารณะภายนอกถูกระงับจนกว่าจะได้รับสิทธิ์เข้าถึงข้อมูลทางการเฉพาะ
@@ -80,11 +80,11 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           {/* Legend and Horizon */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2 bg-white rounded-lg border border-[#C4C7D1]/60">
-              <div className="text-[10px] text-[#717F8F]">ช่วงเวลาคาดการณ์</div>
+              <div className="text-2xs text-[#717F8F]">ช่วงเวลาคาดการณ์</div>
               <div className="font-bold text-[#0B243D] mt-0.5">+24H ถึง +72H</div>
             </div>
             <div className="p-2 bg-white rounded-lg border border-[#C4C7D1]/60">
-              <div className="text-[10px] text-[#717F8F]">ประเภทข้อมูล</div>
+              <div className="text-2xs text-[#717F8F]">ประเภทข้อมูล</div>
               <div className="font-bold text-[#0C57C7] mt-0.5">แบบจำลอง (MODELED)</div>
             </div>
           </div>
@@ -94,7 +94,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
 
       {/* Forecast Disclaimer */}
       <div className="mt-4 pt-2.5 border-t border-[#C4C7D1]/70">
-        <p className="text-[10px] text-[#717F8F] leading-snug">
+        <p className="text-xs text-[#717F8F] leading-relaxed">
           * แบบจำลองเป็นข้อมูลประกอบการเฝ้าระวัง ไม่ใช่การยืนยันเหตุการณ์ล่วงหน้า
         </p>
       </div>

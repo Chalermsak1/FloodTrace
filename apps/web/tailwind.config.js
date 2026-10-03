@@ -35,7 +35,19 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Sarabun', 'Noto Sans Thai', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Noto Sans Thai"', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+      },
+      fontSize: {
+        '2xs': ['0.75rem', { lineHeight: '1.4' }],    // 12px (min small label)
+        'xs': ['0.8125rem', { lineHeight: '1.45' }],  // 13px (metadata)
+        'sm': ['0.875rem', { lineHeight: '1.5' }],    // 14px (secondary, help, caption)
+        'base': ['1rem', { lineHeight: '1.65' }],     // 16px (body, inputs, buttons)
+        'lg': ['1.125rem', { lineHeight: '1.55' }],   // 18px (card headings, prominent body)
+        'xl': ['1.25rem', { lineHeight: '1.45' }],    // 20px (sub-section headings)
+        '2xl': ['1.5rem', { lineHeight: '1.35' }],    // 24px (section headings)
+        '3xl': ['1.875rem', { lineHeight: '1.3' }],   // 30px (page headings)
+        '4xl': ['2.25rem', { lineHeight: '1.25' }],   // 36px (large page headings)
+        'display': ['2.75rem', { lineHeight: '1.22' }], // 44px (hero / display)
       },
       borderRadius: {
         'card': '16px',

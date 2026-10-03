@@ -185,30 +185,30 @@ export const ReportPage: React.FC = () => {
       
       {/* Header Banner */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-3 border border-emerald-100">
-          <Eye className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-3 border border-emerald-200">
+          <Eye className="w-4 h-4" />
           ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
           ส่งรายงานข้อสังเกตสภาพน้ำและสิ่งแวดล้อม
         </h1>
-        <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+        <p className="text-sm sm:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
           ร่วมเฝ้าระวังพื้นที่ของคุณโดยการรายงานข้อเท็จจริงที่พบเห็น ข้อมูลพิกัดละเอียดจะถูกลบออกเพื่อปกป้องความเป็นส่วนตัวของคุณ
         </p>
 
         {/* 3-Step Wizard Indicator */}
-        <div className="grid grid-cols-3 gap-2 mt-6 pt-5 border-t border-slate-100 text-xs font-bold">
-          <div className={`p-2.5 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center ${
+        <div className="grid grid-cols-3 gap-2.5 mt-6 pt-5 border-t border-slate-100 text-sm sm:text-base font-semibold">
+          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
             step === 1 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
           }`}>
             1. เลือกสิ่งที่พบ
           </div>
-          <div className={`p-2.5 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center ${
+          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
             step === 2 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
           }`}>
             2. ระบุตำแหน่ง
           </div>
-          <div className={`p-2.5 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center ${
+          <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
             step === 3 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
           }`}>
             3. ตรวจสอบและส่ง
@@ -217,30 +217,30 @@ export const ReportPage: React.FC = () => {
       </div>
 
       {draftStatus === 'SUBMITTED' ? (
-        <div className="bg-white rounded-3xl p-8 border border-emerald-200 shadow-sm text-center space-y-4">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-emerald-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h2 className="text-xl font-black text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
             บันทึกรายงานข้อสังเกตเรียบร้อยแล้ว
           </h2>
-          <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+          <p className="text-base text-slate-600 max-w-lg mx-auto leading-relaxed">
             {resultMessage}
           </p>
-          <div className="p-4 bg-slate-50 rounded-2xl max-w-md mx-auto text-xs text-slate-500 leading-relaxed text-left border border-slate-100">
+          <div className="p-4 bg-slate-50 rounded-2xl max-w-lg mx-auto text-sm text-slate-600 leading-relaxed text-left border border-slate-100">
             <strong>นโยบายความโปร่งใส:</strong> ข้อมูลของคุณถูกจัดเก็บในหมวด <span className="font-bold text-amber-700">รายงานจากประชาชน (COMMUNITY)</span> ยังไม่ถือเป็นผลยืนยันจากหน่วยงาน และพิกัดจะถูกปัดเศษระดับตำบลเพื่อปกป้องความปลอดภัยของคุณ
           </div>
           <div className="pt-4 flex flex-wrap justify-center gap-3">
             <button
               type="button"
               onClick={handleReset}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold min-h-[44px]"
+              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
             >
               ส่งรายงานเหตุการณ์อื่น
             </button>
             <Link
               to="/cases"
-              className="px-5 py-2.5 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-xs font-bold min-h-[44px] flex items-center gap-1.5"
+              className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2"
             >
               ดูเหตุการณ์ที่กำลังติดตาม <ChevronRight className="w-4 h-4" />
             </Link>
@@ -250,8 +250,8 @@ export const ReportPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
           
           {errorMessage && (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-2xl flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -260,24 +260,24 @@ export const ReportPage: React.FC = () => {
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900">ขั้นตอนที่ 1: เลือกสิ่งที่ท่านพบเห็นในพื้นที่</h2>
-                <p className="text-xs text-slate-500 mt-0.5">เลือกหมวดหมู่ข้อสังเกตตรงตามสภาพความเป็นจริง</p>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 1: เลือกสิ่งที่ท่านพบเห็นในพื้นที่</h2>
+                <p className="text-sm text-slate-500 mt-1">เลือกหมวดหมู่ข้อสังเกตตรงตามสภาพความเป็นจริง</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {REPORT_CATEGORIES.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`p-4 rounded-2xl text-left border transition-all min-h-[64px] flex flex-col justify-center ${
+                    className={`p-4 rounded-2xl text-left border transition-all min-h-[72px] flex flex-col justify-center ${
                       category === cat.id
-                        ? 'border-[#0C57C7] bg-blue-50/50 shadow-xs'
+                        ? 'border-[#0C57C7] bg-blue-50/60 shadow-xs'
                         : 'border-slate-200/80 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <span className="text-sm font-bold text-slate-900">{cat.label}</span>
-                    <span className="text-xs text-slate-500 mt-1 leading-normal">{cat.desc}</span>
+                    <span className="text-base font-bold text-slate-900">{cat.label}</span>
+                    <span className="text-sm text-slate-600 mt-1 leading-normal">{cat.desc}</span>
                   </button>
                 ))}
               </div>
@@ -286,7 +286,7 @@ export const ReportPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-xs font-bold min-h-[44px] flex items-center gap-2"
+                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
                 >
                   ถัดไป: ระบุตำแหน่ง <ChevronRight className="w-4 h-4" />
                 </button>
@@ -298,19 +298,19 @@ export const ReportPage: React.FC = () => {
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900">ขั้นตอนที่ 2: ระบุตำแหน่งที่พบเหตุการณ์</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 2: ระบุตำแหน่งที่พบเหตุการณ์</h2>
+                <p className="text-sm text-slate-500 mt-1">
                   ระบบจะปัดเศษพิกัดระดับตำบลก่อนแสดงผลสู่สาธารณะเพื่อปกป้องความเป็นส่วนตัวของท่าน
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">อำเภอ *</label>
+                  <label className="block text-base font-semibold text-slate-800 mb-1.5">อำเภอ *</label>
                   <select
                     value={district}
                     onChange={(e) => handleDistrictChange(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 min-h-[44px]"
+                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                   >
                     {Object.keys(DISTRICT_COORDS).map(d => (
                       <option key={d} value={d}>อ.{d}</option>
@@ -319,19 +319,19 @@ export const ReportPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">ตำบล / บริเวณที่พบ</label>
+                  <label className="block text-base font-semibold text-slate-800 mb-1.5">ตำบล / บริเวณที่พบ</label>
                   <input
                     type="text"
                     value={subdistrict}
                     onChange={(e) => setSubdistrict(e.target.value)}
                     placeholder="เช่น ต.กบินทร์, ริมแม่น้ำพระปรง"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 min-h-[44px]"
+                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-base font-semibold text-slate-800 mb-1.5">
                   ความลึกน้ำโดยประมาณ (ซม.) ถ้ามี
                 </label>
                 <input
@@ -339,27 +339,27 @@ export const ReportPage: React.FC = () => {
                   value={waterDepth}
                   onChange={(e) => setWaterDepth(e.target.value)}
                   placeholder="เช่น 30"
-                  className="w-full sm:w-1/2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 min-h-[44px]"
+                  className="w-full sm:w-1/2 px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                 />
               </div>
 
-              <div className="p-3 bg-sky-50 border border-sky-200/60 rounded-xl text-xs text-sky-900 flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#0C57C7] mt-0.5 shrink-0" />
-                <span>พิกัดอ้างอิง: ละติจูด {latitude.toFixed(3)}, ลองจิจูด {longitude.toFixed(3)} (แปลงเป็นจุดกว้างระดับอนุภูมิภาคอัตโนมัติ)</span>
+              <div className="p-3.5 bg-sky-50 border border-sky-200/60 rounded-xl text-sm text-sky-900 flex items-start gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-[#0C57C7] mt-0.5 shrink-0" />
+                <span className="leading-relaxed">พิกัดอ้างอิง: ละติจูด {latitude.toFixed(3)}, ลองจิจูด {longitude.toFixed(3)} (แปลงเป็นจุดกว้างระดับอนุภูมิภาคอัตโนมัติ)</span>
               </div>
 
               <div className="pt-4 flex justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold min-h-[44px]"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
                 >
                   ย้อนกลับ
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-xs font-bold min-h-[44px] flex items-center gap-2"
+                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
                 >
                   ถัดไป: ตรวจสอบและส่ง <ChevronRight className="w-4 h-4" />
                 </button>
@@ -371,16 +371,16 @@ export const ReportPage: React.FC = () => {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900">ขั้นตอนที่ 3: ตรวจสอบข้อมูลและยืนยันการส่ง</h2>
-                <p className="text-xs text-slate-500 mt-0.5">แนบภาพถ่าย (ลบข้อมูล EXIF/GPS อัตโนมัติ) และบันทึกคำอธิบายข้อเท็จจริง</p>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 3: ตรวจสอบข้อมูลและยืนยันการส่ง</h2>
+                <p className="text-sm text-slate-500 mt-1">แนบภาพถ่าย (ลบข้อมูล EXIF/GPS อัตโนมัติ) และบันทึกคำอธิบายข้อเท็จจริง</p>
               </div>
 
               {/* Photo Upload Box */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-base font-semibold text-slate-800 mb-1.5">
                   ภาพถ่ายประกอบเหตุการณ์ (ถ้ามี)
                 </label>
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:bg-slate-50 transition-colors">
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center hover:bg-slate-50 transition-colors">
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -389,11 +389,11 @@ export const ReportPage: React.FC = () => {
                     id="report-photo-input"
                   />
                   <label htmlFor="report-photo-input" className="cursor-pointer block">
-                    <Camera className="w-8 h-8 text-slate-400 mx-auto mb-1.5" />
-                    <span className="text-xs font-bold text-[#0C57C7] block">
+                    <Camera className="w-9 h-9 text-slate-400 mx-auto mb-2" />
+                    <span className="text-base font-semibold text-[#0C57C7] block">
                       {selectedFile ? selectedFile.name : 'คลิกเพื่อเลือกภาพถ่ายจากอุปกรณ์'}
                     </span>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">
+                    <span className="text-xs sm:text-sm text-slate-500 mt-1 block">
                       รองรับ JPG, PNG, WebP (สูงสุด 5MB, ระบบจะตัดข้อมูลระบุพิกัดกล้องออกทั้งหมด)
                     </span>
                   </label>
@@ -402,7 +402,7 @@ export const ReportPage: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-base font-semibold text-slate-800 mb-1.5">
                   คำอธิบายข้อสังเกตเพิ่มเติม (ข้อเท็จจริงเท่านั้น)
                 </label>
                 <textarea
@@ -410,12 +410,12 @@ export const ReportPage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="ระบุสิ่งที่พบเห็น เช่น ลักษณะการไหล สภาพของสีน้ำ กลิ่น หรือผลกระทบต่อสิ่งแวดล้อม (ห้ามใส่ข้อความกล่าวหาบุคคลหรือโรงงาน)"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white min-h-[80px]"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:bg-white focus:border-[#0C57C7] outline-none min-h-[96px] leading-relaxed"
                 />
               </div>
 
               {/* Summary Review */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-xs space-y-1.5 text-slate-700">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-sm space-y-1.5 text-slate-700">
                 <div><strong>สิ่งที่พบ:</strong> {category}</div>
                 <div><strong>พื้นที่:</strong> ต.{subdistrict || 'ไม่ระบุ'} อ.{district} จ.ปราจีนบุรี</div>
                 {waterDepth && <div><strong>ความลึกน้ำ:</strong> {waterDepth} ซม.</div>}
@@ -428,9 +428,9 @@ export const ReportPage: React.FC = () => {
                     type="checkbox"
                     checked={declaration}
                     onChange={(e) => setDeclaration(e.target.checked)}
-                    className="w-4 h-4 text-[#0C57C7] rounded-md focus:ring-0 mt-0.5 shrink-0"
+                    className="w-5 h-5 text-[#0C57C7] rounded-md focus:ring-0 mt-0.5 shrink-0"
                   />
-                  <span className="text-xs text-amber-950 font-semibold leading-relaxed">
+                  <span className="text-sm sm:text-base text-amber-950 font-medium leading-relaxed">
                     ฉันยืนยันว่าข้อมูลนี้เป็นสิ่งที่ฉันพบเห็นหรือมีหลักฐานประกอบ และไม่ได้ส่งข้อมูลเพื่อกล่าวหาบุคคลหรือองค์กรโดยไม่มีหลักฐาน
                   </span>
                 </label>
@@ -440,14 +440,14 @@ export const ReportPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold min-h-[44px]"
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
                 >
                   ย้อนกลับ
                 </button>
                 <button
                   type="submit"
                   disabled={draftStatus === 'SUBMITTING'}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold min-h-[44px] flex items-center gap-2 shadow-xs transition-colors"
+                  className="px-7 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs transition-colors"
                 >
                   {draftStatus === 'SUBMITTING' ? 'กำลังส่งข้อมูล...' : 'ส่งรายงานข้อสังเกต'}
                 </button>

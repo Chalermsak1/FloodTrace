@@ -122,14 +122,14 @@ export const MyAreaPage: React.FC = () => {
       {/* Page Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-bold mb-2 border border-blue-100">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-2 border border-blue-100">
             <Compass className="w-3.5 h-3.5" />
             <span>การติดตามสถานะพื้นที่ส่วนบุคคล</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#063B70] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
             พื้นที่ของฉัน
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          <p className="text-sm sm:text-base text-slate-600 mt-1">
             ปักหมุดติดตามตำบลและอำเภอที่คุณสนใจ เพื่อรับการแจ้งเตือนการเปลี่ยนแปลงสถานการณ์น้ำและสิ่งแวดล้อม
           </p>
         </div>
@@ -138,24 +138,24 @@ export const MyAreaPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[44px]"
+          className="px-6 py-3 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           <span>+ เพิ่มพื้นที่ติดตาม</span>
         </button>
       </div>
 
       {/* Followed Area Cards Grid (Section 25: Clean cards, NO large charts) */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-[#063B70]">
+        <h2 className="text-xl font-bold text-[#063B70]">
           พื้นที่ที่กำลังติดตาม ({savedDistricts.length})
         </h2>
 
         {savedDistricts.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3">
             <MapPin className="w-8 h-8 text-slate-300 mx-auto" />
-            <h3 className="font-bold text-slate-700 text-sm">ยังไม่มีพื้นที่ที่ติดตาม</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="font-bold text-slate-700 text-base">ยังไม่มีพื้นที่ที่ติดตาม</h3>
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">
               กดปุ่ม "+ เพิ่มพื้นที่ติดตาม" เพื่อเลือกอำเภอในจังหวัดปราจีนบุรีที่คุณต้องการเฝ้าระวัง
             </p>
           </div>
@@ -179,27 +179,27 @@ export const MyAreaPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-[#0C65E8]" />
-                        <h3 className="text-base font-extrabold text-[#063B70]">
+                        <h3 className="text-lg font-bold text-[#063B70]">
                           อำเภอ{districtName}
                         </h3>
                       </div>
-                      <span className="text-xs text-slate-400 mt-0.5 block">
+                      <span className="text-sm text-slate-500 mt-0.5 block">
                         จังหวัดปราจีนบุรี
                       </span>
                     </div>
 
                     {/* Current Watch Level Badge */}
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getPriorityBadgeClass(status.priority)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityBadgeClass(status.priority)}`}>
                       {status.priority || 'ระดับเฝ้าระวังต่ำ'}
                     </span>
                   </div>
 
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600 flex items-center justify-between">
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <Clock className="w-4 h-4 text-slate-400" />
                       <span>อัปเดตล่าสุด: {status.lastUpdated}</span>
                     </div>
-                    <span className="text-slate-500 font-medium">
+                    <span className="text-slate-600 font-medium">
                       {status.watchStatus}
                     </span>
                   </div>
@@ -211,13 +211,13 @@ export const MyAreaPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => toggleNotification(districtName)}
-                      className={`text-xs font-semibold flex items-center gap-1.5 py-1 px-2.5 rounded-lg transition-colors ${
+                      className={`text-sm font-semibold flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-colors ${
                         status.alertEnabled
                           ? 'text-[#0C65E8] bg-blue-50'
                           : 'text-slate-400 bg-slate-100'
                       }`}
                     >
-                      <BellRing className="w-3.5 h-3.5" />
+                      <BellRing className="w-4 h-4" />
                       <span>{status.alertEnabled ? 'แจ้งเตือนเปิดอยู่' : 'ปิดแจ้งเตือน'}</span>
                     </button>
 
@@ -233,10 +233,10 @@ export const MyAreaPage: React.FC = () => {
 
                       <Link
                         to={`/area-detail?district=${encodeURIComponent(districtName)}`}
-                        className="text-xs font-bold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 py-1 px-2"
+                        className="text-sm font-semibold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 py-1 px-2"
                       >
                         <span>ดูรายละเอียด</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        <ChevronRight className="w-4 h-4" />
                       </Link>
                     </div>
 
@@ -252,20 +252,20 @@ export const MyAreaPage: React.FC = () => {
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <Bell className="w-5 h-5 text-[#0C65E8]" />
-          <h2 className="text-base font-bold text-[#063B70]">การแจ้งเตือนล่าสุดในพื้นที่ของคุณ</h2>
+          <h2 className="text-lg font-bold text-[#063B70]">การแจ้งเตือนล่าสุดในพื้นที่ของคุณ</h2>
         </div>
 
         <div className="space-y-3">
           <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-950 space-y-1">
-              <div className="font-bold text-sm text-amber-900">
+            <div className="text-sm text-amber-950 space-y-1">
+              <div className="font-bold text-base text-amber-900">
                 อ.บ้านสร้าง: มีมวลน้ำหลากระบายลงสู่ทุ่งรับน้ำตามฤดูกาล
               </div>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-slate-600 leading-relaxed text-sm">
                 สถานีตรวจวัดระดับน้ำปากคลองบางพลวงบันทึกระดับน้ำเพิ่มขึ้น 12 ซม. ใน 24 ชม. ที่ผ่านมา แนะนำเกษตรกรเฝ้าระวังแปลงเพาะเลี้ยง
               </p>
-              <div className="text-[11px] text-slate-400 pt-1">
+              <div className="text-xs text-slate-500 pt-1">
                 2 ชั่วโมงที่ผ่านมา • OFFICIAL กรมชลประทาน
               </div>
             </div>
@@ -273,14 +273,14 @@ export const MyAreaPage: React.FC = () => {
 
           <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-[#0C65E8] shrink-0 mt-0.5" />
-            <div className="text-xs text-slate-800 space-y-1">
-              <div className="font-bold text-sm text-[#063B70]">
+            <div className="text-sm text-slate-800 space-y-1">
+              <div className="font-bold text-base text-[#063B70]">
                 อ.กบินทร์บุรี: รายงานผลตรวจคุณภาพน้ำผิวดินรอบประจำเดือน
               </div>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-slate-600 leading-relaxed text-sm">
                 สำนักงานสิ่งแวดล้อมและควบคุมมลพิษที่ 7 (สคพ.7) เผยแพร่ผลวิเคราะห์ตัวอย่างน้ำจุดบรรจบแม่น้ำพระปรง-หนุมาน อยู่ในเกณฑ์มาตรฐานแหล่งน้ำประเภท 3
               </p>
-              <div className="text-[11px] text-slate-400 pt-1">
+              <div className="text-xs text-slate-500 pt-1">
                 เมื่อวานนี้ • OFFICIAL กรมควบคุมมลพิษ
               </div>
             </div>
@@ -294,7 +294,7 @@ export const MyAreaPage: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base text-[#063B70]">เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี</h3>
+              <h3 className="font-bold text-lg text-[#063B70]">เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -305,11 +305,11 @@ export const MyAreaPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600 block">เลือกอำเภอ:</label>
+              <label className="text-sm font-semibold text-slate-700 block">เลือกอำเภอ:</label>
               <select
                 value={selectedToAdd}
                 onChange={(e) => setSelectedToAdd(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0C65E8]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[44px]"
               >
                 {ALL_DISTRICTS.map(d => (
                   <option key={d} value={d} disabled={savedDistricts.includes(d)}>
@@ -323,14 +323,14 @@ export const MyAreaPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors min-h-[44px]"
               >
                 ยกเลิก
               </button>
               <button
                 type="button"
                 onClick={handleAddArea}
-                className="px-5 py-2 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-xs font-bold transition-colors"
+                className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
               >
                 ยืนยันการเพิ่ม
               </button>

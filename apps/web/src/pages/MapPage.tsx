@@ -237,25 +237,25 @@ export const MapPage: React.FC = () => {
     <div className="w-full flex flex-col space-y-2">
       
       {/* 1. Header Bar: Compact Navigation Context */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 bg-slate-900/90 text-white rounded-2xl backdrop-blur-md border border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2 bg-slate-900/90 text-white rounded-2xl backdrop-blur-md border border-slate-800 shadow-sm">
         <div className="flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
             <span>แผนที่เฝ้าระวังสิ่งแวดล้อม (Environmental Watch Map)</span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-400/30">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-400/30">
               ดาวเทียมสิ่งแวดล้อม
             </span>
           </h1>
         </div>
 
         {/* Refresh & Scope Indicators */}
-        <div className="flex items-center gap-3 text-xs text-slate-300">
+        <div className="flex items-center gap-3.5 text-xs sm:text-sm text-slate-300">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             <span>ขอบเขตการวิเคราะห์: <strong className="text-white font-semibold">จ.ปราจีนบุรี</strong></span>
           </div>
-          <div className="hidden md:flex items-center gap-1 text-[11px] text-slate-400">
-            <Clock className="w-3 h-3 text-blue-400" />
+          <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
+            <Clock className="w-3.5 h-3.5 text-blue-400" />
             <span>อัปเดตอัตโนมัติ: {lastRefreshedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
           </div>
         </div>
@@ -288,7 +288,7 @@ export const MapPage: React.FC = () => {
         {/* 3. Floating Search Bar at Top (Section 11 - Visual Reference Layout) */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-30">
           <div className="relative">
-            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 px-3.5 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[#0C65E8] focus-within:border-transparent">
+            <div className="flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 px-4 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[#0C65E8] focus-within:border-transparent min-h-[46px]">
               <Search className="w-5 h-5 text-slate-400 shrink-0 mr-2.5" />
               <input
                 type="text"
@@ -296,7 +296,7 @@ export const MapPage: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 placeholder="ค้นหาพื้นที่ ตำบล อำเภอ หรือจังหวัด..."
-                className="w-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none font-medium"
+                className="w-full text-base text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none font-medium"
               />
               {searchQuery && (
                 <button
@@ -322,22 +322,22 @@ export const MapPage: React.FC = () => {
                   <button
                     key={idx}
                     onMouseDown={() => handleSearchResultClick(res)}
-                    className="w-full px-4 py-2.5 text-left hover:bg-blue-50/80 flex items-center justify-between transition-colors group"
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50/80 flex items-center justify-between transition-colors group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-xl bg-blue-100 text-[#0C65E8] flex items-center justify-center shrink-0 group-hover:bg-[#0C65E8] group-hover:text-white transition-colors">
-                        <MapPin className="w-3.5 h-3.5" />
+                      <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0C65E8] flex items-center justify-center shrink-0 group-hover:bg-[#0C65E8] group-hover:text-white transition-colors">
+                        <MapPin className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-800 group-hover:text-[#0C65E8]">
+                        <div className="text-sm font-semibold text-slate-800 group-hover:text-[#0C65E8]">
                           {res.title}
                         </div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-xs text-slate-500">
                           {res.subtitle}
                         </div>
                       </div>
                     </div>
-                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
                       {res.type === 'district' ? 'อำเภอ' : res.type === 'tambon' ? 'ตำบล' : res.type === 'waterway' ? 'ทางน้ำ' : 'จังหวัด'}
                     </span>
                   </button>
@@ -384,42 +384,42 @@ export const MapPage: React.FC = () => {
 
         {/* 5. Floating Layer Control Panel (Section 13) */}
         {showLayerPanel && (
-          <div className="absolute top-20 right-4 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 z-30 animate-in fade-in slide-in-from-right-2 duration-150 space-y-3.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="absolute top-20 right-4 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 z-30 animate-in fade-in slide-in-from-right-2 duration-150 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#0C65E8]" />
-                <span className="text-xs font-bold text-slate-800">ชั้นข้อมูลแผนที่</span>
+                <span className="text-sm font-bold text-slate-800">ชั้นข้อมูลแผนที่</span>
               </div>
               <button
                 onClick={() => setShowLayerPanel(false)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* ANALYSIS */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">การวิเคราะห์ความเสี่ยง</span>
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">การวิเคราะห์ความเสี่ยง</span>
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                  <span>พื้นผิวระดับการเฝ้าระวัง</span>
+                  <span className="w-3 h-3 rounded-full bg-rose-500"></span>
+                  <span className="font-medium">พื้นผิวระดับการเฝ้าระวัง</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.monitoringSurface}
                   onChange={() => toggleLayer('monitoringSurface')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
 
               {/* Opacity Slider */}
               {visibleLayers.monitoringSurface && (
                 <div className="pt-1 px-2 space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-500">
+                  <div className="flex justify-between text-xs text-slate-500">
                     <span>ความโปร่งแสงพื้นผิว</span>
-                    <span className="font-semibold">{Math.round(surfaceOpacity * 100)}%</span>
+                    <span className="font-semibold text-slate-700">{Math.round(surfaceOpacity * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -428,148 +428,148 @@ export const MapPage: React.FC = () => {
                     step="0.05"
                     value={surfaceOpacity}
                     onChange={(e) => setSurfaceOpacity(parseFloat(e.target.value))}
-                    className="w-full accent-[#0C65E8] cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                    className="w-full accent-[#0C65E8] cursor-pointer h-2 bg-slate-200 rounded-lg"
                   />
                 </div>
               )}
             </div>
 
             {/* HYDROLOGY */}
-            <div className="space-y-1.5 border-t border-slate-100 pt-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">โครงข่ายอุทกวิทยา</span>
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+            <div className="space-y-2 border-t border-slate-100 pt-2.5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">โครงข่ายอุทกวิทยา</span>
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-                  <span>แม่น้ำและลำคลองสายหลัก</span>
+                  <span className="w-3 h-3 rounded-full bg-sky-500"></span>
+                  <span className="font-medium">แม่น้ำและลำคลองสายหลัก</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.waterways}
                   onChange={() => toggleLayer('waterways')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                  <span>สถานีวัดระดับน้ำ (โทรมาตร)</span>
+                  <span className="w-3 h-3 rounded-full bg-blue-600"></span>
+                  <span className="font-medium">สถานีวัดระดับน้ำ (โทรมาตร)</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.stations}
                   onChange={() => toggleLayer('stations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
-                  <span>สถานีวัดน้ำฝนอัตโนมัติ</span>
+                  <span className="w-3 h-3 rounded-full bg-purple-600"></span>
+                  <span className="font-medium">สถานีวัดน้ำฝนอัตโนมัติ</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.rainfallStations}
                   onChange={() => toggleLayer('rainfallStations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
             </div>
 
             {/* COMMUNITY */}
-            <div className="space-y-1.5 border-t border-slate-100 pt-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ภาคประชาชน</span>
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+            <div className="space-y-2 border-t border-slate-100 pt-2.5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ภาคประชาชน</span>
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  <span>รายงานข้อสังเกตชุมชน</span>
+                  <span className="w-3 h-3 rounded-full bg-emerald-600"></span>
+                  <span className="font-medium">รายงานข้อสังเกตชุมชน</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.observations}
                   onChange={() => toggleLayer('observations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
             </div>
 
             {/* GEOGRAPHY */}
-            <div className="space-y-1.5 border-t border-slate-100 pt-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ภูมิศาสตร์และป้ายชื่อ</span>
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+            <div className="space-y-2 border-t border-slate-100 pt-2.5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ภูมิศาสตร์และป้ายชื่อ</span>
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
-                  <span>หน้ากากนอกเขตปราจีนบุรี</span>
+                  <span className="w-3 h-3 rounded-full bg-slate-700"></span>
+                  <span className="font-medium">หน้ากากนอกเขตปราจีนบุรี</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.outsideMask}
                   onChange={() => toggleLayer('outsideMask')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
                 <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                  <span>ป้ายชื่อตำบลและอำเภอ</span>
+                  <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                  <span className="font-medium">ป้ายชื่อตำบลและอำเภอ</span>
                 </span>
                 <input
                   type="checkbox"
                   checked={visibleLayers.adminLabels}
                   onChange={() => toggleLayer('adminLabels')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer"
+                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </label>
             </div>
           </div>
         )}
 
-        {/* 6. Compact Floating Legend (Bottom-Left, Section 14 Matching Reference) */}
-        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3 max-w-[320px]">
-          <div className="text-[11px] font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+        {/* 6. Compact Floating Legend (Bottom-Left, Section 14, 50.9, 50.10) */}
+        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3.5 max-w-[340px]">
+          <div className="text-xs sm:text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
             <span>ระดับความสำคัญในการเฝ้าระวัง</span>
-            <span className="text-[9px] text-slate-400 font-normal">จ.ปราจีนบุรี</span>
+            <span className="text-2xs sm:text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">จ.ปราจีนบุรี</span>
           </div>
 
           {/* Visual Color Chips */}
-          <div className="grid grid-cols-5 gap-1 text-center mb-2">
+          <div className="grid grid-cols-5 gap-1.5 text-center mb-2.5">
             <div className="flex flex-col items-center">
               <span className="w-4 h-4 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
-              <span className="text-[9px] text-slate-600 font-medium mt-0.5">สูงมาก</span>
+              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">สูงมาก</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="w-4 h-4 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
-              <span className="text-[9px] text-slate-600 font-medium mt-0.5">สูง</span>
+              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">สูง</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="w-4 h-4 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
-              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ปานกลาง</span>
+              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ปานกลาง</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="w-4 h-4 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
-              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ต่ำ</span>
+              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ต่ำ</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="w-4 h-4 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
-              <span className="text-[9px] text-slate-600 font-medium mt-0.5">ไม่มีข้อมูล</span>
+              <span className="text-2xs sm:text-xs text-slate-700 font-medium mt-1">ไม่มีข้อมูล</span>
             </div>
           </div>
 
           {/* Clarification Disclaimer (Section 14 & 23) */}
-          <p className="text-[9px] text-slate-500 leading-tight border-t border-slate-100 pt-1.5">
+          <p className="text-2xs sm:text-xs text-slate-500 leading-normal border-t border-slate-100 pt-2">
             พื้นที่สีแสดงระดับ Monitoring / Verification Priority จากข้อมูลที่ระบบมีในขณะนั้น ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
           </p>
         </div>
 
         {/* 7. Slide-out Detail Drawer (Non-blocking, on Selected Cell or Marker) */}
         {selectedCellData && (
-          <div className="absolute top-4 left-4 z-20 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3 animate-in fade-in slide-in-from-left-2 duration-150 max-h-[85%] overflow-y-auto">
+          <div className="absolute top-4 left-4 z-20 w-84 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3.5 animate-in fade-in slide-in-from-left-2 duration-150 max-h-[85%] overflow-y-auto">
             <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
               <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">พื้นที่วิเคราะห์</span>
-                <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">พื้นที่วิเคราะห์</span>
+                <h3 className="text-base font-bold text-slate-900 leading-snug">
                   {selectedCellData.cell_name || `ต.${selectedCellData.subdistrict} (อ.${selectedCellData.district})`}
                 </h3>
               </div>
@@ -583,9 +583,9 @@ export const MapPage: React.FC = () => {
 
             {/* Priority Status Pill */}
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-              <span className="text-xs text-slate-600">ลำดับการเฝ้าระวัง:</span>
+              <span className="text-sm text-slate-600">ลำดับการเฝ้าระวัง:</span>
               <span 
-                className="text-xs font-bold px-2.5 py-1 rounded-full text-white shadow-xs"
+                className="text-xs font-bold px-3 py-1 rounded-full text-white shadow-xs"
                 style={{ backgroundColor: selectedCellData.color || '#0284c7' }}
               >
                 {selectedCellData.priority_badge || selectedCellData.priority_level}
@@ -593,12 +593,12 @@ export const MapPage: React.FC = () => {
             </div>
 
             {/* Priority Score */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-slate-600">
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm text-slate-600">
                 <span>คะแนนความสำคัญ:</span>
                 <span className="font-bold text-slate-900">{selectedCellData.priority_score ?? '-'} / 1.00</span>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-300"
                   style={{ 
@@ -611,10 +611,10 @@ export const MapPage: React.FC = () => {
 
             {/* Contributing Factors */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-slate-700">ปัจจัยที่นำมาประมวลผล:</span>
-              <ul className="space-y-1 text-[11px] text-slate-600 pl-1">
+              <span className="text-xs font-bold text-slate-700">ปัจจัยที่นำมาประมวลผล:</span>
+              <ul className="space-y-1 text-xs text-slate-600 pl-1 leading-relaxed">
                 {selectedCellData.contributing_factors && selectedCellData.contributing_factors.map((f: string, i: number) => (
-                  <li key={i} className="leading-snug flex items-start gap-1.5">
+                  <li key={i} className="flex items-start gap-1.5">
                     <span className="text-[#0C65E8] shrink-0 font-bold">•</span>
                     <span>{f}</span>
                   </li>
@@ -623,26 +623,26 @@ export const MapPage: React.FC = () => {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs border-t border-slate-100 pt-2">
-              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-[10px] text-slate-400 block">ฝนสะสม 24 ชม.</span>
-                <span className="font-bold text-slate-800">{selectedCellData.rain_24h_mm ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : '-'}</span>
+            <div className="grid grid-cols-2 gap-2 text-center text-xs border-t border-slate-100 pt-2.5">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-2xs text-slate-400 block mb-0.5">ฝนสะสม 24 ชม.</span>
+                <span className="font-bold text-sm text-slate-800">{selectedCellData.rain_24h_mm ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : '-'}</span>
               </div>
-              <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-[10px] text-slate-400 block">รายงานชุมชน</span>
-                <span className="font-bold text-slate-800">{selectedCellData.citizen_report_count ?? 0} รายการ</span>
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-2xs text-slate-400 block mb-0.5">รายงานชุมชน</span>
+                <span className="font-bold text-sm text-slate-800">{selectedCellData.citizen_report_count ?? 0} รายการ</span>
               </div>
             </div>
 
             {/* Provenance & Action Link */}
-            <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
+            <div className="text-xs text-slate-500 pt-2 flex items-center justify-between border-t border-slate-100">
               <span>ความสดใหม่: {selectedCellData.freshness || 'สดใหม่'}</span>
               <Link 
                 to={`/my-area?district=${selectedCellData.district}`}
-                className="text-[#0C65E8] font-bold hover:underline flex items-center gap-1"
+                className="text-[#0C65E8] font-semibold hover:underline flex items-center gap-1"
               >
                 <span>ดูข้อมูลอำเภอ</span>
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>

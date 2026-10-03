@@ -77,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({
               {lastUpdated || '2 ต.ค. 2567 14:30 น.'}
             </span>
           </div>
-          <div className="text-[11px] text-sky-300/70 mt-0.5">
+          <div className="text-xs text-sky-300/80 mt-0.5">
             ระบบประมวลผลข้อมูลตามหลักการพิสูจน์แหล่งที่มา (Provenance-backed)
           </div>
         </div>

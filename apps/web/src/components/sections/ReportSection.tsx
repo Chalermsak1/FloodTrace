@@ -195,36 +195,36 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
               <h3 className="font-bold text-base text-[#0B243D] leading-tight">
                 รายงานเหตุการณ์ (Report)
               </h3>
-              <p className="text-[11px] text-[#717F8F]">
+              <p className="text-xs text-[#717F8F]">
                 ให้ประชาชนรายงานสิ่งที่พบแบบปลอดภัยและถูกกฎหมาย
               </p>
             </div>
           </div>
           {hasSavedDraft && submissionState === 'DRAFT' && (
-            <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-              <FileText className="w-3 h-3" /> ร่างที่บันทึกไว้
+            <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-medium">
+              <FileText className="w-3.5 h-3.5" /> ร่างที่บันทึกไว้
             </span>
           )}
         </div>
 
         {/* Stepper (1 ข้อมูลเหตุการณ์ -> 2 ระบุตำแหน่ง -> 3 ส่งรายงาน) */}
-        <div className="mt-3 flex items-center justify-between text-xs">
+        <div className="mt-3 flex items-center justify-between text-xs sm:text-sm">
           <div className={`flex items-center gap-1.5 font-semibold ${step >= 1 ? 'text-[#0C57C7]' : 'text-[#717F8F]'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white ${step >= 1 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${step >= 1 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
               1
             </span>
             <span>ข้อมูลเหตุการณ์</span>
           </div>
           <ChevronRight className="w-3.5 h-3.5 text-[#C4C7D1]" />
           <div className={`flex items-center gap-1.5 font-semibold ${step >= 2 ? 'text-[#0C57C7]' : 'text-[#717F8F]'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white ${step >= 2 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${step >= 2 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
               2
             </span>
             <span>ระบุตำแหน่ง</span>
           </div>
           <ChevronRight className="w-3.5 h-3.5 text-[#C4C7D1]" />
           <div className={`flex items-center gap-1.5 font-semibold ${step >= 3 ? 'text-[#0C57C7]' : 'text-[#717F8F]'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white ${step >= 3 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${step >= 3 ? 'bg-[#0C57C7]' : 'bg-slate-300'}`}>
               3
             </span>
             <span>ส่งรายงาน</span>
@@ -360,15 +360,15 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <div className="py-2">
                       <Upload className="w-5 h-5 text-[#0C57C7] mx-auto mb-1" />
                       <div className="text-xs font-semibold text-[#0B243D]">+ อัปโหลดรูปถ่าย</div>
-                      <div className="text-[10px] text-[#717F8F]">รองรับ JPG, PNG สูงสุด 5MB</div>
+                      <div className="text-xs text-[#717F8F]">รองรับ JPG, PNG สูงสุด 5MB</div>
                     </div>
                   )}
                 </div>
 
                 {/* Privacy Safeguard Notice */}
-                <div className="p-2.5 rounded-lg bg-blue-50/80 border border-blue-200 text-[11px] text-[#0B243D] flex items-start gap-2">
+                <div className="p-2.5 rounded-lg bg-blue-50/80 border border-blue-200 text-xs text-[#0B243D] flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-[#0C57C7] shrink-0 mt-0.5" />
-                  <p className="leading-snug">
+                  <p className="leading-relaxed">
                     ระบบจะปกป้องข้อมูลตำแหน่งและข้อมูลส่วนบุคคล (EXIF & GPS) จากภาพก่อนนำไปแสดงในระบบสาธารณะ
                   </p>
                 </div>
@@ -382,9 +382,9 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <button
                       type="button"
                       onClick={executeSubmission}
-                      className="self-end px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-semibold flex items-center gap-1"
+                      className="self-end px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 min-h-[36px]"
                     >
-                      <RotateCw className="w-3 h-3" />
+                      <RotateCw className="w-3.5 h-3.5" />
                       <span>ลองส่งใหม่อีกครั้ง</span>
                     </button>
                   </div>

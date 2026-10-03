@@ -98,12 +98,12 @@ export const ForecastModal: React.FC<Props> = ({ isOpen, onClose, onOpenProvenan
             <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
               Production weather forecasting is blocked under the platform's private-only data access policy (<code>REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True</code>).
             </p>
-            <div className="text-[11px] text-slate-300 bg-slate-900/90 p-4 rounded-lg border border-slate-800 text-left font-mono space-y-1.5 max-w-xl mx-auto">
+            <div className="text-xs text-slate-300 bg-slate-900/90 p-4 rounded-lg border border-slate-800 text-left font-mono space-y-1.5 max-w-xl mx-auto">
               <div><strong className="text-slate-400">Status:</strong> <span className="text-amber-300">{forecast?.status || 'FORECAST_UNAVAILABLE'}</span></div>
               <div><strong className="text-slate-400">Reason:</strong> <span className="text-rose-400">{forecast?.reason || 'ACCESS_REQUIRED'}</span></div>
               <div><strong className="text-slate-400">Source Gate:</strong> <span className="text-sky-300">{forecast?.source_access || 'PUBLIC_ONLY (TMD / Open-Meteo)'}</span></div>
               <div><strong className="text-slate-400">Production Ingestion:</strong> <span className="text-rose-400">BLOCKED</span></div>
-              <div className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800">
+              <div className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800 leading-relaxed">
                 Public NWP forecast feeds (TMD Open API, Open-Meteo) are restricted to isolated test/dev environments and blocked from production factual ingestion until an authorized institutional credential or MOU is verified.
               </div>
             </div>
@@ -137,9 +137,9 @@ export const ForecastModal: React.FC<Props> = ({ isOpen, onClose, onOpenProvenan
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                      <YAxis yAxisId="left" stroke="#38bdf8" fontSize={11} domain={[0, 'auto']} />
-                      <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" fontSize={11} domain={[0, 100]} />
+                      <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
+                      <YAxis yAxisId="left" stroke="#38bdf8" fontSize={12} domain={[0, 'auto']} />
+                      <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" fontSize={12} domain={[0, 100]} />
                       <Tooltip 
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
                         labelStyle={{ color: '#f8fafc', fontWeight: 'bold' }}
@@ -165,16 +165,16 @@ export const ForecastModal: React.FC<Props> = ({ isOpen, onClose, onOpenProvenan
                         : 'bg-slate-900/60 border-slate-800'
                     }`}
                   >
-                    <div className="text-[11px] font-semibold text-slate-400">
+                    <div className="text-xs font-semibold text-slate-400">
                       {d.date.split('-').slice(1).join('/')}
                     </div>
                     <div className="text-sm font-bold text-white mt-1">
-                      {d.precipitation_sum_mm} <span className="text-[10px] text-slate-400">mm</span>
+                      {d.precipitation_sum_mm} <span className="text-xs text-slate-400">mm</span>
                     </div>
-                    <div className="text-[10px] text-amber-400 mt-0.5">
+                    <div className="text-xs text-amber-400 mt-0.5">
                       {d.probability_max_pct}% prob
                     </div>
-                    <div className={`mt-1.5 text-[9px] px-1 py-0.5 rounded font-semibold ${
+                    <div className={`mt-1.5 text-2xs px-1.5 py-0.5 rounded font-semibold ${
                       (d.runoff_risk_level || '').includes('WARNING')
                         ? 'bg-rose-500/20 text-rose-300'
                         : (d.runoff_risk_level || '').includes('HIGH')

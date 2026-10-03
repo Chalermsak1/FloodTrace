@@ -59,11 +59,11 @@ export const ProvenanceBadge: React.FC<Props> = ({ provenance, onClick, compact 
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span>{label}</span>
       {!compact && (
-        <span className="opacity-80 text-[10px] ml-1 font-mono uppercase">
+        <span className="opacity-80 text-xs ml-1 font-mono uppercase">
           [{provenance.freshness_status || 'CURRENT'}]
         </span>
       )}
-      <ExternalLink className="w-2.5 h-2.5 opacity-50 ml-0.5" />
+      <ExternalLink className="w-3 h-3 opacity-50 ml-0.5" />
     </button>
   );
 };

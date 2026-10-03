@@ -177,11 +177,11 @@ export const KnowledgePage: React.FC = () => {
       {/* Page Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-bold mb-3 border border-blue-100">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-3 border border-blue-100">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>ศูนย์ข้อมูลความรู้และสุขอนามัยชุมชน</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#063B70] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
             ความรู้และคำแนะนำ
           </h1>
           <p className="text-sm sm:text-base text-slate-600 mt-2 leading-relaxed">
@@ -191,10 +191,10 @@ export const KnowledgePage: React.FC = () => {
 
         {/* Emergency Hotline Button */}
         <div className="shrink-0 flex flex-col items-start sm:items-end gap-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-          <span className="text-xs text-slate-500 font-medium">พบเหตุมลพิษฉุกเฉิน แจ้งสายด่วน:</span>
+          <span className="text-sm text-slate-600 font-medium">พบเหตุมลพิษฉุกเฉิน แจ้งสายด่วน:</span>
           <a
             href="tel:1650"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-sm transition-colors min-h-[44px]"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors min-h-[44px]"
           >
             <PhoneCall className="w-4 h-4" />
             <span>สายด่วนมลพิษ 1650</span>
@@ -217,7 +217,7 @@ export const KnowledgePage: React.FC = () => {
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0C65E8] group-hover:bg-[#0C65E8] group-hover:text-white flex items-center justify-center transition-colors">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-[#0C65E8] transition-colors">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-[#0C65E8] transition-colors">
                     {topic.badge}
                   </span>
                 </div>
@@ -226,12 +226,12 @@ export const KnowledgePage: React.FC = () => {
                   {topic.title}
                 </h2>
                 
-                <p className="text-xs sm:text-sm text-slate-600 mt-2.5 leading-relaxed">
+                <p className="text-sm text-slate-600 mt-2.5 leading-relaxed">
                   {topic.shortDesc}
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0C65E8]">
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#0C65E8]">
                 <span>อ่านคำแนะนำฉบับเต็ม</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -252,10 +252,10 @@ export const KnowledgePage: React.FC = () => {
                   <selectedTopic.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-[#0C65E8] uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[#0C65E8] uppercase tracking-wider">
                     {selectedTopic.badge}
                   </span>
-                  <h3 className="font-extrabold text-lg sm:text-xl text-[#063B70]">
+                  <h3 className="font-bold text-lg sm:text-xl text-[#063B70]">
                     {selectedTopic.title}
                   </h3>
                 </div>
@@ -270,13 +270,13 @@ export const KnowledgePage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+            <div className="space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed">
               <p className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-800 font-medium">
                 {selectedTopic.content.summary}
               </p>
 
               <div>
-                <h4 className="font-bold text-slate-900 mb-2">ประเด็นสำคัญที่ควรรู้:</h4>
+                <h4 className="font-bold text-base text-slate-900 mb-2">ประเด็นสำคัญที่ควรรู้:</h4>
                 <ul className="space-y-2">
                   {selectedTopic.content.points.map((pt, idx) => (
                     <li key={idx} className="flex items-start gap-2.5">
@@ -290,11 +290,11 @@ export const KnowledgePage: React.FC = () => {
               {selectedTopic.content.dos.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-                    <div className="font-bold text-emerald-900 mb-1.5 flex items-center gap-1.5">
+                    <div className="font-bold text-emerald-900 mb-1.5 flex items-center gap-1.5 text-sm sm:text-base">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>สิ่งที่ควรปฏิบัติ</span>
                     </div>
-                    <ul className="space-y-1.5 text-xs text-emerald-950">
+                    <ul className="space-y-1.5 text-sm text-emerald-950">
                       {selectedTopic.content.dos.map((d, idx) => (
                         <li key={idx}>✓ {d}</li>
                       ))}
@@ -302,11 +302,11 @@ export const KnowledgePage: React.FC = () => {
                   </div>
 
                   <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200">
-                    <div className="font-bold text-rose-900 mb-1.5 flex items-center gap-1.5">
+                    <div className="font-bold text-rose-900 mb-1.5 flex items-center gap-1.5 text-sm sm:text-base">
                       <AlertTriangle className="w-4 h-4 text-rose-600" />
                       <span>สิ่งที่ไม่ควรทำ</span>
                     </div>
-                    <ul className="space-y-1.5 text-xs text-rose-950">
+                    <ul className="space-y-1.5 text-sm text-rose-950">
                       {selectedTopic.content.donts.map((d, idx) => (
                         <li key={idx}>✗ {d}</li>
                       ))}
@@ -321,7 +321,7 @@ export const KnowledgePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedTopic(null)}
-                className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-xs font-bold transition-colors min-h-[44px]"
+                className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
               >
                 ปิดหน้าต่าง
               </button>

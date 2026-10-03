@@ -25,22 +25,22 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
               <h3 className="font-bold text-base text-[#0B243D] leading-tight">
                 ผลตรวจจากหน่วยงาน (Official Results)
               </h3>
-              <p className="text-[11px] text-[#717F8F]">
+              <p className="text-xs text-[#717F8F]">
                 แสดงผลตรวจและเอกสารจากหน่วยงานที่เผยแพร่ได้
               </p>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
             OFFICIAL
           </span>
         </div>
 
         {/* 3 Tabs: [ผลตรวจคุณภาพน้ำ] [ผลตรวจตะกอน] [ประเภท/เอกสาร] */}
-        <div className="mt-3 flex items-center gap-1.5 border-b border-[#C4C7D1]/60 pb-1 text-xs">
+        <div className="mt-3 flex items-center gap-1.5 border-b border-[#C4C7D1]/60 pb-1 text-xs sm:text-sm">
           <button
             type="button"
             onClick={() => setActiveTab('water')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors min-h-[36px] ${
               activeTab === 'water'
                 ? 'bg-[#0C57C7] text-white shadow-sm'
                 : 'text-[#717F8F] hover:bg-slate-100 hover:text-[#0B243D]'
@@ -51,7 +51,7 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('sediment')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors min-h-[36px] ${
               activeTab === 'sediment'
                 ? 'bg-[#0C57C7] text-white shadow-sm'
                 : 'text-[#717F8F] hover:bg-slate-100 hover:text-[#0B243D]'
@@ -62,7 +62,7 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('documents')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors min-h-[36px] ${
               activeTab === 'documents'
                 ? 'bg-[#0C57C7] text-white shadow-sm'
                 : 'text-[#717F8F] hover:bg-slate-100 hover:text-[#0B243D]'
@@ -73,7 +73,7 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
         </div>
 
         {/* Tab Content Display */}
-        <div className="mt-3 text-xs">
+        <div className="mt-3 text-xs sm:text-sm">
           {activeTab === 'water' && (
             <div className="space-y-2.5">
               
@@ -81,33 +81,33 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
               <div className="p-3 rounded-xl bg-white border border-[#C4C7D1] shadow-2xs space-y-2">
                 <div className="flex items-start justify-between gap-1">
                   <div>
-                    <span className="text-[10px] text-[#717F8F] block">จุดเก็บตัวอย่าง:</span>
-                    <span className="font-bold text-xs text-[#0B243D]">
+                    <span className="text-xs text-[#717F8F] block">จุดเก็บตัวอย่าง:</span>
+                    <span className="font-bold text-sm text-[#0B243D]">
                       แม่น้ำปราจีนบุรี บริเวณสะพานข้ามแม่น้ำ ต.ท่าตูม
                     </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
                     อยู่ระหว่างตรวจ
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-[#717F8F] pt-1 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs text-[#717F8F] pt-1.5 border-t border-slate-100">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-[#717F8F]" />
+                    <Calendar className="w-3.5 h-3.5 text-[#717F8F]" />
                     <span>วันที่: 2 ต.ค. 2567</span>
                   </span>
                   <span>หน่วยงาน: สคพ.7 (ปราจีนบุรี)</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-[10px] text-[#717F8F]">พารามิเตอร์: pH, DO, ค่าการนำไฟฟ้า</span>
+                  <span className="text-xs text-[#717F8F]">พารามิเตอร์: pH, DO, ค่าการนำไฟฟ้า</span>
                   <button
                     type="button"
                     onClick={onOpenAudit}
-                    className="px-2.5 py-1 rounded bg-blue-50 text-[#0C57C7] font-semibold text-[11px] hover:bg-blue-100 flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1.5 rounded bg-blue-50 text-[#0C57C7] font-semibold text-xs hover:bg-blue-100 flex items-center gap-1 transition-colors min-h-[36px]"
                   >
                     <span>ดูเอกสาร</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -116,33 +116,33 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
               <div className="p-3 rounded-xl bg-white border border-[#C4C7D1] shadow-2xs space-y-2">
                 <div className="flex items-start justify-between gap-1">
                   <div>
-                    <span className="text-[10px] text-[#717F8F] block">จุดเก็บตัวอย่าง:</span>
-                    <span className="font-bold text-xs text-[#0B243D]">
+                    <span className="text-xs text-[#717F8F] block">จุดเก็บตัวอย่าง:</span>
+                    <span className="font-bold text-sm text-[#0B243D]">
                       จุดตรวจสถานีวัดระดับน้ำบ้านโนนสุขภูมิ อ.กบินทร์บุรี
                     </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
                     ผลตรวจพร้อมเผยแพร่
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-[#717F8F] pt-1 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs text-[#717F8F] pt-1.5 border-t border-slate-100">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-[#717F8F]" />
+                    <Calendar className="w-3.5 h-3.5 text-[#717F8F]" />
                     <span>วันที่: 28 ก.ย. 2567</span>
                   </span>
                   <span>หน่วยงาน: กรมชลประทาน / สสน.</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-[10px] text-[#717F8F]">สถานะ: อุทกวิทยาและระดับน้ำปกติ</span>
+                  <span className="text-xs text-[#717F8F]">สถานะ: อุทกวิทยาและระดับน้ำปกติ</span>
                   <button
                     type="button"
                     onClick={onOpenAudit}
-                    className="px-2.5 py-1 rounded bg-blue-50 text-[#0C57C7] font-semibold text-[11px] hover:bg-blue-100 flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1.5 rounded bg-blue-50 text-[#0C57C7] font-semibold text-xs hover:bg-blue-100 flex items-center gap-1 transition-colors min-h-[36px]"
                   >
                     <span>ดูเอกสาร</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -153,11 +153,11 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
           {activeTab === 'sediment' && (
             <div className="p-4 bg-slate-50 border border-[#C4C7D1]/70 rounded-xl text-center space-y-2">
               <AlertCircle className="w-6 h-6 text-[#717F8F] mx-auto" />
-              <div className="font-bold text-xs text-[#0B243D]">ยังไม่มีผลตรวจจากหน่วยงาน</div>
-              <p className="text-[11px] text-[#717F8F] max-w-xs mx-auto leading-relaxed">
+              <div className="font-bold text-sm text-[#0B243D]">ยังไม่มีผลตรวจจากหน่วยงาน</div>
+              <p className="text-xs text-[#717F8F] max-w-xs mx-auto leading-relaxed">
                 ยังไม่มีการบันทึกผลการตรวจวิเคราะห์ตัวอย่างตะกอนดินฉบับสมบูรณ์ในระบบฐานข้อมูลสาธารณะ
               </p>
-              <div className="text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200 mt-2">
+              <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
                 * การไม่มีผลตรวจไม่ได้หมายความว่าพื้นที่นั้นปลอดภัย (Absence of evidence is not evidence of safety)
               </div>
             </div>
@@ -165,29 +165,29 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
 
           {activeTab === 'documents' && (
             <div className="space-y-2">
-              <div className="p-2.5 rounded-lg bg-white border border-[#C4C7D1] flex items-center justify-between">
+              <div className="p-3 rounded-lg bg-white border border-[#C4C7D1] flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-xs text-[#0B243D]">ประกาศสถานการณ์สิ่งแวดล้อม สคพ.7</div>
-                  <div className="text-[10px] text-[#717F8F]">เอกสารรายงานคุณภาพน้ำลุ่มน้ำปราจีนบุรี ไตรมาส 3</div>
+                  <div className="font-semibold text-sm text-[#0B243D]">ประกาศสถานการณ์สิ่งแวดล้อม สคพ.7</div>
+                  <div className="text-xs text-[#717F8F]">เอกสารรายงานคุณภาพน้ำลุ่มน้ำปราจีนบุรี ไตรมาส 3</div>
                 </div>
                 <button
                   type="button"
                   onClick={onOpenAudit}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-[#0C57C7] text-xs font-semibold rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0C57C7] text-xs sm:text-sm font-semibold rounded min-h-[36px]"
                 >
                   เปิดอ่าน
                 </button>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-white border border-[#C4C7D1] flex items-center justify-between">
+              <div className="p-3 rounded-lg bg-white border border-[#C4C7D1] flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-xs text-[#0B243D]">คู่มือการใช้น้ำปลอดภัยสำหรับประชาชน</div>
-                  <div className="text-[10px] text-[#717F8F]">กรมควบคุมมลพิษ / จังหวัดปราจีนบุรี</div>
+                  <div className="font-semibold text-sm text-[#0B243D]">คู่มือการใช้น้ำปลอดภัยสำหรับประชาชน</div>
+                  <div className="text-xs text-[#717F8F]">กรมควบคุมมลพิษ / จังหวัดปราจีนบุรี</div>
                 </div>
                 <button
                   type="button"
                   onClick={onOpenAudit}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-[#0C57C7] text-xs font-semibold rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#0C57C7] text-xs sm:text-sm font-semibold rounded min-h-[36px]"
                 >
                   เปิดอ่าน
                 </button>
@@ -200,7 +200,7 @@ export const OfficialResultsSection: React.FC<OfficialResultsSectionProps> = ({
 
       {/* Provenance Footer Note */}
       <div className="mt-4 pt-2.5 border-t border-[#C4C7D1]/70">
-        <p className="text-[10px] text-[#717F8F] leading-snug">
+        <p className="text-xs text-[#717F8F] leading-relaxed">
           * ข้อมูลผลตรวจทุกรายการเชื่อมโยงกับแหล่งที่มาทางการ (Provenance) สามารถตรวจสอบย้อนหลังได้
         </p>
       </div>

@@ -66,11 +66,11 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold tracking-tight text-white leading-none">Ruwaigon</span>
-              <span className="text-[11px] font-medium bg-[#0C65E8]/80 text-sky-100 px-2 py-0.5 rounded-full border border-sky-300/30">
+              <span className="text-xs font-medium bg-[#0C65E8]/80 text-sky-100 px-2.5 py-0.5 rounded-full border border-sky-300/30">
                 ปราจีนบุรี
               </span>
             </div>
-            <p className="text-[11px] text-sky-200/90 font-medium leading-tight mt-0.5">
+            <p className="text-xs text-sky-200/90 font-medium leading-tight mt-0.5">
               เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย
             </p>
           </div>
@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="absolute right-0 top-full mt-1.5 w-64 bg-white text-[#0B243D] rounded-lg shadow-xl border border-[#C4C7D1] py-1.5 z-50 overflow-hidden"
                 onMouseLeave={() => setShowSearchResults(false)}
               >
-                <div className="px-3 py-1 text-[11px] font-semibold text-[#717F8F] uppercase tracking-wider border-b border-slate-100">
+                <div className="px-3 py-1.5 text-xs font-semibold text-[#717F8F] uppercase tracking-wider border-b border-slate-100">
                   อำเภอในจังหวัดปราจีนบุรี
                 </div>
                 {filteredDistricts.length > 0 ? (
@@ -210,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Language Selector */}
-          <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs font-semibold text-white select-none cursor-pointer hover:bg-white/20 transition-colors">
+          <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white select-none cursor-pointer hover:bg-white/20 transition-colors">
             <span>TH</span>
             <ChevronDown className="w-3.5 h-3.5 text-white/70" />
           </div>
@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onToggleMode}
               disabled={switchingMode}
               title={`สลับโหมดระบบ (ปัจจุบัน: ${systemMode})`}
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
                 systemMode === 'PRODUCTION'
                   ? 'bg-rose-950/80 text-rose-200 border-rose-500/50 hover:bg-rose-900'
                   : 'bg-emerald-950/80 text-emerald-200 border-emerald-500/50 hover:bg-emerald-900'

@@ -253,35 +253,35 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Project Name:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Project Name:</span>
                     <span className="font-semibold text-slate-200 font-mono">{metadata?.project_name || 'FloodTrace'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Project Owner / Lead:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Project Owner / Lead:</span>
                     <span className="font-semibold text-amber-400/90 font-mono">{metadata?.project_owner || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Academic / Institutional Affiliation:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Academic / Institutional Affiliation:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.institution || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Advisor / Faculty Oversight:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Advisor / Faculty Oversight:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.advisor || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Public Communications Contact:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Public Communications Contact:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.public_contact || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Data Privacy Officer:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Data Privacy Officer:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.privacy_contact || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Security Contact / Vulnerability Reporting:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Security Contact / Vulnerability Reporting:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.security_contact || 'NOT DESIGNATED'}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800">
-                    <span className="text-slate-500 block text-[11px]">Legal Counsel / Governance Contact:</span>
+                    <span className="text-slate-400 block text-xs mb-0.5">Legal Counsel / Governance Contact:</span>
                     <span className="font-semibold text-slate-400 font-mono">{metadata?.legal_contact || 'NOT DESIGNATED'}</span>
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <span className="text-slate-500">➔</span>
                   <span className="px-2.5 py-1 rounded bg-sky-500/20 text-sky-400 font-bold border border-sky-500/40">PUBLISHED</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2">
+                <p className="text-xs text-slate-400 mt-2">
                   Terminal review states: <code className="text-rose-400">REJECTED</code>, <code className="text-amber-400">WITHDRAWN</code>, <code className="text-purple-400">CORRECTED</code>.
                   No sensitive claim may become public directly from AI or model output.
                 </p>
@@ -360,7 +360,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-2">
                     <Check className="w-4 h-4" /> Standardized Objective Phrasing
                   </span>
-                  <ul className="space-y-1 text-slate-300 text-[11px] list-disc list-inside">
+                  <ul className="space-y-1 text-slate-300 text-xs list-disc list-inside">
                     <li>"Potential exposure area"</li>
                     <li>"Estimated source area"</li>
                     <li>"Modeled hydrological connectivity"</li>
@@ -374,7 +374,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <span className="font-bold text-rose-400 flex items-center gap-1.5 mb-2">
                     <X className="w-4 h-4" /> Strictly Prohibited Causal Phrasing
                   </span>
-                  <ul className="space-y-1 text-slate-300 text-[11px] list-disc list-inside">
+                  <ul className="space-y-1 text-slate-300 text-xs list-disc list-inside">
                     <li>"Confirmed polluter / source"</li>
                     <li>"Poisoned area / toxic dump"</li>
                     <li>"Illegal factory / criminal act"</li>
@@ -394,7 +394,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Publicly Approved & Evidence-Bundled Claims
                 </h3>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-xs text-slate-400">
                   Total published: {claims.length}
                 </span>
               </div>
@@ -403,7 +403,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <div className="p-8 text-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 text-xs">
                   <UserCheck className="w-8 h-8 text-slate-600 mx-auto mb-2" />
                   No claims currently published.
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     All sensitive claims require human review and complete evidence bundles before publication.
                   </p>
                 </div>
@@ -413,21 +413,21 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <div key={c.claim_id} className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 text-xs">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                          <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
                             {c.category}
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded text-xs font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                             v{c.version} {c.correction_status}
                           </span>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-500">
+                        <span className="text-xs font-mono text-slate-400">
                           ID: {c.claim_id}
                         </span>
                       </div>
                       <p className="text-xs text-white font-medium mt-2 leading-relaxed">
                         {c.claim_text}
                       </p>
-                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-slate-400 font-mono pt-2 border-t border-slate-800/80">
+                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-400 font-mono pt-2 border-t border-slate-800/80">
                         <div>
                           <span className="text-slate-500 block">Sources:</span>
                           <span className="text-slate-300">{c.source_ids?.join(', ') || 'N/A'}</span>
@@ -461,11 +461,11 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <Scale className="w-4 h-4 text-sky-400" />
                     Data Source Access Matrix & Production Verification (Sec. 5 & 50)
                   </h3>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <span className="px-2 py-0.5 rounded text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                     FAIL-CLOSED VERIFIED
                   </span>
                 </div>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
+                <p className="text-slate-300 text-xs leading-relaxed">
                   <strong>Master Prompt Mandatory Rule:</strong> All external datasets ingested into production factual pipelines
                   MUST come through private, authenticated, or officially authorized channels (API key issued to project, institutional MOU).
                   Public open datasets without private credentials are strictly marked <strong className="text-amber-300">PUBLIC_ONLY</strong> and blocked from production factual ingestion.
@@ -510,42 +510,42 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <div>
                           <div className="font-bold text-white text-sm flex items-center gap-2">
                             {s.source_name}
-                            <span className="text-[10px] font-mono font-normal text-slate-400">({s.source_id})</span>
+                            <span className="text-xs font-mono font-normal text-slate-400">({s.source_id})</span>
                           </div>
-                          <div className="text-[11px] text-slate-400">{s.organization}</div>
+                          <div className="text-xs text-slate-400">{s.organization}</div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getAuthBadge(s.authorization_status)}`}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getAuthBadge(s.authorization_status)}`}>
                             {s.authorization_status}
                           </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getActionBadge(s.ingestion_action)}`}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getActionBadge(s.ingestion_action)}`}>
                             {s.ingestion_action}
                           </span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-slate-300">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-300">
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Dataset:</span>
+                          <span className="text-slate-500 block text-xs">Dataset:</span>
                           <span>{s.dataset}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Access Method:</span>
-                          <span className="font-mono text-[10px]">{s.access_method}</span>
+                          <span className="text-slate-500 block text-xs">Access Method:</span>
+                          <span className="font-mono text-xs">{s.access_method}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Authentication:</span>
+                          <span className="text-slate-500 block text-xs">Authentication:</span>
                           <span className="text-slate-300">{s.authentication}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Storage / Derived:</span>
+                          <span className="text-slate-500 block text-xs">Storage / Derived:</span>
                           <span className="text-slate-300">
                             Raw: {s.raw_storage_allowed ? 'Allowed' : 'Restricted'} • Derived: {s.derived_output_allowed ? 'Allowed' : 'Restricted'}
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                      <div className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60 leading-relaxed">
                         <strong className="text-slate-300">Audit Notes: </strong>
                         {s.notes}
                       </div>
@@ -564,7 +564,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <ShieldAlert className="w-4 h-4 text-amber-400" />
                   Structured Notice & Takedown / Correction Request Gateway
                 </h3>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
+                <p className="text-slate-300 text-xs leading-relaxed">
                   Submit a formal request for factual correction, data source challenge, privacy redaction, or security reporting.
                   <br />
                   <strong>Important Notice:</strong> Verified official government records (such as factory registry entries)
@@ -573,26 +573,26 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {submitResult ? (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs sm:text-sm">
                   <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1">
                     <CheckCircle2 className="w-5 h-5" />
                     Request Successfully Recorded
                   </div>
-                  <p className="text-slate-300 text-[11px]">
+                  <p className="text-slate-300 text-xs">
                     Reference ID: <strong className="font-mono text-emerald-300">{submitResult.request_id}</strong>
                   </p>
-                  <p className="text-slate-300 text-[11px] mt-1">
+                  <p className="text-slate-300 text-xs mt-1">
                     {submitResult.message}
                   </p>
                   <button
                     onClick={() => setSubmitResult(null)}
-                    className="mt-3 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition"
+                    className="mt-3 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm transition min-h-[38px]"
                   >
                     Submit Another Notice
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmitTakedown} className="space-y-3 text-xs">
+                <form onSubmit={handleSubmitTakedown} className="space-y-3.5 text-xs sm:text-sm">
                   {submitError && (
                     <div className="p-3 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
                       {submitError}
@@ -601,13 +601,13 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 text-[11px] font-semibold mb-1">
+                      <label className="block text-slate-400 text-xs font-semibold mb-1">
                         Request Type
                       </label>
                       <select
                         value={requestType}
                         onChange={e => setRequestType(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500 min-h-[40px]"
                       >
                         <option value="FACTUAL_CORRECTION">Factual Correction</option>
                         <option value="DATA_SOURCE_CHALLENGE">Data-Source Challenge</option>
@@ -619,13 +619,13 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </div>
 
                     <div>
-                      <label className="block text-slate-400 text-[11px] font-semibold mb-1">
+                      <label className="block text-slate-400 text-xs font-semibold mb-1">
                         Target Resource Type
                       </label>
                       <select
                         value={targetType}
                         onChange={e => setTargetType(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500 min-h-[40px]"
                       >
                         <option value="CLAIM">Published Claim (claim_id)</option>
                         <option value="REPORT">Citizen Report (report_id)</option>
@@ -637,7 +637,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 text-[11px] font-semibold mb-1">
+                      <label className="block text-slate-400 text-xs font-semibold mb-1">
                         Target Record Identifier
                       </label>
                       <input
@@ -645,12 +645,12 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         placeholder="e.g. clm_12345 or 3-101-1/38ปจ"
                         value={targetId}
                         onChange={e => setTargetId(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500 min-h-[40px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-400 text-[11px] font-semibold mb-1">
+                      <label className="block text-slate-400 text-xs font-semibold mb-1">
                         Requester Official Contact (Email)
                       </label>
                       <input
@@ -658,13 +658,13 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         placeholder="contact@organization.or.th"
                         value={requesterContact}
                         onChange={e => setRequesterContact(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500 min-h-[40px]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-slate-400 text-[11px] font-semibold mb-1">
+                    <label className="block text-slate-400 text-xs font-semibold mb-1">
                       Detailed Grounds & Supporting Evidence
                     </label>
                     <textarea
@@ -672,7 +672,7 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       placeholder="Please specify factual error, conflicting official document number, or privacy grounds..."
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-sky-500"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500"
                     />
                   </div>
 
@@ -680,9 +680,9 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold transition disabled:opacity-50 min-h-[40px]"
                     >
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="w-4 h-4" />
                       <span>{submitting ? 'Submitting Notice...' : 'Submit Official Request'}</span>
                     </button>
                   </div>
@@ -694,11 +694,11 @@ export const GovernanceModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-[11px] text-slate-500">
+        <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400">
           <span>FloodTrace Evidence & Legal-Safety Charter (v2.0-Audit)</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition min-h-[40px] flex items-center justify-center"
           >
             Close
           </button>

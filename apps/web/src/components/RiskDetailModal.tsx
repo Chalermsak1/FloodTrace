@@ -79,7 +79,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
             <div className="text-xs font-semibold text-white">
               INSUFFICIENT DATA
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
               DIW 101/105/106 is an industrial activity code, not a toxicity score. Official lab waste assay or inspection records are required before assigning a hazard rating.
             </p>
           </div>
@@ -93,7 +93,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
             <div className="text-xs font-semibold text-sky-400 font-mono">
               UNCONFIRMED — NO CONTAMINATION MEASUREMENT
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
               System strictly forbids declaring an area contaminated based solely on distance, flood status, or photos. Confirmed contamination requires certified chemical assays.
             </p>
           </div>
@@ -118,7 +118,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
                     {factors.spatial_proximity.value} {factors.spatial_proximity.unit}
                   </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-slate-400 space-y-0.5">
+                <div className="mt-1.5 text-xs text-slate-400 space-y-0.5">
                   <div><strong>Source:</strong> {factors.spatial_proximity.source}</div>
                   <div><strong>Methodology:</strong> {factors.spatial_proximity.methodology}</div>
                   <div><strong>Nearest Channel:</strong> {factors.spatial_proximity.nearest_waterway}</div>
@@ -136,7 +136,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
                     {factors.hydrological_stage.value !== null ? `${factors.hydrological_stage.value} ${factors.hydrological_stage.unit}` : 'NO DATA'}
                   </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-slate-400 space-y-0.5">
+                <div className="mt-1.5 text-xs text-slate-400 space-y-0.5">
                   <div><strong>Source:</strong> {factors.hydrological_stage.source} (Station: {factors.hydrological_stage.station_name})</div>
                   <div><strong>Methodology:</strong> {factors.hydrological_stage.methodology}</div>
                   <div><strong>Distance to Gauge:</strong> {factors.hydrological_stage.distance_to_gauge_km} km</div>
@@ -154,7 +154,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
                     {factors.forecast_rainfall_48h.value !== null ? `${factors.forecast_rainfall_48h.value} ${factors.forecast_rainfall_48h.unit}` : 'N/A'}
                   </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-slate-400 space-y-0.5">
+                <div className="mt-1.5 text-xs text-slate-400 space-y-0.5">
                   <div><strong>Source:</strong> {factors.forecast_rainfall_48h.source}</div>
                   <div><strong>Methodology:</strong> {factors.forecast_rainfall_48h.methodology} ({factors.forecast_rainfall_48h.status})</div>
                 </div>
@@ -172,7 +172,7 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
             <ProvenanceBadge provenance={hotspot.provenance} onClick={onOpenProvenanceAudit} />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-xs font-mono text-slate-400">
             <div>
               <span className="text-slate-500 block">Classification:</span>
               <span className="text-purple-400 font-bold">{hotspot.provenance.category}</span>
@@ -192,12 +192,12 @@ export const RiskDetailModal: React.FC<Props> = ({ hotspot, onClose, onOpenProve
           </div>
 
           <div className="pt-2 flex items-center justify-between">
-            <div className="text-[10px] text-slate-400 font-mono">
+            <div className="text-xs text-slate-400 font-mono">
               Calculated: {hotspot.last_calculated} | Source: {hotspot.provenance.source_agency}
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 transition"
+              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold shadow-lg shadow-sky-600/30 transition min-h-[40px] flex items-center justify-center"
             >
               Close
             </button>

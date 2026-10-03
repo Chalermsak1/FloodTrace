@@ -374,7 +374,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             visibility: visibleLayers.waterways ? 'visible' : 'none',
             'symbol-placement': 'line',
             'text-field': ['get', 'name'],
-            'text-size': 11.5,
+            'text-size': 12.5,
             'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
             'text-max-angle': 30,
             'text-offset': [0, -1]
@@ -382,7 +382,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           paint: {
             'text-color': '#e0f2fe',
             'text-halo-color': '#0c4a6e',
-            'text-halo-width': 2.2
+            'text-halo-width': 2.4
           }
         },
         // 12. District Labels (Collision Detection)
@@ -396,7 +396,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           layout: {
             visibility: visibleLayers.adminLabels ? 'visible' : 'none',
             'text-field': ['get', 'name'],
-            'text-size': 13.5,
+            'text-size': 15.0,
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
             'text-allow-overlap': false,
             'text-ignore-placement': false
@@ -404,7 +404,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           paint: {
             'text-color': '#ffffff',
             'text-halo-color': '#0f172a',
-            'text-halo-width': 2.8
+            'text-halo-width': 3.0
           }
         },
         // 13. Subdistrict Labels (Collision Detection)
@@ -418,7 +418,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           layout: {
             visibility: visibleLayers.adminLabels ? 'visible' : 'none',
             'text-field': ['get', 'name'],
-            'text-size': 11.5,
+            'text-size': 13.0,
             'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
             'text-allow-overlap': false,
             'text-ignore-placement': false
@@ -426,7 +426,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           paint: {
             'text-color': '#f8fafc',
             'text-halo-color': '#1e293b',
-            'text-halo-width': 2.2
+            'text-halo-width': 2.5
           }
         }
       ]
@@ -488,25 +488,25 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           ? JSON.parse(props.contributing_factors) 
           : props.contributing_factors;
         if (Array.isArray(factors)) {
-          factorsHtml = factors.slice(0, 3).map((f: string) => `<li class="text-[11px] text-slate-700 leading-tight">${f}</li>`).join('');
+          factorsHtml = factors.slice(0, 3).map((f: string) => `<li class="text-xs text-slate-700 leading-snug">${f}</li>`).join('');
         }
       } catch (_) {}
 
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '290px' })
+      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="p-3 font-sans space-y-2">
             <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
-              <span class="text-xs font-bold text-slate-900">${props.cell_name || props.subdistrict}</span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-xs" style="background-color: ${props.color || '#0284c7'}">
+              <span class="text-sm font-bold text-slate-900">${props.cell_name || props.subdistrict}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white shadow-xs" style="background-color: ${props.color || '#0284c7'}">
                 ${props.priority_level}
               </span>
             </div>
-            <div class="text-[11px] text-slate-600">
+            <div class="text-xs text-slate-600">
               คะแนนความสำคัญ: <span class="font-bold text-slate-900">${props.priority_score ?? '-'}</span> / 1.00
             </div>
             ${factorsHtml ? `<ul class="space-y-1 my-1 pl-1">${factorsHtml}</ul>` : ''}
-            <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+            <div class="text-xs text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
               <span>ความสดใหม่: ${props.freshness || 'ล่าสุด'}</span>
               <span class="text-[#0C65E8] font-bold">อ.${props.district}</span>
             </div>
@@ -616,8 +616,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         badge.style.right = '-5px';
         badge.style.backgroundColor = '#0f172a';
         badge.style.color = '#ffffff';
-        badge.style.fontSize = '10px';
-        badge.style.fontWeight = 'bold';
+        badge.style.fontSize = '11px';
+        badge.style.fontWeight = '700';
         badge.style.padding = '1px 5px';
         badge.style.borderRadius = '999px';
         badge.style.border = '1.5px solid #ffffff';
@@ -661,18 +661,18 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           new maplibregl.Popup({ offset: 16 })
             .setLngLat([st.longitude, st.latitude])
             .setHTML(`
-              <div class="p-3 font-sans space-y-1.5 min-w-[220px]">
+              <div class="p-3.5 font-sans space-y-2 min-w-[240px]">
                 <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bgColor}"></span>
-                  <span class="text-xs font-bold text-slate-900">${st.name_th || st.station_id}</span>
+                  <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${bgColor}"></span>
+                  <span class="text-sm font-bold text-slate-900">${st.name_th || st.station_id}</span>
                 </div>
-                <div class="text-[11px] text-slate-600">
+                <div class="text-sm text-slate-700">
                   ระดับน้ำปัจจุบัน: <span class="font-bold text-slate-900">${st.water_level_msl ? `${st.water_level_msl.toFixed(2)} ม.รทก.` : 'กำลังตรวจวัด'}</span>
                 </div>
-                ${st.warning_level_msl ? `<div class="text-[10px] text-slate-500">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
-                <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+                ${st.warning_level_msl ? `<div class="text-xs text-slate-600">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
+                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                   <span>${st.district ? `อ.${st.district}` : 'ปราจีนบุรี'}</span>
-                  <span class="text-emerald-700 font-medium">โทรมาตรทางการ</span>
+                  <span class="text-emerald-700 font-semibold">โทรมาตรทางการ</span>
                 </div>
               </div>
             `)
@@ -706,17 +706,17 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           new maplibregl.Popup({ offset: 16 })
             .setLngLat([rs.longitude, rs.latitude])
             .setHTML(`
-              <div class="p-3 font-sans space-y-1.5 min-w-[220px]">
+              <div class="p-3.5 font-sans space-y-2 min-w-[240px]">
                 <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${bgColor}"></span>
-                  <span class="text-xs font-bold text-slate-900">${rs.name_th || rs.station_id}</span>
+                  <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${bgColor}"></span>
+                  <span class="text-sm font-bold text-slate-900">${rs.name_th || rs.station_id}</span>
                 </div>
-                <div class="text-[11px] text-slate-600">
+                <div class="text-sm text-slate-700">
                   ฝนสะสม 24 ชม.: <span class="font-bold text-slate-900">${rain24.toFixed(1)} มม.</span>
                 </div>
-                <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                   <span>${rs.district ? `อ.${rs.district}` : 'ปราจีนบุรี'}</span>
-                  <span class="text-indigo-700 font-medium">สถานีวัดน้ำฝน</span>
+                  <span class="text-indigo-700 font-semibold">สถานีวัดน้ำฝน</span>
                 </div>
               </div>
             `)
@@ -764,20 +764,20 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           new maplibregl.Popup({ offset: 16 })
             .setLngLat([cluster.lng, cluster.lat])
             .setHTML(`
-              <div class="p-3 font-sans space-y-1.5 min-w-[240px]">
-                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1">
-                  <span class="text-xs font-bold text-slate-900">${cluster.lastObs.category || 'ข้อสังเกตจากประชาชน'}</span>
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${cluster.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+              <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+                  <span class="text-sm font-bold text-slate-900">${cluster.lastObs.category || 'ข้อสังเกตจากประชาชน'}</span>
+                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${cluster.verified ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
                     ${cluster.verified ? '✓ ตรวจสอบแล้ว' : 'รายงานชุมชน'}
                   </span>
                 </div>
-                <div class="text-[11px] text-slate-700">
+                <div class="text-sm text-slate-700">
                   พบรายงานในบริเวณนี้: <strong class="text-slate-900">${cluster.count} รายการ</strong>
                 </div>
-                <p class="text-[11px] text-slate-600 line-clamp-2">${cluster.lastObs.description || 'มีข้อสังเกตทางสิ่งแวดล้อมในพื้นที่'}</p>
-                <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed">${cluster.lastObs.description || 'มีข้อสังเกตทางสิ่งแวดล้อมในพื้นที่'}</p>
+                <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                   <span>${cluster.lastObs.district ? `อ.${cluster.lastObs.district}` : 'ปราจีนบุรี'}</span>
-                  <span>ความแม่นยำระดับตำบล</span>
+                  <span class="text-slate-600 font-medium">ความแม่นยำระดับตำบล</span>
                 </div>
               </div>
             `)

@@ -82,13 +82,13 @@ export const TelemetryDrawer: React.FC<Props> = ({
                   <div key={st.id} className="p-2 rounded-lg bg-slate-800/40 border border-slate-850 flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-white">{st.name_th}</div>
-                      <div className="text-[10px] text-slate-400">{st.basin} • อ.{st.district}</div>
+                      <div className="text-xs text-slate-400">{st.basin} • อ.{st.district}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-white">
                         {st.water_level_msl !== null ? `${st.water_level_msl} m MSL` : 'NO DATA'}
                       </div>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold border ${badgeColor}`}>
                         {st.status}
                       </span>
                     </div>
@@ -128,11 +128,11 @@ export const TelemetryDrawer: React.FC<Props> = ({
                         />
                       </div>
                     ) : (
-                      <div className="text-[10px] text-amber-300/90 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 leading-tight">
+                      <div className="text-xs text-amber-300/90 bg-amber-500/10 px-2.5 py-1.5 rounded border border-amber-500/20 leading-relaxed">
                         The RID public API supports storage/volume/inflow/outflow fields, but usable current telemetry for the selected Prachin Buri reservoirs was unavailable/empty at audit time.
                       </div>
                     )}
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                    <div className="flex justify-between items-center text-xs text-slate-400 mt-1">
                       <span>อ.{r.district} • Cap: {r.capacity_mcm} MCM</span>
                       <span className="font-semibold text-slate-300">
                         {hasLiveTelemetry && pct !== null ? `${pct.toFixed(1)}% Capacity` : 'Design Capacity Recorded (RID)'}
