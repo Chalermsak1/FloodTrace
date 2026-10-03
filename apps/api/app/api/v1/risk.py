@@ -258,7 +258,8 @@ async def get_public_area_card(
         CitizenReport.district.ilike(f"%{target_district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
-        CitizenReport.reporter_role != "TEST/DEMO"
+        CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD"
     ).all()
     citizen_count = len(reports)
 
@@ -434,7 +435,8 @@ async def get_evidence_packet(
         CitizenReport.district.ilike(f"%{district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
-        CitizenReport.reporter_role != "TEST/DEMO"
+        CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD"
     ).all()
 
     forecast = await fetch_openmeteo_forecast("prachin_mueang")
@@ -587,7 +589,8 @@ async def get_my_area_summary(
         CitizenReport.district.ilike(f"%{district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
-        CitizenReport.reporter_role != "TEST/DEMO"
+        CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD"
     ).all()
 
     # Forecast

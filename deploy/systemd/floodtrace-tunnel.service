@@ -1,0 +1,17 @@
+[Unit]
+Description=Cloudflare Named Tunnel for FloodTrace
+After=network.target floodtrace-api.service
+Wants=floodtrace-api.service
+
+[Service]
+Type=simple
+User=floodtrace
+Group=floodtrace
+ExecStart=/usr/local/bin/cloudflared tunnel run floodtrace-production
+Restart=always
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

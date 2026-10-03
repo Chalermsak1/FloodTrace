@@ -1,0 +1,20 @@
+[Unit]
+Description=FloodTrace Production API & Ingestion Engine
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=floodtrace
+Group=floodtrace
+WorkingDirectory=/opt/floodtrace
+EnvironmentFile=/opt/floodtrace/.env.production
+ExecStart=/opt/floodtrace/.venv/bin/uvicorn apps.api.app.main:app --host 0.0.0.0 --port 8001 --workers 2
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

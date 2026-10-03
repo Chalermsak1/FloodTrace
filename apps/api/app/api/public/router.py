@@ -410,10 +410,11 @@ def get_public_overview(
     """
     zone_data = next((z for z in PRACHIN_SUB_BASINS if z["district"] == district), PRACHIN_SUB_BASINS[0])
     
-    # Query database for actual verified observation count (strictly excluding automated test fixtures)
+    # Query database for actual verified observation count (strictly excluding automated test fixtures and quarantined records)
     public_reports_query = db.query(CitizenReport).filter(
         CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
         CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD",
         not_(CitizenReport.reporter_name.ilike("%Test%")),
         not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
         not_(CitizenReport.reporter_name.ilike("%Fixture%")),
@@ -1151,6 +1152,7 @@ def get_public_my_area(
     public_reports_query = db.query(CitizenReport).filter(
         CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
         CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD",
         not_(CitizenReport.reporter_name.ilike("%Test%")),
         not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
         not_(CitizenReport.reporter_name.ilike("%Fixture%")),
@@ -1203,6 +1205,7 @@ def get_public_observations(
     query = db.query(CitizenReport).filter(
         CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
         CitizenReport.reporter_role != "TEST/DEMO",
+        CitizenReport.publication_state != "WITHHELD",
         not_(CitizenReport.reporter_name.ilike("%Test%")),
         not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
         not_(CitizenReport.reporter_name.ilike("%Fixture%")),

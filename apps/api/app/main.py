@@ -313,9 +313,10 @@ def root(request: Request):
         "api_v1_docs": "/docs"
     }
 
-# Master Prompt Section 21: HEALTH CHECKS
+# Master Prompt Section 21 & Section 18: HEALTH CHECKS (/health, /readiness, /liveness)
 @app.get("/health/live")
 @app.get("/health")
+@app.get("/liveness")
 def liveness_check():
     """
     Process Liveness Probe: Verifies application process is running and accepting HTTP requests.
@@ -564,7 +565,7 @@ def health_metrics():
 if os.path.isdir(DIST_DIR):
     @app.get("/{full_path:path}")
     async def serve_spa_page_fallback(full_path: str):
-        if full_path.startswith(("api/", "api", "docs", "redoc", "openapi.json", "health", "uploads")):
+        if full_path.startswith(("api/", "api", "docs", "redoc", "openapi.json", "health", "uploads", "liveness", "readiness")):
             raise HTTPException(status_code=404, detail="Resource not found")
         candidate = os.path.join(DIST_DIR, full_path)
         if full_path and os.path.isfile(candidate):

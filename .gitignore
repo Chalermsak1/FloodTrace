@@ -62,4 +62,5 @@ data/uploads/*
 apps/data/uploads/*
 !apps/data/uploads/.gitkeep
 backups/*.sql
+backups/*.dump
 !backups/.gitkeep
