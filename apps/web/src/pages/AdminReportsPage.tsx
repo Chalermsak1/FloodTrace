@@ -23,6 +23,8 @@ import {
   EyeOff,
   ExternalLink,
   Lock,
+  Key,
+  LogOut,
   MessageSquare,
   Building,
   CheckSquare,
@@ -36,7 +38,8 @@ import {
   Activity,
   Server,
   Database,
-  Play
+  Play,
+  HelpCircle
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -120,6 +123,17 @@ export const AdminReportsPage: React.FC = () => {
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [sseConnected, setSseConnected] = useState<boolean>(false);
 
+  // Staff Authentication Gate (Eliminate hardcoded client secrets)
+  const [staffKey, setStaffKey] = useState<string>(() => {
+    return sessionStorage.getItem('floodtrace_staff_key') || '';
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return Boolean(sessionStorage.getItem('floodtrace_staff_key'));
+  });
+  const [keyInput, setKeyInput] = useState<string>('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSubmitting, setAuthSubmitting] = useState<boolean>(false);
+
   // Queue state & pagination
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [summary, setSummary] = useState<OperationalSummary | null>(null);
@@ -202,6 +216,7 @@ export const AdminReportsPage: React.FC = () => {
     evidence: true,
     context: true,
     related: false,
+    infoRequests: true,
     verification: true,
     escalation: false,
     resolution: false,
@@ -212,6 +227,10 @@ export const AdminReportsPage: React.FC = () => {
   const [assignModalOpen, setAssignModalOpen] = useState<boolean>(false);
   const [assigneeInput, setAssigneeInput] = useState<string>('');
   const [assignNoteInput, setAssignNoteInput] = useState<string>('');
+
+  const [infoModalOpen, setInfoModalOpen] = useState<boolean>(false);
+  const [infoRequestTypeInput, setInfoRequestTypeInput] = useState<string>('UPLOAD_ANOTHER_PHOTO');
+  const [infoRequestTextInput, setInfoRequestTextInput] = useState<string>('');
 
   const [statusModalOpen, setStatusModalOpen] = useState<boolean>(false);
   const [targetStatusInput, setTargetStatusInput] = useState<string>('');
@@ -252,13 +271,55 @@ export const AdminReportsPage: React.FC = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // Common Headers helper
+  // Common Headers helper (No hardcoded credentials)
   const getAuthHeaders = () => ({
-    'X-Admin-Key': 'dev-admin-secret-key-change-in-prod',
+    'X-Admin-Key': staffKey,
     'X-Staff-Role': currentRole,
     'X-Staff-User': currentUsername,
     'Content-Type': 'application/json'
   });
+
+  // Staff Login Handler
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const candidateKey = keyInput.trim();
+    if (!candidateKey) {
+      setAuthError('กรุณาระบุ Staff Access Key');
+      return;
+    }
+    setAuthSubmitting(true);
+    setAuthError(null);
+    try {
+      const resp = await fetch('/api/v1/admin/auth/me', {
+        headers: {
+          'X-Admin-Key': candidateKey,
+          'X-Staff-Role': 'ADMIN',
+          'X-Staff-User': 'admin_user',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (resp.ok) {
+        sessionStorage.setItem('floodtrace_staff_key', candidateKey);
+        setStaffKey(candidateKey);
+        setIsAuthenticated(true);
+        setAuthError(null);
+      } else {
+        setAuthError('คีย์การเข้าถึงไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าใช้งานระบบ (HTTP 401)');
+      }
+    } catch (err) {
+      setAuthError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบสิทธิ์ได้');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('floodtrace_staff_key');
+    setStaffKey('');
+    setIsAuthenticated(false);
+    setKeyInput('');
+    setAuthError(null);
+  };
 
   // Switch role helper
   const handleRoleSwitch = (role: 'ADMIN' | 'REVIEWER' | 'OPERATOR' | 'READ_ONLY') => {
@@ -271,8 +332,13 @@ export const AdminReportsPage: React.FC = () => {
 
   // 1. Fetch Staff Directory & Summary
   const fetchSummary = async () => {
+    if (!staffKey) return;
     try {
       const resp = await fetch('/api/v1/admin/reports/summary', { headers: getAuthHeaders() });
+      if (resp.status === 401) {
+        handleLogout();
+        return;
+      }
       if (resp.ok) {
         const data = await resp.json();
         setSummary(data);
@@ -283,8 +349,13 @@ export const AdminReportsPage: React.FC = () => {
   };
 
   const fetchStaffUsers = async () => {
+    if (!staffKey) return;
     try {
       const resp = await fetch('/api/v1/admin/staff/users', { headers: getAuthHeaders() });
+      if (resp.status === 401) {
+        handleLogout();
+        return;
+      }
       if (resp.ok) {
         const data = await resp.json();
         setStaffUsers(data);
@@ -296,6 +367,7 @@ export const AdminReportsPage: React.FC = () => {
 
   // 2. Fetch Reports Queue
   const fetchReports = async () => {
+    if (!staffKey) return;
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -309,6 +381,10 @@ export const AdminReportsPage: React.FC = () => {
       if (districtFilter) params.append('district', districtFilter);
 
       const resp = await fetch(`/api/v1/admin/reports?${params.toString()}`, { headers: getAuthHeaders() });
+      if (resp.status === 401) {
+        handleLogout();
+        return;
+      }
       if (resp.ok) {
         const data = await resp.json();
         setReports(data.items || []);
@@ -381,7 +457,11 @@ export const AdminReportsPage: React.FC = () => {
 
   // Setup SSE realtime listener
   useEffect(() => {
-    const sse = new EventSource('/api/v1/admin/events');
+    if (!isAuthenticated || !staffKey) {
+      setSseConnected(false);
+      return;
+    }
+    const sse = new EventSource(`/api/v1/admin/events?token=${encodeURIComponent(staffKey)}`);
     sse.onopen = () => setSseConnected(true);
     sse.onerror = () => setSseConnected(false);
 
@@ -418,7 +498,7 @@ export const AdminReportsPage: React.FC = () => {
     return () => {
       sse.close();
     };
-  }, [selectedReportId]);
+  }, [isAuthenticated, staffKey, selectedReportId]);
 
   // Map Initialization & Marker Updates
   useEffect(() => {
@@ -520,6 +600,34 @@ export const AdminReportsPage: React.FC = () => {
       if (!resp.ok) throw new Error(data.detail || 'เกิดข้อผิดพลาดในการมอบหมายงาน');
       setActionSuccess(`มอบหมายงานให้ ${assigneeInput} เรียบร้อยแล้ว`);
       setAssignModalOpen(false);
+      fetchReportDetail(selectedReportId);
+      fetchReports();
+      fetchSummary();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const handleRequestInfo = async () => {
+    if (!selectedReportId || !infoRequestTextInput.trim()) {
+      setActionError('กรุณากรอกรายละเอียดสิ่งที่ต้องการขอข้อมูลเพิ่มเติม');
+      return;
+    }
+    setActionError(null);
+    try {
+      const resp = await fetch(`/api/v1/admin/reports/${selectedReportId}/request-info`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          request_type: infoRequestTypeInput,
+          request_text: infoRequestTextInput.trim()
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || 'เกิดข้อผิดพลาดในการขอข้อมูลเพิ่มเติม');
+      setActionSuccess('ส่งคำขอข้อมูลเพิ่มเติมไปยังผู้แจ้งเหตุเรียบร้อยแล้ว');
+      setInfoModalOpen(false);
+      setInfoRequestTextInput('');
       fetchReportDetail(selectedReportId);
       fetchReports();
       fetchSummary();
@@ -703,6 +811,73 @@ export const AdminReportsPage: React.FC = () => {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F5F8FC] flex flex-col justify-center items-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[#063B70] text-white mx-auto mb-5 shadow-md">
+            <Shield className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-center text-slate-900 mb-1">
+            FloodTrace Staff Operations Console
+          </h2>
+          <p className="text-xs text-center text-slate-500 mb-6">
+            ระบบบริหารจัดการและตรวจสอบข้อเท็จจริงสำหรับเจ้าหน้าที่ (Internal Back-Office)
+          </p>
+
+          {authError && (
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-rose-800 text-xs">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Staff Access Key (รหัสผ่านเจ้าหน้าที่)
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  placeholder="ป้อนรหัสคีย์การเข้าถึง..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={authSubmitting || !keyInput.trim()}
+              className="w-full py-2.5 px-4 bg-[#0C65E8] hover:bg-blue-700 disabled:bg-slate-300 text-white font-medium text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2"
+            >
+              {authSubmitting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>กำลังตรวจสอบสิทธิ์...</span>
+                </>
+              ) : (
+                <>
+                  <Key className="w-4 h-4" />
+                  <span>เข้าสู่ระบบเจ้าหน้าที่</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <a href="/" className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+              ← กลับสู่หน้าหลักภาคประชาชน (Public Site)
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F8FC] text-slate-800 flex flex-col font-sans pb-12">
       {/* Top Staff Operations Bar */}
@@ -764,6 +939,14 @@ export const AdminReportsPage: React.FC = () => {
               title="รีเฟรชข้อมูล"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 hover:text-white transition"
+              title="ออกจากระบบ (Sign Out)"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1137,6 +1320,15 @@ export const AdminReportsPage: React.FC = () => {
                     </button>
 
                     <button
+                      onClick={() => setInfoModalOpen(true)}
+                      disabled={currentRole === 'READ_ONLY'}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40 transition flex items-center gap-1"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      ขอข้อมูลเพิ่ม
+                    </button>
+
+                    <button
                       onClick={() => setVerifyModalOpen(true)}
                       disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition flex items-center gap-1"
@@ -1360,7 +1552,72 @@ export const AdminReportsPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Section 5: Structured Verification Workflow (Section 17) */}
+                  {/* Section 4.5: Information Requests (Citizen Coordination) */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                    <button
+                      onClick={() => toggleSection('infoRequests')}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-sm font-bold text-[#063B70]"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-amber-600" />
+                        5. การขอข้อมูลเพิ่มเติมจากประชาชน (Information Requests)
+                        {reportDetail.info_requests && reportDetail.info_requests.length > 0 && (
+                          <span className="ml-1.5 px-2 py-0.5 rounded-full text-2xs bg-amber-100 text-amber-800 font-bold">
+                            {reportDetail.info_requests.length}
+                          </span>
+                        )}
+                      </span>
+                      {openSections.infoRequests ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {openSections.infoRequests && (
+                      <div className="p-3.5 text-sm space-y-3">
+                        {reportDetail.info_requests && reportDetail.info_requests.length > 0 ? (
+                          <div className="space-y-2.5">
+                            {reportDetail.info_requests.map((ir: any) => (
+                              <div key={ir.id} className="p-3 rounded-xl bg-amber-50/50 border border-amber-200/80 space-y-1.5 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                                    {ir.request_type === 'UPLOAD_ANOTHER_PHOTO' ? 'ขอภาพถ่ายเพิ่มเติม' :
+                                     ir.request_type === 'CONFIRM_LOCATION' ? 'ขอยืนยันจุดเกิดเหตุ' :
+                                     ir.request_type === 'CONFIRM_OBSERVATION_TIME' ? 'ขอยืนยันวันเวลาสังเกตเห็น' :
+                                     ir.request_type === 'DESCRIBE_WATER_DEPTH' ? 'ขอข้อมูลระดับความลึก' :
+                                     ir.request_type === 'CONFIRM_CONDITION_STILL_PRESENT' ? 'สอบถามสภาพน้ำปัจจุบัน' : ir.request_type}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full font-bold ${ir.status === 'ANSWERED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                    {ir.status === 'ANSWERED' ? 'ตอบแล้ว' : 'รอคำตอบ'}
+                                  </span>
+                                </div>
+                                <p className="text-slate-800 font-medium">{ir.request_text}</p>
+                                <div className="text-slate-400 text-2xs flex items-center justify-between pt-1 border-t border-amber-100">
+                                  <span>โดย: {ir.requested_by}</span>
+                                  <span>{ir.requested_at ? new Date(ir.requested_at).toLocaleString('th-TH') : ''}</span>
+                                </div>
+                                {ir.response_text && (
+                                  <div className="mt-1 p-2 rounded bg-white border border-amber-200 text-slate-700">
+                                    <strong className="text-emerald-700 block">คำตอบจากประชาชน:</strong>
+                                    {ir.response_text}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 italic text-center py-2 text-sm">
+                            ยังไม่มีการขอข้อมูลเพิ่มเติม
+                            <button
+                              onClick={() => setInfoModalOpen(true)}
+                              disabled={currentRole === 'READ_ONLY'}
+                              className="block mx-auto mt-2 text-sm text-amber-600 font-bold hover:underline disabled:opacity-30"
+                            >
+                              + ขอข้อมูลเพิ่มเติมจากประชาชน
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section 6: Structured Verification Workflow (Section 17) */}
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       onClick={() => toggleSection('verification')}
@@ -1368,7 +1625,7 @@ export const AdminReportsPage: React.FC = () => {
                     >
                       <span className="flex items-center gap-1.5">
                         <CheckSquare className="w-4 h-4 text-emerald-600" />
-                        5. บันทึกการพิสูจน์ข้อเท็จจริง (Structured Verification)
+                        6. บันทึกการพิสูจน์ข้อเท็จจริง (Structured Verification)
                       </span>
                       {openSections.verification ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
@@ -1896,6 +2153,56 @@ export const AdminReportsPage: React.FC = () => {
               <button onClick={() => setAssignModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 font-medium">ยกเลิก</button>
               <button onClick={handleAssign} className="px-5 py-2 bg-[#0C65E8] text-white text-sm font-semibold rounded-xl hover:bg-blue-700 shadow-sm min-h-[40px]">
                 บันทึกการมอบหมาย
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1.5 Info Request Modal (Citizen Coordination) */}
+      {infoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-[#063B70] flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-amber-600" /> ขอข้อมูลเพิ่มเติมจากประชาชน
+              </h3>
+              <button onClick={() => setInfoModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <div className="space-y-3.5 text-sm">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1.5">ประเภทข้อมูลที่ต้องการขอเพิ่ม:</label>
+                <select
+                  value={infoRequestTypeInput}
+                  onChange={(e) => setInfoRequestTypeInput(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm"
+                >
+                  <option value="UPLOAD_ANOTHER_PHOTO">ขอภาพถ่ายเพิ่มเติม (มุมกว้าง/ผิวน้ำ/สภาพแวดล้อม)</option>
+                  <option value="CONFIRM_LOCATION">ขอยืนยันจุดหรือสถานที่เกิดเหตุชัดเจน</option>
+                  <option value="CONFIRM_OBSERVATION_TIME">ขอยืนยันวันเวลาที่สังเกตเห็น</option>
+                  <option value="DESCRIBE_WATER_DEPTH">ขอข้อมูลระดับความลึกหรือระยะท่วม</option>
+                  <option value="CONFIRM_CONDITION_STILL_PRESENT">สอบถามว่าสภาพน้ำยังคงมีอาการดังกล่าวอยู่หรือไม่</option>
+                  <option value="OTHER">ข้อซักถามอื่นๆ</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1.5">ข้อความแจ้งผู้รายงาน:</label>
+                <textarea
+                  rows={3}
+                  value={infoRequestTextInput}
+                  onChange={(e) => setInfoRequestTextInput(e.target.value)}
+                  placeholder="ระบุข้อความที่ต้องการสื่อสารกับผู้รายงาน เช่น รบกวนช่วยถ่ายภาพบริเวณผิวน้ำให้เห็นสภาพสีและคราบเพิ่มเติม..."
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button onClick={() => setInfoModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 font-medium">ยกเลิก</button>
+              <button onClick={handleRequestInfo} className="px-5 py-2 bg-amber-600 text-white text-sm font-semibold rounded-xl hover:bg-amber-700 shadow-sm min-h-[40px]">
+                ส่งคำขอข้อมูล
               </button>
             </div>
           </div>

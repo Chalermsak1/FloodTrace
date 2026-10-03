@@ -111,8 +111,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """
     async def dispatch(self, request: Request, call_next):
         # Extract IP supporting reverse proxy / load balancer (Section 3 & 25)
+        cf_ip = request.headers.get("CF-Connecting-IP")
         forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
+        if cf_ip:
+            client_ip = cf_ip.strip()
+        elif forwarded:
             client_ip = forwarded.split(",")[0].strip()
         else:
             client_ip = request.client.host if request.client else "127.0.0.1"
@@ -122,14 +125,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Determine rate limit tier
         limit = settings.RATE_LIMIT_PER_MINUTE
-        if "/reports/upload-photo" in path:
+        if "/admin" in path:
+            limit = max(settings.RATE_LIMIT_PER_MINUTE * 5, 300) # Staff operations console
+        elif "/reports/upload-photo" in path:
             limit = 5 # Max 5 photo uploads per minute
-        elif "/reports" in path and request.method == "POST":
-            limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE # 10/min for report submissions
+        elif ("/public/reports" in path or "/reports" in path) and request.method == "POST":
+            limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE # 10/min for citizen report submissions
         elif "/governance/takedown" in path and request.method == "POST":
             limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE
-        elif "/admin" in path:
-            limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE * 2
 
         allowed, retry_after = rate_limiter.is_allowed(client_ip, limit, window_seconds=60)
         if not allowed:

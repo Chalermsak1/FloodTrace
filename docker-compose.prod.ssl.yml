@@ -1,4 +1,23 @@
 services:
+  # Automated HTTPS Reverse Proxy (Automatic Let's Encrypt SSL/TLS)
+  caddy:
+    image: caddy:2-alpine
+    container_name: floodtrace_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - floodtrace_caddy_data:/data
+      - floodtrace_caddy_config:/config
+    depends_on:
+      - web
+    networks:
+      - floodtrace_net
+
   # Spatial Database: PostgreSQL 16 with PostGIS 3.4
   db:
     image: postgis/postgis:16-3.4-alpine
@@ -6,15 +25,13 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-floodtrace_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-floodtrace_secure_pass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production}
       POSTGRES_DB: ${POSTGRES_DB:-floodtrace_db}
-    ports:
-      - "5433:5432"
     volumes:
       - floodtrace_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-floodtrace_user} -d ${POSTGRES_DB:-floodtrace_db}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
     networks:
@@ -28,32 +45,28 @@ services:
     container_name: floodtrace_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-floodtrace_user}:${POSTGRES_PASSWORD:-floodtrace_secure_pass}@db:5432/${POSTGRES_DB:-floodtrace_db}
-      ENVIRONMENT: ${ENVIRONMENT:-production}
-      DATA_ENV: ${DATA_ENV:-PRODUCTION}
-      REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION: ${REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION:-false}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-floodtrace_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-floodtrace_db}
+      ENVIRONMENT: production
+      DATA_ENV: PRODUCTION
+      REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION: "false"
       ALLOW_OFFICIAL_PUBLIC_PRODUCTION: "true"
-      ADMIN_API_KEY: ${ADMIN_API_KEY:-floodtrace_admin_production_key_change_me}
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
-      ENABLE_SCHEDULER: ${ENABLE_SCHEDULER:-true}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY must be set in production}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-https://${DOMAIN:-localhost}}
+      ENABLE_SCHEDULER: "true"
       THAIWATER_API_KEY: ${THAIWATER_API_KEY:-}
-    ports:
-      - "${API_PORT:-8001}:8001"
     depends_on:
       db:
         condition: service_healthy
     networks:
       - floodtrace_net
 
-  # FloodTrace Web Frontend (Nginx SPA + Reverse Proxy)
+  # FloodTrace Web Frontend (Nginx SPA + Internal API Proxy)
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
     container_name: floodtrace_web
     restart: unless-stopped
-    ports:
-      - "${WEB_PORT:-80}:80"
     depends_on:
       - api
     networks:
@@ -61,6 +74,8 @@ services:
 
 volumes:
   floodtrace_pgdata:
+  floodtrace_caddy_data:
+  floodtrace_caddy_config:
 
 networks:
   floodtrace_net:

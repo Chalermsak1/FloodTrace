@@ -12,6 +12,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import not_
 
 from apps.api.app.core.database import get_db
 from apps.api.app.core.config import settings
@@ -182,7 +183,7 @@ PRACHIN_SUB_BASINS: List[Dict[str, Any]] = [
         "connectivity": "จุดบรรจบแม่น้ำหนุมานและแม่น้ำพระปรง ไหลลงแม่น้ำปราจีนบุรี",
         "obs_count": 8,
         "forecast": "มีแนวโน้มขยายตัวตามแนวลุ่มน้ำใน 24 ชั่วโมง",
-        "sampling": "รอผลตรวจทางห้องปฏิบัติการจากหน่วยงาน",
+        "sampling": "ยังไม่มีข้อมูลผลตรวจจากห้องปฏิบัติการในระบบ",
         "receptors": "ชุมชนริมน้ำกบินทร์บุรี, แปลงเกษตรกรรม 1,200 ไร่, โรงเรียน 3 แห่ง",
         "confidence": "คุณภาพข้อมูล: สูง",
         "freshness": "สดใหม่ (อัปเดตวันนี้)",
@@ -409,15 +410,20 @@ def get_public_overview(
     """
     zone_data = next((z for z in PRACHIN_SUB_BASINS if z["district"] == district), PRACHIN_SUB_BASINS[0])
     
-    # Query database for actual verified observation count
-    obs_count = db.query(CitizenReport).filter(
-        CitizenReport.district == district,
-        CitizenReport.verification_status != "REJECTED"
-    ).count()
+    # Query database for actual verified observation count (strictly excluding automated test fixtures)
+    public_reports_query = db.query(CitizenReport).filter(
+        CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
+        CitizenReport.reporter_role != "TEST/DEMO",
+        not_(CitizenReport.reporter_name.ilike("%Test%")),
+        not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
+        not_(CitizenReport.reporter_name.ilike("%Fixture%")),
+        not_(CitizenReport.reporter_name.ilike("%Synthetic%"))
+    )
+    obs_count = public_reports_query.filter(CitizenReport.district == district).count()
 
     total_stations = db.query(WaterStation).count()
     total_rainfall_stations = db.query(RainfallStation).count()
-    total_reports = db.query(CitizenReport).filter(CitizenReport.verification_status != "REJECTED").count()
+    total_reports = public_reports_query.count()
 
     # Calculate latest system update timestamp from data
     latest_timestamps = []
@@ -1142,10 +1148,15 @@ def get_public_my_area(
             "why": ["✓ ไม่พบปัจจัยเสี่ยงด้านการปนเปื้อนในพื้นที่"]
         }
 
-    obs_count = db.query(CitizenReport).filter(
-        CitizenReport.district == district,
-        CitizenReport.verification_status != "REJECTED"
-    ).count()
+    public_reports_query = db.query(CitizenReport).filter(
+        CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
+        CitizenReport.reporter_role != "TEST/DEMO",
+        not_(CitizenReport.reporter_name.ilike("%Test%")),
+        not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
+        not_(CitizenReport.reporter_name.ilike("%Fixture%")),
+        not_(CitizenReport.reporter_name.ilike("%Synthetic%"))
+    )
+    obs_count = public_reports_query.filter(CitizenReport.district == district).count()
 
     return PublicAreaSummaryDTO(
         district=district,
@@ -1154,8 +1165,8 @@ def get_public_my_area(
         verification_priority_label=zone_data["priority_label"],
         verification_priority_explanation="ระดับนี้ใช้สำหรับจัดลำดับพื้นที่ที่ควรได้รับการตรวจสอบเพิ่มเติม ไม่ใช่การยืนยันว่ามีการปนเปื้อน",
         flood_status=zone_data["flood_status"],
-        community_observation_summary=f"รายงานข้อสังเกตจากประชาชนในพื้นที่: {obs_count if obs_count > 0 else zone_data['obs_count']} รายการ",
-        community_observation_count=obs_count if obs_count > 0 else zone_data["obs_count"],
+        community_observation_summary=f"รายงานข้อสังเกตจากประชาชนในพื้นที่: {obs_count} รายการ" if obs_count > 0 else "ยังไม่มีรายงานข้อสังเกตจากประชาชนในพื้นที่นี้",
+        community_observation_count=obs_count,
         official_sampling_status=zone_data["sampling"],
         forecast_watch_summary=zone_data["forecast"],
         data_confidence=zone_data["confidence"],
@@ -1190,7 +1201,12 @@ def get_public_observations(
     - Categories: น้ำเปลี่ยนสี, คราบบนผิวน้ำ, กลิ่นผิดปกติ, ฟอง/ตะกอนผิดปกติ, สัตว์น้ำตาย, ขยะ/วัสดุผิดปกติ, อื่น ๆ
     """
     query = db.query(CitizenReport).filter(
-        CitizenReport.verification_status != "REJECTED"
+        CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
+        CitizenReport.reporter_role != "TEST/DEMO",
+        not_(CitizenReport.reporter_name.ilike("%Test%")),
+        not_(CitizenReport.reporter_name.ilike("%Whistleblower%")),
+        not_(CitizenReport.reporter_name.ilike("%Fixture%")),
+        not_(CitizenReport.reporter_name.ilike("%Synthetic%"))
     )
     if district:
         query = query.filter(CitizenReport.district == district)
@@ -1661,5 +1677,5 @@ def track_citizen_report_status(report_id: str, db: Session = Depends(get_db)):
         "public_description_th": desc_th,
         "verification_level": report.verification_status or "UNVERIFIED",
         "verification_level_th": verif_th,
-        "last_updated": report.created_at.isoformat() if report.created_at else None
+        "last_updated": (report.updated_at or report.created_at).isoformat() if (report.updated_at or report.created_at) else None
     }

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from contextlib import asynccontextmanager
 import logging
 from datetime import datetime, timezone
@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         from apps.api.app.core.source_access import evaluate_source_access, IngestionAction
-        if settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION or settings.DATA_ENV == "PRODUCTION":
+        if settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION:
             diw_eval = evaluate_source_access("diw_industrial_waste", credential_override=settings.DIW_AUTHORIZED_CREDENTIAL, enforce_private_production=True)
             if diw_eval.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION:
                 purged = db.query(IndustrialFacility).delete()
@@ -71,37 +71,38 @@ async def lifespan(app: FastAPI):
 
             db.commit()
 
-        if not (settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION or settings.DATA_ENV == "PRODUCTION"):
-            logger.info("Syncing verified DIW industrial waste facilities if authorized...")
-            diw_items = load_diw_facilities()
-            for item in diw_items:
-                f = IndustrialFacility(
-                    id=item["id"],
-                    fid=item.get("fid"),
-                    name=item["name"],
-                    business_type=item["business_type"],
-                    facility_type=item["facility_type"],
-                    official_activity_category=item.get("official_activity_category"),
-                    address=item.get("address"),
-                    subdistrict=item["subdistrict"],
-                    district=item["district"],
-                    province=item.get("province", "ปราจีนบุรี"),
-                    latitude=item["latitude"],
-                    longitude=item["longitude"],
-                    horsepower=item.get("horsepower", 0.0),
-                    workers=item.get("workers", 0),
-                    capital=item.get("capital", 0.0),
-                    official_licensed_capacity=item.get("official_licensed_capacity"),
-                    hazard_evidence_status=item.get("hazard_evidence_status", "INSUFFICIENT_DATA"),
-                    hazard_classification=item.get("hazard_classification", "NOT_AVAILABLE_IN_REGISTRY"),
-                    chemical_assay_evidence=item.get("chemical_assay_evidence", "INSUFFICIENT_DATA — No chemical lab assays published in DIW registry"),
-                    environmental_inspection_evidence=item.get("environmental_inspection_evidence", "INSUFFICIENT_DATA — No PCD inspection violations reported in registry"),
-                    provenance=item["provenance"]
-                )
-                db.merge(f)
-            db.commit()
-            if diw_items:
-                logger.info(f"Audited {len(diw_items)} DIW facilities synced.")
+        if not settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION:
+            if db.query(IndustrialFacility).count() == 0:
+                logger.info("Syncing verified DIW industrial waste facilities if authorized...")
+                diw_items = load_diw_facilities()
+                for item in diw_items:
+                    f = IndustrialFacility(
+                        id=item["id"],
+                        fid=item.get("fid"),
+                        name=item["name"],
+                        business_type=item["business_type"],
+                        facility_type=item["facility_type"],
+                        official_activity_category=item.get("official_activity_category"),
+                        address=item.get("address"),
+                        subdistrict=item["subdistrict"],
+                        district=item["district"],
+                        province=item.get("province", "ปราจีนบุรี"),
+                        latitude=item["latitude"],
+                        longitude=item["longitude"],
+                        horsepower=item.get("horsepower", 0.0),
+                        workers=item.get("workers", 0),
+                        capital=item.get("capital", 0.0),
+                        official_licensed_capacity=item.get("official_licensed_capacity"),
+                        hazard_evidence_status=item.get("hazard_evidence_status", "INSUFFICIENT_DATA"),
+                        hazard_classification=item.get("hazard_classification", "NOT_AVAILABLE_IN_REGISTRY"),
+                        chemical_assay_evidence=item.get("chemical_assay_evidence", "INSUFFICIENT_DATA — No chemical lab assays published in DIW registry"),
+                        environmental_inspection_evidence=item.get("environmental_inspection_evidence", "INSUFFICIENT_DATA — No PCD inspection violations reported in registry"),
+                        provenance=item["provenance"]
+                    )
+                    db.merge(f)
+                db.commit()
+                if diw_items:
+                    logger.info(f"Audited {len(diw_items)} DIW facilities synced.")
                 
             if db.query(WaterStation).count() == 0:
                 logger.info("Syncing initial ThaiWater water stations...")
@@ -180,11 +181,16 @@ async def lifespan(app: FastAPI):
     ingestion_pipeline.start_worker()
     logger.info("Ingestion pipeline worker initialized.")
 
-    source_scheduler.start()
-    logger.info("Automated source scheduler initialized.")
+    if settings.ENABLE_SCHEDULER:
+        source_scheduler.start()
+        logger.info("Automated source scheduler initialized.")
+    else:
+        logger.info("Automated source scheduler disabled (ENABLE_SCHEDULER=false).")
 
     yield
-    source_scheduler.stop()
+
+    if settings.ENABLE_SCHEDULER:
+        source_scheduler.stop()
     ingestion_pipeline.stop_worker()
     logger.info("Shutting down FloodTrace Prachin Buri engine.")
 
@@ -242,7 +248,7 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -273,8 +279,32 @@ UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../d
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+# Mount production SPA assets if available
+DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../apps/web/dist"))
+if not os.path.isdir(DIST_DIR):
+    DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../web/dist"))
+
+if os.path.isdir(DIST_DIR):
+    ASSETS_DIR = os.path.join(DIST_DIR, "assets")
+    if os.path.isdir(ASSETS_DIR):
+        app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="spa_assets")
+
 @app.get("/")
-def root():
+def root(request: Request):
+    accept_header = request.headers.get("accept", "")
+    index_file = os.path.join(DIST_DIR, "index.html") if os.path.isdir(DIST_DIR) else ""
+    if ("text/html" in accept_header or "application/xhtml+xml" in accept_header) and os.path.isfile(index_file):
+        return FileResponse(index_file)
+    if "application/json" in accept_header:
+        return {
+            "platform": "FloodTrace Prachin Buri",
+            "description": "Environmental and Flood Risk Intelligence Platform",
+            "region": "Prachin Buri, Thailand",
+            "integrity_rule": "NEVER fabricate or hallucinate real-world data. Real data first, provenance always.",
+            "api_v1_docs": "/docs"
+        }
+    if os.path.isfile(index_file):
+        return FileResponse(index_file)
     return {
         "platform": "FloodTrace Prachin Buri",
         "description": "Environmental and Flood Risk Intelligence Platform",
@@ -529,3 +559,17 @@ def health_metrics():
         "pipeline": stats,
         "circuit_breakers": cb_status
     }
+
+# Master Production Architecture: Client-Side SPA Page Routing Fallback
+if os.path.isdir(DIST_DIR):
+    @app.get("/{full_path:path}")
+    async def serve_spa_page_fallback(full_path: str):
+        if full_path.startswith(("api/", "api", "docs", "redoc", "openapi.json", "health", "uploads")):
+            raise HTTPException(status_code=404, detail="Resource not found")
+        candidate = os.path.join(DIST_DIR, full_path)
+        if full_path and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        index_file = os.path.join(DIST_DIR, "index.html")
+        if os.path.isfile(index_file):
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Page not found")

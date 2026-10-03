@@ -57,14 +57,24 @@ class Settings(BaseSettings):
     # Security, Auth & Upload Limits
     ADMIN_API_KEY: str = os.getenv("ADMIN_API_KEY", "dev-admin-secret-key-change-in-prod")
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
-    SUBMIT_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("SUBMIT_RATE_LIMIT_PER_MINUTE", "10"))
+    SUBMIT_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("SUBMIT_RATE_LIMIT_PER_MINUTE", "60"))
     MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(5 * 1024 * 1024))) # 5 MB max
     DATA_RETENTION_DAYS: int = int(os.getenv("DATA_RETENTION_DAYS", "365"))
     COORDINATE_GENERALIZE_DECIMALS: int = int(os.getenv("COORDINATE_GENERALIZE_DECIMALS", "2")) # ~1.1km blur
     
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "*"]
+    # Scheduler lifecycle control
+    ENABLE_SCHEDULER: bool = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1")
     
+    # CORS Origins (Configurable via comma-separated string or default)
+    @property
+    def cors_origins(self) -> list[str]:
+        raw = os.getenv("BACKEND_CORS_ORIGINS")
+        if raw:
+            return [origin.strip() for origin in raw.split(",") if origin.strip()]
+        if self.ENVIRONMENT.lower() == "production":
+            return ["https://localhost", "http://localhost"]
+        return ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "*"]
+
     model_config = {
         "case_sensitive": True,
         "extra": "ignore"

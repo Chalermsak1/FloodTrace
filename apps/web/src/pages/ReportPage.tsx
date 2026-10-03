@@ -62,9 +62,9 @@ export const ReportPage: React.FC = () => {
   const [trackingLoading, setTrackingLoading] = useState<boolean>(false);
   const [trackingError, setTrackingError] = useState<string | null>(null);
 
-  const handleTrackReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const idToTrack = trackingIdInput.trim();
+  const handleTrackReport = async (e?: React.FormEvent, directId?: string) => {
+    if (e) e.preventDefault();
+    const idToTrack = (directId || trackingIdInput).trim();
     if (!idToTrack) return;
     setTrackingLoading(true);
     setTrackingError(null);
@@ -406,7 +406,7 @@ export const ReportPage: React.FC = () => {
                       onClick={() => {
                         setTrackingIdInput(submittedReportId);
                         setActiveMode('track');
-                        handleTrackReport({ preventDefault: () => {} } as any);
+                        handleTrackReport(undefined, submittedReportId);
                       }}
                       className="text-xs font-semibold text-[#0C57C7] hover:underline inline-flex items-center gap-1"
                     >

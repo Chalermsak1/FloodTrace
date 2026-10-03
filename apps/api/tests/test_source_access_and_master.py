@@ -400,6 +400,33 @@ def test_acceptance_test_7_public_evidence_packets_exclude_confidential_fields()
 
 def test_acceptance_test_8_every_public_claim_has_audit_trail():
     """TEST 8: Every public claim has an audit trail."""
+    from apps.api.app.core.database import SessionLocal
+    from apps.api.app.models.entities import ClaimPublication
+    with SessionLocal() as db:
+        if db.query(ClaimPublication).filter(ClaimPublication.publication_status == "PUBLISHED").count() == 0:
+            c = ClaimPublication(
+                claim_id="CLM-AUDIT-001",
+                claim_text="รายงานการตรวจวัดระดับน้ำสถานีสะพานปราจีนบุรี",
+                claim_type="MEASURED_FACT",
+                category="WATER_MONITORING",
+                source_ids=["thaiwater_waterlevel"],
+                evidence_ids=["ev_audit_001"],
+                data_version="2026.1",
+                model_version="1.0",
+                methodology_version="1.0",
+                publication_status="PUBLISHED",
+                version=1,
+                reviewer="auditor",
+                provenance={
+                    "source_id": "thaiwater_waterlevel",
+                    "provenance_hash": "audit_hash_001",
+                    "category": "MEASURED_FACT",
+                    "authority": "HAII / ThaiWater"
+                }
+            )
+            db.add(c)
+            db.commit()
+
     resp = client.get("/api/v1/governance/claims")
     assert resp.status_code == 200
     claims = resp.json()

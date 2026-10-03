@@ -106,62 +106,49 @@ def get_current_staff_user(
         provided_key = header_key
     elif credentials and credentials.credentials:
         provided_key = credentials.credentials
+    elif request.query_params.get("token"):
+        provided_key = request.query_params.get("token")
+    elif request.query_params.get("key"):
+        provided_key = request.query_params.get("key")
 
-    # Optional role/user overrides sent by authorized staff client
-    client_staff_user = request.headers.get("X-Staff-User")
-    client_staff_role = request.headers.get("X-Staff-Role")
-
-    # If admin key is provided, validate key
-    is_admin_key_valid = (provided_key == settings.ADMIN_API_KEY)
-    
-    # In development/test mode or with valid key, allow role resolution
-    if is_admin_key_valid or settings.ENVIRONMENT == "development" or settings.DATA_ENV != "PRODUCTION":
-        # Look up requested staff user if specified
-        if client_staff_user:
-            staff_record = db.query(StaffUser).filter(StaffUser.username == client_staff_user).first()
-            if staff_record and staff_record.is_active:
-                # If client requested specific role override and admin key is present, respect role
-                role = StaffRole(client_staff_role) if (client_staff_role in StaffRole._value2member_map_) else StaffRole(staff_record.role)
-                return StaffPrincipal(
-                    user_id=staff_record.id,
-                    username=staff_record.username,
-                    display_name=staff_record.display_name,
-                    role=role,
-                    department=staff_record.department,
-                    email=staff_record.email
-                )
-
-        # If role is explicitly requested
-        if client_staff_role and client_staff_role in StaffRole._value2member_map_:
-            req_role = StaffRole(client_staff_role)
-            return StaffPrincipal(
-                user_id=f"staff_{req_role.value.lower()}",
-                username=f"{req_role.value.lower()}_user",
-                display_name=f"Staff Operator ({req_role.value})",
-                role=req_role,
-                department="Operations & Verification",
-                email=f"{req_role.value.lower()}@floodtrace.internal"
-            )
-
-        # Default to ADMIN if valid admin key supplied
-        if is_admin_key_valid:
-            return StaffPrincipal(
-                user_id="staff_admin_01",
-                username="admin_user",
-                display_name="System Administrator (ผู้ดูแลระบบ)",
-                role=StaffRole.ADMIN,
-                department="Executive & Platform Operations",
-                email="admin@floodtrace.internal"
-            )
-
-    # In production without admin key, require authentication
-    if not is_admin_key_valid:
+    # Validate key - MUST be valid admin key unconditionally
+    if not provided_key or provided_key != settings.ADMIN_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Staff authentication required. Provide valid 'X-Admin-Key' or 'Authorization: Bearer <token>'."
         )
 
-    # Default fallback
+    # Optional role/user overrides sent by authorized staff client
+    client_staff_user = request.headers.get("X-Staff-User")
+    client_staff_role = request.headers.get("X-Staff-Role")
+
+    # Look up requested staff user if specified
+    if client_staff_user:
+        staff_record = db.query(StaffUser).filter(StaffUser.username == client_staff_user).first()
+        if staff_record and staff_record.is_active:
+            role = StaffRole(client_staff_role) if (client_staff_role in StaffRole._value2member_map_) else StaffRole(staff_record.role)
+            return StaffPrincipal(
+                user_id=staff_record.id,
+                username=staff_record.username,
+                display_name=staff_record.display_name,
+                role=role,
+                department=staff_record.department,
+                email=staff_record.email
+            )
+
+    # If role is explicitly requested by authenticated client
+    if client_staff_role and client_staff_role in StaffRole._value2member_map_:
+        req_role = StaffRole(client_staff_role)
+        return StaffPrincipal(
+            user_id=f"staff_{req_role.value.lower()}",
+            username=f"{req_role.value.lower()}_user",
+            display_name=f"Staff Operator ({req_role.value})",
+            role=req_role,
+            department="Operations & Verification",
+            email=f"{req_role.value.lower()}@floodtrace.internal"
+        )
+
+    # Default to ADMIN for authenticated key
     return StaffPrincipal(
         user_id="staff_admin_01",
         username="admin_user",

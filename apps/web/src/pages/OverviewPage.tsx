@@ -371,7 +371,7 @@ export const OverviewPage: React.FC = () => {
             <div className="pt-2 md:pt-0 md:px-3 first:pl-0">
               <span className="text-xs text-slate-500 block mb-1">สถานีตรวจวัดอัตโนมัติ:</span>
               <span className="text-sm sm:text-base font-bold text-slate-900">
-                {loading ? '...' : `${overviewData?.total_water_stations ?? 26} สถานีน้ำ + ${overviewData?.total_rainfall_stations ?? 77} สถานีฝน`}
+                {loading ? '...' : `${overviewData?.total_water_stations ?? 27} สถานีน้ำ + ${overviewData?.total_rainfall_stations ?? 77} สถานีฝน`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">
@@ -383,7 +383,7 @@ export const OverviewPage: React.FC = () => {
             <div className="pt-2 md:pt-0 md:px-3">
               <span className="text-xs text-slate-500 block mb-1">รายงานชุมชนที่ได้รับ:</span>
               <span className="text-sm sm:text-base font-bold text-teal-700">
-                {loading ? '...' : `${overviewData?.total_citizen_reports ?? 189} รายการ`}
+                {loading ? '...' : `${overviewData?.total_citizen_reports ?? 0} รายการ`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">

@@ -5,9 +5,27 @@ import asyncio
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
+# ------------------------------------------------------------------
+# TEST DATABASE ISOLATION (Final Real-World Readiness Audit)
+# The suite deletes station/facility tables and inserts fixture citizen
+# reports. It MUST NEVER run against the live database. The URL is set
+# before the app config is imported so the engine binds to the test DB.
+# ------------------------------------------------------------------
+os.environ["DATABASE_URL"] = os.environ.get(
+    "FLOODTRACE_TEST_DATABASE_URL",
+    "postgresql://chalermsak:@localhost:5432/floodtrace_test_db",
+)
+if "test" not in os.environ["DATABASE_URL"].rsplit("/", 1)[-1]:
+    raise RuntimeError(
+        "Refusing to run tests: DATABASE_URL does not point to a dedicated *test* database."
+    )
+
 from apps.api.app.core.config import settings
-from apps.api.app.core.database import SessionLocal
+from apps.api.app.core.database import SessionLocal, engine, reconcile_database_schema
 from apps.api.app.models.entities import IndustrialFacility, WaterStation, Reservoir, RainfallStation
+
+assert "test" in str(engine.url).rsplit("/", 1)[-1], "Test engine is not bound to a test database"
+reconcile_database_schema(engine)
 
 orig_env = settings.DATA_ENV
 orig_gate = settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION
