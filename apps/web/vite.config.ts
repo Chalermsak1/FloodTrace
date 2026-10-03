@@ -6,6 +6,20 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['maplibre-gl']
   },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-maplibre': ['maplibre-gl'],
+          'vendor-leaflet': ['leaflet'],
+          'vendor-charts': ['recharts'],
+          'vendor-icons': ['lucide-react']
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {
