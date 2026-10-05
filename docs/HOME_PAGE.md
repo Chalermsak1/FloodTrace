@@ -1,10 +1,5 @@
-# สถาปัตยกรรมและการทำงานของหน้าหลัก (RUWAIGON HOME DASHBOARD)
-
-> **P0-1 current runtime status:** This note supersedes contradictory active-content descriptions below; historical audits remain unchanged. Home counts appear only when API supplies real counts. Priority, freshness, update time, map geometry, and announcements remain unavailable without eligible evidence. ThaiWater is the only active external API source. P0-3 owns media delivery; P0-5 owns authentication and SSE.
-
-> **Legacy API restoration update (2026-10-05):** Home station totals, current-sample counts, source timestamps, and station-threshold counts come from provenance-validated public telemetry. Zero remains zero; missing or stale samples remain unavailable. Map preview uses the point-only Monitoring Priority model only when current verified station inputs exist. Unsupported boundary, waterways, flood polygons, and announcements remain unavailable. Dashboard summaries and map input refresh every 60 seconds. Live upstream reachability remains unverified in the local QA network.
-
-**ขอบเขต:** Ruwaigon — ข้อมูลจังหวัดปราจีนบุรี (โครงการภายใน: FloodTrace)
+# สถาปัตยกรรมและการทำงานของหน้าหลัก (FLOODTRACE HOME DASHBOARD)
+**ขอบเขต:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
 **เส้นทาง URL:** `/overview` (หรือ `/`)  
 **วัตถุประสงค์หลัก:** สื่อสารสถานการณ์สิ่งแวดล้อมและน้ำท่วมของจังหวัดปราจีนบุรีอย่างโปร่งใส เข้าถึงง่าย น่าเชื่อถือ อิงข้อมูลความจริงแบบพลวัต (Dynamic Data) โดยปราศจากการกุสถิติหรือสร้างความตื่นตระหนกเกินจริง
 
@@ -21,7 +16,7 @@
 │    - วันเวลาอัปเดตระบบล่าสุดตามจริง (dynamic พ.ศ. 2569)                  │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 2. MAIN NAVIGATION HEADER                                              │
-│    - โลโก้ Ruwaigon + คำบรรยายระบบ                                      │
+│    - โลโก้ FloodTrace (Ruwaigon) + คำบรรยายระบบ                         │
 │    - ลิงก์นำทาง: หน้าหลัก, แผนที่, ข้อมูล, รายงาน, เกี่ยวกับเรา             │
 │    - กล่องค้นหาพิกัด/ตำบล/อำเภอส่วนหัว                                    │
 ├────────────────────────────────────────────────────────────────────────┤

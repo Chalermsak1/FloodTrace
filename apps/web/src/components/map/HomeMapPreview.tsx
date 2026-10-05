@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
+  Compass, 
   ChevronRight, 
+  ExternalLink, 
+  Layers, 
+  MapPin, 
+  Info, 
+  Plus, 
+  Minus, 
   RotateCcw,
   ShieldCheck,
+  AlertTriangle,
   X
 } from 'lucide-react';
-import { MapLibreMapView } from './MapLibreMapView';
-import { EvidenceLabel } from '../ui/EvidenceLabel';
-import { FeedbackState } from '../ui/FeedbackState';
+import { MapLibreMapView, DISTRICT_CENTROIDS } from './MapLibreMapView';
 
 export const HomeMapPreview: React.FC = () => {
+  const navigate = useNavigate();
+
   // Telemetry & Geospatial Data
   const [monitoringSurface, setMonitoringSurface] = useState<any>(null);
   const [boundaryData, setBoundaryData] = useState<any>(null);
@@ -18,7 +26,7 @@ export const HomeMapPreview: React.FC = () => {
   const [stations, setStations] = useState<any[]>([]);
   const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'partial' | 'empty' | 'unavailable'>('loading');
+  const [mapError, setMapError] = useState<boolean>(false);
 
   // Selected Preview Cell / Marker
   const [selectedCell, setSelectedCell] = useState<any>(null);
@@ -38,32 +46,32 @@ export const HomeMapPreview: React.FC = () => {
   });
 
   useEffect(() => {
-    const load = () => Promise.all([
+    setLoading(true);
+    setMapError(false);
+
+    Promise.all([
       fetch('/api/public/map/monitoring-priority').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/map/boundary').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/public/stations').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/public/observations').then(r => r.ok ? r.json() : null).catch(() => null)
+      fetch('/api/public/stations').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/public/observations').then(r => r.ok ? r.json() : []).catch(() => [])
     ])
       .then(([surfaceRes, boundRes, waterRes, stationsRes, obsRes]) => {
-        const results = [surfaceRes !== null, boundRes !== null, waterRes !== null, Array.isArray(stationsRes), Array.isArray(obsRes)];
-        const hasAnyData = Boolean(surfaceRes?.features?.length || boundRes?.boundary?.features?.length || waterRes?.features?.length || stationsRes?.length || obsRes?.length);
-        setMonitoringSurface(surfaceRes);
-        setBoundaryData(boundRes);
-        setWaterways(waterRes);
-        setStations(Array.isArray(stationsRes) ? stationsRes : []);
-        setObservations(Array.isArray(obsRes) ? obsRes : []);
-        setMapStatus(results.every(Boolean) ? (hasAnyData ? 'ready' : 'empty') : results.some(Boolean) ? 'partial' : 'unavailable');
+        if (!surfaceRes && !boundRes) {
+          setMapError(true);
+        } else {
+          setMonitoringSurface(surfaceRes);
+          setBoundaryData(boundRes);
+          setWaterways(waterRes);
+          setStations(Array.isArray(stationsRes) ? stationsRes : []);
+          setObservations(Array.isArray(obsRes) ? obsRes : []);
+        }
         setLoading(false);
       })
       .catch(() => {
-        setMapStatus('unavailable');
+        setMapError(true);
         setLoading(false);
       });
-
-    load();
-    const refresh = window.setInterval(load, 60_000);
-    return () => window.clearInterval(refresh);
   }, []);
 
   const handleSelectCell = (props: any) => {
@@ -79,47 +87,58 @@ export const HomeMapPreview: React.FC = () => {
   };
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3.5">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
-          <div className="mb-1"><EvidenceLabel family="MODEL" detail="ชั้นวิเคราะห์" /></div>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#063B70] tracking-tight">
-            แผนที่เฝ้าระวัง
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#0C65E8] animate-pulse"></span>
+            <span className="text-xs font-semibold text-[#0C65E8] tracking-wider uppercase">
+              ภาพรวมเชิงพื้นที่ (Spatial Situational Overview)
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
+            แผนที่เฝ้าระวังสิ่งแวดล้อม
           </h2>
-          <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-            ขอบเขตข้อมูล: จังหวัดปราจีนบุรี. ชั้นข้อมูลจะแสดงเฉพาะเมื่อ API ส่งกลับ
+          <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-2xl leading-relaxed">
+            ติดตามพื้นที่ที่ควรได้รับการตรวจสอบ โครงข่ายแม่น้ำสายหลัก และหมุดสังเกตการณ์ในจังหวัดปราจีนบุรี
           </p>
         </div>
 
         <Link
           to="/map"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-[#0C65E8] border border-[#0C65E8]/30 rounded-xl text-sm font-semibold transition-all shadow-xs shrink-0 self-start sm:self-auto group min-h-[44px]"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-[#0C65E8] border border-[#0C65E8]/30 rounded-xl text-sm font-semibold transition-all shadow-xs shrink-0 self-start sm:self-auto group min-h-[44px]"
         >
-          <span>เปิดแผนที่เฝ้าระวัง</span>
+          <span>เปิดแผนที่ความเสี่ยงเต็มรูปแบบ</span>
           <ChevronRight className="w-4 h-4 text-[#0C65E8] group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
 
       {/* Main Map Container */}
-      {mapStatus === 'partial' && <FeedbackState kind="partial" title="แสดงชั้นข้อมูลได้บางส่วน" detail="บางคำขอไม่สำเร็จ ชั้นข้อมูลที่ไม่มีหลักฐานจะไม่แสดง" />}
-      {mapStatus === 'empty' && <FeedbackState kind="empty" title="ไม่มีชั้นข้อมูลพร้อมแสดง" detail="API ยังไม่มีข้อมูลแผนที่ในขณะนี้" />}
-      <div className="relative w-full h-[360px] sm:h-[400px] xl:h-[430px] rounded-2xl overflow-hidden shadow-card border border-slate-200/90 bg-slate-900">
+      <div className="relative w-full h-[480px] sm:h-[580px] lg:h-[620px] rounded-3xl overflow-hidden shadow-card border border-slate-200/90 bg-slate-900">
         
         {loading && (
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-30">
             <div className="bg-white/95 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
               <span className="w-4 h-4 border-2 border-[#0C65E8] border-t-transparent rounded-full animate-spin"></span>
-              <span className="text-sm font-semibold text-slate-800">กำลังโหลดชั้นข้อมูล...</span>
+              <span className="text-sm font-semibold text-slate-800">กำลังเชื่อมต่อข้อมูลดาวเทียมและโทรมาตร...</span>
             </div>
           </div>
         )}
 
-        {mapStatus === 'unavailable' ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 p-4 text-center z-20">
-            <div className="max-w-sm rounded-xl bg-white p-4"><FeedbackState kind="unavailable" title="แผนที่ไม่พร้อมใช้งาน" detail="ไม่มีชั้นข้อมูลที่ API ส่งกลับ" />
-              <Link to="/map" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[#0C65E8]">เปิดหน้าแผนที่และตรวจสอบสถานะ</Link>
-            </div>
+        {mapError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-white p-6 text-center z-20">
+            <AlertTriangle className="w-10 h-10 text-amber-400 mb-3" />
+            <h3 className="font-bold text-lg">ไม่สามารถโหลดแผนที่เฝ้าระวังได้ในขณะนี้</h3>
+            <p className="text-sm text-slate-400 max-w-md mt-1 mb-4 leading-relaxed">
+              ระบบกำลังเชื่อมต่อสถานีโทรมาตรและข้อมูลเชิงพื้นที่ กรุณาลองใหม่อีกครั้ง
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 bg-[#0C65E8] text-white text-sm font-semibold rounded-xl hover:bg-[#063B70] transition-colors min-h-[44px]"
+            >
+              โหลดใหม่อีกครั้ง
+            </button>
           </div>
         ) : (
           <MapLibreMapView
@@ -139,12 +158,24 @@ export const HomeMapPreview: React.FC = () => {
           />
         )}
 
+        {/* Floating Top CTA Button on Map (Section 17) */}
+        <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-2">
+          <Link
+            to="/map"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#063B70]/90 hover:bg-[#063B70] text-white text-sm font-semibold shadow-xl border border-white/20 backdrop-blur-md transition-all group hover:scale-[1.02] min-h-[44px]"
+          >
+            <Compass className="w-4 h-4 text-[#38BDF8]" />
+            <span>เปิดแผนที่ความเสี่ยง</span>
+            <ExternalLink className="w-4 h-4 text-white/70 group-hover:text-white" />
+          </Link>
+        </div>
+
         {/* Floating Reset View Button */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
           <button
             onClick={handleResetView}
             title="รีเซ็ตมุมมอง จ.ปราจีนบุรี"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-900 text-white text-xs font-medium border border-white/15 backdrop-blur-md transition-all shadow-md min-h-[44px]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-900 text-white text-xs font-medium border border-white/15 backdrop-blur-md transition-all shadow-md min-h-[40px]"
           >
             <RotateCcw className="w-3.5 h-3.5 text-[#38BDF8]" />
             <span className="hidden sm:inline">จ.ปราจีนบุรี</span>
@@ -161,27 +192,30 @@ export const HomeMapPreview: React.FC = () => {
           {/* LEGEND A */}
           <div className="space-y-1">
             <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              จุดแบบจำลองจากสถานี (ไม่ประมาณพื้นที่)
+              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
             </span>
-            <div className="grid grid-cols-4 gap-1 text-center">
+            <div className="grid grid-cols-5 gap-1 text-center">
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#DC2626] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">เกินวิกฤต</span>
+                <span className="text-2xs text-slate-700 font-medium">สูงมาก</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#EA580C] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ถึงเกณฑ์เตือน</span>
+                <span className="text-2xs text-slate-700 font-medium">สูง</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="w-3 h-3 rounded-full bg-[#EAB308] shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium">ปานกลาง</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ต่ำกว่าเตือน</span>
+                <span className="text-2xs text-slate-700 font-medium">ต่ำ</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-sky-600 shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ข้อมูลฝน</span>
+                <span className="w-3 h-3 rounded-full bg-[#64748B] shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium">ไม่มีข้อมูล</span>
               </div>
             </div>
-            <p className="text-2xs leading-relaxed text-slate-500">สีระดับน้ำเทียบเกณฑ์จากต้นทาง จุดฝนไม่มีเกณฑ์จัดระดับ</p>
           </div>
 
           {/* LEGEND B */}
@@ -199,20 +233,18 @@ export const HomeMapPreview: React.FC = () => {
                 <span className="text-2xs">รายงานประชาชน</span>
               </div>
             </div>
-            <div className="flex flex-wrap gap-1.5 pt-1"><EvidenceLabel family="OFFICIAL" /><EvidenceLabel family="COMMUNITY" /></div>
           </div>
 
           <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
-            จุดสถานีแสดงข้อมูลสำหรับจัดลำดับการติดตาม ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
+            พื้นที่สีแสดงระดับ Monitoring Priority เชิงพื้นที่ ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
           </p>
         </div>
 
         {/* Selected Cell Preview Card (If Clicked) */}
         {selectedCell && (
-          <div className="absolute top-14 right-3 z-20 w-[min(90%,22rem)] max-h-[55%] overflow-y-auto bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 animate-fadeIn">
+          <div className="absolute top-4 right-4 sm:top-16 sm:right-4 z-20 w-[90%] sm:w-80 bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 animate-fadeIn">
             <div className="flex items-start justify-between border-b border-slate-100 pb-2 mb-2">
               <div>
-                <EvidenceLabel family="MODEL" detail="ระดับเฝ้าระวัง" />
                 <h4 className="font-bold text-base text-[#063B70] leading-snug">
                   {selectedCell.cell_name || selectedCell.subdistrict}
                 </h4>
@@ -233,17 +265,17 @@ export const HomeMapPreview: React.FC = () => {
                   className="font-bold px-2.5 py-1 rounded-full text-white text-xs"
                   style={{ backgroundColor: selectedCell.color || '#0284c7' }}
                 >
-                  {selectedCell.priority_level || 'ไม่สามารถยืนยันได้'}
+                  {selectedCell.priority_level}
                 </span>
               </div>
 
               <div className="flex justify-between text-xs sm:text-sm text-slate-600">
                 <span>คะแนนความสำคัญ:</span>
-                <span className="font-bold text-slate-900">{typeof selectedCell.priority_score === 'number' ? `${selectedCell.priority_score.toFixed(2)} / 1.00` : 'ไม่มีข้อมูล'}</span>
+                <span className="font-bold text-slate-900">{selectedCell.priority_score ?? '-'} / 1.00</span>
               </div>
 
               <div className="text-xs sm:text-sm text-slate-600 pt-0.5">
-                <EvidenceLabel family="COMMUNITY" /> <strong className="text-slate-900">{typeof selectedCell.citizen_report_count === 'number' ? `${selectedCell.citizen_report_count} รายการ` : 'ไม่มีข้อมูล'}</strong>
+                รายงานประชาชนในพื้นที่: <strong className="text-slate-900">{selectedCell.citizen_report_count ?? 0} รายการ</strong>
               </div>
 
               <Link

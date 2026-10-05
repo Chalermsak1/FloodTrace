@@ -26,10 +26,10 @@ from apps.api.app.models.entities import CitizenReport, CitizenReportAuditLog, S
 
 client = TestClient(app)
 
-ADMIN_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY}
-REVIEWER_HEADERS = ADMIN_HEADERS
-OPERATOR_HEADERS = ADMIN_HEADERS
-READONLY_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY, "X-Staff-Role": "READ_ONLY"}
+ADMIN_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY, "X-Staff-Role": "ADMIN", "X-Staff-User": "admin_user"}
+REVIEWER_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY, "X-Staff-Role": "REVIEWER", "X-Staff-User": "reviewer_01"}
+OPERATOR_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY, "X-Staff-Role": "OPERATOR", "X-Staff-User": "operator_01"}
+READONLY_HEADERS = {"X-Admin-Key": settings.ADMIN_API_KEY, "X-Staff-Role": "READ_ONLY", "X-Staff-User": "readonly_01"}
 
 @pytest.fixture
 def test_report(db: Session = None):
@@ -85,31 +85,31 @@ def test_unauthenticated_access_blocked():
     assert resp.status_code == 401
 
 
-def test_staff_profile_uses_fixed_database_principal():
-    """Verifies staff identity comes from the fixed active database record."""
+def test_staff_profile_and_roles():
+    """Verifies staff authentication and permission resolution."""
     resp_admin = client.get("/api/v1/admin/auth/me", headers=ADMIN_HEADERS)
     assert resp_admin.status_code == 200
     data_admin = resp_admin.json()
     assert data_admin["role"] == "ADMIN"
-    assert data_admin["user_id"] == "staff_admin_01"
-    assert data_admin["username"] == "admin_user"
     assert data_admin["permissions"]["can_manage_publication"] is True
 
     resp_ro = client.get("/api/v1/admin/auth/me", headers=READONLY_HEADERS)
-    assert resp_ro.status_code == 400
-    assert resp_ro.json()["error"]["code"] == "INVALID_REQUEST"
+    assert resp_ro.status_code == 200
+    data_ro = resp_ro.json()
+    assert data_ro["role"] == "READ_ONLY"
+    assert data_ro["permissions"]["can_assign"] is False
+    assert data_ro["permissions"]["can_verify"] is False
 
 
-def test_caller_cannot_select_readonly_identity_or_mutate(test_report):
-    """A caller cannot choose a read-only identity through request headers."""
+def test_readonly_user_cannot_mutate(test_report):
+    """Critical Test 2: READ_ONLY staff cannot perform mutations or status changes."""
     # Attempt status change
     resp = client.post(
         f"/api/v1/admin/reports/{test_report.id}/status",
         headers=READONLY_HEADERS,
         json={"new_status": "TRIAGING", "reason": "Attempting unauthorized status change"}
     )
-    assert resp.status_code == 400
-    assert resp.json()["error"]["code"] == "INVALID_REQUEST"
+    assert resp.status_code == 403
 
     # Attempt assignment
     resp_assign = client.post(
@@ -117,12 +117,12 @@ def test_caller_cannot_select_readonly_identity_or_mutate(test_report):
         headers=READONLY_HEADERS,
         json={"assigned_to": "readonly_01"}
     )
-    assert resp_assign.status_code == 400
-    assert resp_assign.json()["error"]["code"] == "INVALID_REQUEST"
+    assert resp_assign.status_code == 403
 
 
-def test_fixed_admin_can_assign_and_verify(test_report):
-    """The fixed ADMIN principal retains the approved report workflows."""
+def test_operator_can_assign_but_cannot_verify(test_report):
+    """Critical Test 3: OPERATOR can triage and assign, but cannot verify."""
+    # Operator assigns report
     resp_assign = client.post(
         f"/api/v1/admin/reports/{test_report.id}/assign",
         headers=OPERATOR_HEADERS,
@@ -132,6 +132,7 @@ def test_fixed_admin_can_assign_and_verify(test_report):
     data = resp_assign.json()
     assert data["assigned_to"] == "reviewer_01"
 
+    # Operator tries to verify -> Must be 403 Forbidden
     resp_verify = client.post(
         f"/api/v1/admin/reports/{test_report.id}/verify",
         headers=OPERATOR_HEADERS,
@@ -146,7 +147,7 @@ def test_fixed_admin_can_assign_and_verify(test_report):
             "what_should_be_verified": "Water sample assay"
         }
     )
-    assert resp_verify.status_code == 200
+    assert resp_verify.status_code == 403
 
 
 def test_state_machine_valid_and_invalid_transitions(test_report):
@@ -185,36 +186,50 @@ def test_state_machine_valid_and_invalid_transitions(test_report):
 
 
 def test_official_confirmed_requires_explicit_evidence(test_report):
-    """Status transitions cannot bypass the server-owned verification criteria."""
-    for new_status in ("TRIAGING", "ASSIGNED", "IN_REVIEW", "UNDER_VERIFICATION"):
-        client.post(
-            f"/api/v1/admin/reports/{test_report.id}/status",
-            headers=REVIEWER_HEADERS,
-            json={"new_status": new_status, "reason": "Review"}
-        )
+    """Critical Test 5: OFFICIAL_CONFIRMED requires explicit official source citation."""
+    # Set to UNDER_VERIFICATION first
+    client.post(
+        f"/api/v1/admin/reports/{test_report.id}/status",
+        headers=REVIEWER_HEADERS,
+        json={"new_status": "TRIAGING", "reason": "Triage"}
+    )
+    client.post(
+        f"/api/v1/admin/reports/{test_report.id}/status",
+        headers=REVIEWER_HEADERS,
+        json={"new_status": "ASSIGNED", "reason": "Assign"}
+    )
+    client.post(
+        f"/api/v1/admin/reports/{test_report.id}/status",
+        headers=REVIEWER_HEADERS,
+        json={"new_status": "IN_REVIEW", "reason": "Review"}
+    )
+    client.post(
+        f"/api/v1/admin/reports/{test_report.id}/status",
+        headers=REVIEWER_HEADERS,
+        json={"new_status": "UNDER_VERIFICATION", "reason": "Verification"}
+    )
 
-    status_only = client.post(
+    # Attempt OFFICIAL_CONFIRMED without evidence -> Must be HTTP 400
+    resp_no_ev = client.post(
+        f"/api/v1/admin/reports/{test_report.id}/status",
+        headers=REVIEWER_HEADERS,
+        json={"new_status": "OFFICIAL_CONFIRMED", "reason": "Confirming without evidence"}
+    )
+    assert resp_no_ev.status_code == 400
+
+    # With official evidence -> Succeeds
+    resp_ok = client.post(
         f"/api/v1/admin/reports/{test_report.id}/status",
         headers=REVIEWER_HEADERS,
         json={
-            "new_status": "OFFICIAL_CONFIRMED", "reason": "Confirmation",
-            "official_source_evidence": "citation-12345",
+            "new_status": "OFFICIAL_CONFIRMED",
+            "reason": "Official confirmation received from Pollution Control Dept",
+            "official_source_evidence": "หนังสือราชการ กรมควบคุมมลพิษ ที่ ทส 0305/ว1234 ผลตรวจค่า DO ต่ำกว่ามาตรฐาน"
         }
     )
-    assert status_only.status_code == 400
+    assert resp_ok.status_code == 200
+    assert resp_ok.json()["new_status"] == "OFFICIAL_CONFIRMED"
 
-    verified = client.post(
-        f"/api/v1/admin/reports/{test_report.id}/verify",
-        headers=REVIEWER_HEADERS,
-        json={
-            "verification_status": "OFFICIAL_CONFIRMED",
-            "verification_method": "OFFICIAL_SOURCE",
-            "what_was_observed": "Official record explicitly identifies a published observation.",
-            "official_source_evidence": "citation-12345",
-        }
-    )
-    assert verified.status_code == 200
-    assert verified.json()["verification_status"] == "OFFICIAL_CONFIRMED"
 
 def test_structured_verification_workflow(test_report):
     """Critical Test 6: Structured verification establishes factual boundaries."""

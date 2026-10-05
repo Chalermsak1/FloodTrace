@@ -68,9 +68,6 @@ services:
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-25}
       DB_POOL_TIMEOUT: ${DB_POOL_TIMEOUT:-30}
       DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-1800}
-      PRIVATE_MEDIA_ROOT: /app/data/private-media
-    volumes:
-      - ruwaigon_private_media:/app/data/private-media
     depends_on:
       db:
         condition: service_healthy
@@ -108,8 +105,6 @@ volumes:
     name: floodtrace_caddy_data
   floodtrace_caddy_config:
     name: floodtrace_caddy_config
-  ruwaigon_private_media:
-    name: ruwaigon_private_media
 
 networks:
   floodtrace_net:

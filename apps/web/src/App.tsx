@@ -14,7 +14,6 @@ import { KnowledgePage } from './pages/KnowledgePage';
 import { DataMethodologyPage } from './pages/DataMethodologyPage';
 import { AboutPage } from './pages/AboutPage';
 import { AdminReportsPage } from './pages/AdminReportsPage';
-import { ResearchInboxPage } from './pages/ResearchInboxPage';
 
 export const App: React.FC = () => {
   return (
@@ -24,7 +23,6 @@ export const App: React.FC = () => {
           {/* Internal Staff Operations Console (Protected & Separated from Citizen UI) */}
           <Route path="/admin" element={<Navigate to="/admin/reports" replace />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
-          <Route path="/admin/research" element={<ResearchInboxPage />} />
 
           {/* Public Citizen Interface */}
           <Route path="/" element={<AppLayout />}>

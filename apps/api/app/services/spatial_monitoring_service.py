@@ -31,148 +31,12 @@ from apps.api.app.models.entities import (
     WaterLevelObservation,
     RainfallObservation
 )
-from apps.api.app.core.publication import public_report_predicate
-from apps.api.app.core.config import settings
-from apps.api.app.core.provenance import compute_source_freshness, FreshnessStatus
 
 logger = logging.getLogger(__name__)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "data")
 BOUNDARY_FILE = os.path.join(DATA_DIR, "prachinburi_boundary.geojson")
 OUTSIDE_MASK_FILE = os.path.join(DATA_DIR, "prachinburi_outside_mask.geojson")
-
-
-def build_station_priority_points(
-    water_stations: List[Any],
-    rainfall_stations: List[Any],
-    now: Optional[datetime] = None,
-    bbox: Optional[Tuple[float, float, float, float]] = None,
-    district: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Build a point-only model from current, source-verified station evidence."""
-    now = now or datetime.now(timezone.utc)
-    min_lon, min_lat, max_lon, max_lat = settings.PRACHINBURI_BBOX
-    if bbox:
-        min_lon, min_lat, max_lon, max_lat = bbox
-    features = []
-    input_counts = {"water_level": 0, "rainfall": 0}
-    levels = {"VERY_HIGH": 0, "HIGH": 0, "LOW": 0, "RAINFALL_INPUT": 0}
-
-    def is_valid_point(station: Any, source_url: str, measurement: Any) -> bool:
-        provenance = station.provenance if isinstance(station.provenance, dict) else {}
-        if (
-            provenance.get("source_url") != source_url
-            or provenance.get("scope_filter") != "province_name:ปราจีนบุรี"
-            or provenance.get("category") != "MEASURED_FACT"
-            or provenance.get("source_verification") != "VERIFIED_OFFICIAL"
-            or provenance.get("geocoding_precision") != "OFFICIAL_COORDINATES"
-            or measurement is None
-            or isinstance(measurement, bool)
-            or not isinstance(measurement, (int, float))
-            or not math.isfinite(float(measurement))
-            or not isinstance(provenance.get("original_timestamp"), str)
-        ):
-            return False
-        freshness, _ = compute_source_freshness(provenance["original_timestamp"])
-        if freshness != FreshnessStatus.CURRENT:
-            return False
-        try:
-            latitude = float(station.latitude)
-            longitude = float(station.longitude)
-        except (TypeError, ValueError, OverflowError):
-            return False
-        return (
-            math.isfinite(latitude)
-            and math.isfinite(longitude)
-            and min_lat <= latitude <= max_lat
-            and min_lon <= longitude <= max_lon
-            and (not district or station.district == district)
-        )
-
-    for station in water_stations:
-        value = station.water_level_msl
-        if not is_valid_point(station, settings.THAIWATER_API_URL, value):
-            continue
-        warning = station.warning_level_msl
-        if warning is None or isinstance(warning, bool) or not isinstance(warning, (int, float)) or not math.isfinite(float(warning)):
-            continue
-        critical = station.critical_level_msl
-        critical = critical if isinstance(critical, (int, float)) and not isinstance(critical, bool) and math.isfinite(float(critical)) else None
-        level = "VERY_HIGH" if critical is not None and value >= critical else "HIGH" if value >= warning else "LOW"
-        color = {"VERY_HIGH": "#DC2626", "HIGH": "#EA580C", "LOW": "#10B981"}[level]
-        provenance = station.provenance
-        timestamp = provenance["original_timestamp"]
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [float(station.longitude), float(station.latitude)]},
-            "properties": {
-                "cell_name": "จุดข้อมูลระดับน้ำ",
-                "district": station.district,
-                "data_kind": "WATER_LEVEL_OBSERVATION",
-                "priority_level": level,
-                "priority_label_th": {"VERY_HIGH": "เกินเกณฑ์วิกฤตจากต้นทาง", "HIGH": "ถึงเกณฑ์เตือนจากต้นทาง", "LOW": "ต่ำกว่าเกณฑ์เตือนจากต้นทาง"}[level],
-                "priority_badge": level,
-                "priority_score": None,
-                "water_level_msl": float(value),
-                "warning_level_msl": float(warning),
-                "critical_level_msl": float(critical) if critical is not None else None,
-                "source_timestamp": timestamp,
-                "freshness": "CURRENT",
-                "color": color,
-                "fill_opacity": 0.65,
-                "contributing_factors": ["เปรียบเทียบค่าระดับน้ำกับเกณฑ์เตือน/วิกฤตที่สถานีต้นทางส่งมา"],
-            },
-        })
-        input_counts["water_level"] += 1
-        levels[level] += 1
-
-    for station in rainfall_stations:
-        value = station.rain_24h_mm
-        if not is_valid_point(station, settings.THAIWATER_RAIN_API_URL, value):
-            continue
-        timestamp = station.provenance["original_timestamp"]
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [float(station.longitude), float(station.latitude)]},
-            "properties": {
-                "cell_name": "จุดข้อมูลฝน",
-                "district": station.district,
-                "data_kind": "RAINFALL_OBSERVATION",
-                "priority_level": "RAINFALL_INPUT",
-                "priority_label_th": "มีข้อมูลฝนจากสถานี",
-                "priority_badge": "RAINFALL INPUT",
-                "priority_score": None,
-                "rain_24h_mm": float(value),
-                "source_timestamp": timestamp,
-                "freshness": "CURRENT",
-                "color": "#0284C7",
-                "fill_opacity": 0.65,
-                "contributing_factors": ["จุดนี้แสดงข้อมูลฝนจากสถานี ไม่มีเกณฑ์ต้นทางสำหรับจัดระดับความรุนแรง"],
-            },
-        })
-        input_counts["rainfall"] += 1
-        levels["RAINFALL_INPUT"] += 1
-
-    return {
-        "type": "FeatureCollection",
-        "description": "จุดข้อมูลสำหรับจัดลำดับการติดตาม ไม่ใช่พื้นผิวเชิงพื้นที่หรือการยืนยันความเสี่ยง",
-        "province": "ปราจีนบุรี",
-        "status": "AVAILABLE MODEL" if features else "UNAVAILABLE",
-        "reason_code": None if features else "NO_CURRENT_VERIFIED_STATION_INPUTS",
-        "feature_count": len(features),
-        "model_inputs": input_counts,
-        "priority_counts": levels if features else None,
-        "retrieved_at": now.isoformat() if features else None,
-        "provenance": {
-            "category": "MODEL",
-            "dataset_name": "Monitoring / Verification Priority station points",
-            "source_agencies": ["ThaiWater / HII"],
-            "geometry_method": "source-verified station coordinates; no interpolation or authored cells",
-            "limitations": "Water levels use only thresholds supplied by the station source. Rain points have no severity class without a source threshold.",
-            "disclaimer": "This visualization supports monitoring priority. It does not confirm contamination, toxicity, or causation.",
-        },
-        "features": features,
-    }
 
 # 45 Verified Authentic Subdistricts (Tambon) centroids across 7 districts in Prachin Buri
 AUTHENTIC_CELL_ANCHORS = [
@@ -407,10 +271,10 @@ class SpatialMonitoringService:
 
         # 2. Fetch Real Citizen Reports (only public visible, not suppressed/rejected, excluding test fixtures)
         public_reports = db.query(CitizenReport).filter(
-            public_report_predicate(),
             CitizenReport.public_latitude.isnot(None),
             CitizenReport.public_longitude.isnot(None),
             CitizenReport.status.notin_(["REJECTED", "SPAM", "DISMISSED"]),
+            CitizenReport.publication_state != "SUPPRESSED",
             CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
             CitizenReport.reporter_role != "TEST/DEMO",
             not_(CitizenReport.reporter_name.ilike("%Test%")),

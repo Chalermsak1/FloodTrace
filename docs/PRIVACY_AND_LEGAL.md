@@ -1,6 +1,4 @@
 # นโยบายความเป็นส่วนตัวและการคุ้มครองข้อมูลตามกฎหมาย (PRIVACY & LEGAL POLICY)
-
-> **P0-1 current runtime status:** This note supersedes contradictory claims about current evidence and health below; historical audits remain unchanged. Public output contains no unsupported environmental measurements, source updates, forecast, or unverified geometry. This unit does not change publication filtering or media authorization. P0-3 owns media delivery; P0-5 owns authentication and SSE.
 **ขอบเขตระบบ:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
 **สถานะการตรวจสอบ:** ร่างฉบับตรวจสอบความจริงเพื่อการใช้งานจริง (PRODUCTION TRUTH AUDIT)  
 **วันที่ตรวจสอบล่าสุด:** 2026-10-02  

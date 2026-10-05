@@ -30,6 +30,7 @@ const safeSetData = (map: maplibregl.Map | null, sourceId: string, data: any) =>
 
 export interface MapLibreMapViewProps {
   monitoringSurface: any; // GeoJSON FeatureCollection of Continuous Priority Cells
+  floodExtent?: any; // GeoJSON FeatureCollection from /api/public/flood-extent
   boundaryData: any;      // Boundary and Outside Mask from /api/public/map/boundary
   waterways: any;         // GeoJSON FeatureCollection of Waterways
   stations: any[];        // Water level telemetry stations
@@ -37,6 +38,7 @@ export interface MapLibreMapViewProps {
   observations: any[];    // Citizen community reports
   visibleLayers: {
     monitoringSurface: boolean;
+    floodExtent?: boolean;
     waterways: boolean;
     stations: boolean;
     rainfallStations: boolean;
@@ -48,14 +50,85 @@ export interface MapLibreMapViewProps {
   selectedDistrict: string;
   onSelectDistrict: (district: string) => void;
   onSelectCell?: (cellProps: any) => void;
+  onSelectFloodFeature?: (featureProps: any) => void;
   onSelectMarker?: (markerProps: any) => void;
   surfaceOpacity?: number;
   basemap?: 'satellite' | 'streets';
   targetCoords?: [number, number] | null; // [lat, lng]
 }
 
-export const DISTRICT_CENTROIDS: Record<string, [number, number]> = {};
-export const AUTHENTIC_TAMBONS: Array<{ name: string; district: string; lat: number; lng: number }> = [];
+// Authentic District Centroids in Prachin Buri [lat, lng]
+export const DISTRICT_CENTROIDS: Record<string, [number, number]> = {
+  'กบินทร์บุรี': [13.995, 101.725],
+  'ศรีมหาโพธิ': [13.882, 101.518],
+  'เมืองปราจีนบุรี': [14.053, 101.372],
+  'บ้านสร้าง': [13.985, 101.215],
+  'ประจันตคาม': [14.112, 101.552],
+  'นาดี': [14.135, 101.882],
+  'ศรีมโหสถ': [13.865, 101.415]
+};
+
+// Authentic Subdistricts across 7 districts
+export const AUTHENTIC_TAMBONS = [
+  // กบินทร์บุรี
+  { name: 'ต.กบินทร์', district: 'กบินทร์บุรี', lat: 13.9876, lng: 101.7214 },
+  { name: 'ต.เมืองเก่า', district: 'กบินทร์บุรี', lat: 13.9921, lng: 101.7543 },
+  { name: 'ต.นนทรี', district: 'กบินทร์บุรี', lat: 13.9245, lng: 101.7612 },
+  { name: 'ต.นาแขม', district: 'กบินทร์บุรี', lat: 13.8712, lng: 101.8021 },
+  { name: 'ต.บ่อทอง', district: 'กบินทร์บุรี', lat: 13.8123, lng: 101.7345 },
+  { name: 'ต.ย่านรี', district: 'กบินทร์บุรี', lat: 13.9312, lng: 101.7123 },
+  { name: 'ต.ลาดตะเคียน', district: 'กบินทร์บุรี', lat: 13.8521, lng: 101.6945 },
+  { name: 'ต.วังดาล', district: 'กบินทร์บุรี', lat: 13.9612, lng: 101.6621 },
+  { name: 'ต.วังตะเคียน', district: 'กบินทร์บุรี', lat: 13.7912, lng: 101.8214 },
+  { name: 'ต.หนองกี่', district: 'กบินทร์บุรี', lat: 14.0214, lng: 101.8123 },
+  { name: 'ต.หาดนางแก้ว', district: 'กบินทร์บุรี', lat: 13.9512, lng: 101.7245 },
+  { name: 'ต.เขาไม้แก้ว', district: 'กบินทร์บุรี', lat: 13.7612, lng: 101.7821 },
+
+  // ศรีมหาโพธิ
+  { name: 'ต.ศรีมหาโพธิ', district: 'ศรีมหาโพธิ', lat: 13.8762, lng: 101.5403 },
+  { name: 'ต.ท่าตูม', district: 'ศรีมหาโพธิ', lat: 13.8967, lng: 101.5642 },
+  { name: 'ต.กรอกสมบูรณ์', district: 'ศรีมหาโพธิ', lat: 13.8210, lng: 101.6214 },
+  { name: 'ต.ดงกระทงยาม', district: 'ศรีมหาโพธิ', lat: 13.9412, lng: 101.4921 },
+  { name: 'ต.บางกุ้ง', district: 'ศรีมหาโพธิ', lat: 13.9212, lng: 101.5123 },
+  { name: 'ต.หนองโพรง', district: 'ศรีมหาโพธิ', lat: 13.8321, lng: 101.5412 },
+  { name: 'ต.หัวหว้า', district: 'ศรีมหาโพธิ', lat: 13.7845, lng: 101.5123 },
+  { name: 'ต.สัมพันธ์', district: 'ศรีมหาโพธิ', lat: 13.9100, lng: 101.5300 },
+
+  // เมืองปราจีนบุรี
+  { name: 'ต.หน้าเมือง', district: 'เมืองปราจีนบุรี', lat: 14.0530, lng: 101.3720 },
+  { name: 'ต.รอบเมือง', district: 'เมืองปราจีนบุรี', lat: 14.0610, lng: 101.3850 },
+  { name: 'ต.ดงขี้เหล็ก', district: 'เมืองปราจีนบุรี', lat: 14.1345, lng: 101.4512 },
+  { name: 'ต.บ้านพระ', district: 'เมืองปราจีนบุรี', lat: 14.1212, lng: 101.4123 },
+  { name: 'ต.โนนห้อม', district: 'เมืองปราจีนบุรี', lat: 14.0812, lng: 101.4312 },
+  { name: 'ต.ไม้เค็ด', district: 'เมืองปราจีนบุรี', lat: 14.0921, lng: 101.3612 },
+  { name: 'ต.บางเดชะ', district: 'เมืองปราจีนบุรี', lat: 14.0210, lng: 101.3200 },
+  { name: 'ต.ท่างาม', district: 'เมืองปราจีนบุรี', lat: 14.0450, lng: 101.4010 },
+
+  // บ้านสร้าง
+  { name: 'ต.บ้านสร้าง', district: 'บ้านสร้าง', lat: 13.9850, lng: 101.2150 },
+  { name: 'ต.บางพลวง', district: 'บ้านสร้าง', lat: 13.9621, lng: 101.2412 },
+  { name: 'ต.บางปลาร้า', district: 'บ้านสร้าง', lat: 13.9310, lng: 101.1920 },
+  { name: 'ต.บางแตน', district: 'บ้านสร้าง', lat: 13.9010, lng: 101.1650 },
+  { name: 'ต.บางยาง', district: 'บ้านสร้าง', lat: 13.9980, lng: 101.1710 },
+
+  // ประจันตคาม
+  { name: 'ต.ประจันตคาม', district: 'ประจันตคาม', lat: 14.1120, lng: 101.5520 },
+  { name: 'ต.เกาะลอย', district: 'ประจันตคาม', lat: 14.0720, lng: 101.5210 },
+  { name: 'ต.คำโตนด', district: 'ประจันตคาม', lat: 14.1520, lng: 101.5830 },
+  { name: 'ต.ดงบัง', district: 'ประจันตคาม', lat: 14.1350, lng: 101.6210 },
+  { name: 'ต.บุฝ้าย', district: 'ประจันตคาม', lat: 14.1820, lng: 101.5410 },
+
+  // นาดี
+  { name: 'ต.นาดี', district: 'นาดี', lat: 14.2123, lng: 101.8745 },
+  { name: 'ต.ทุ่งโพธิ์', district: 'นาดี', lat: 14.1812, lng: 101.8921 },
+  { name: 'ต.สะพานหิน', district: 'นาดี', lat: 14.1610, lng: 101.8210 },
+  { name: 'ต.บุพราหมณ์', district: 'นาดี', lat: 14.2820, lng: 101.9120 },
+
+  // ศรีมโหสถ
+  { name: 'ต.โคกปีบ', district: 'ศรีมโหสถ', lat: 13.8650, lng: 101.4150 },
+  { name: 'ต.โคกไทย', district: 'ศรีมโหสถ', lat: 13.8612, lng: 101.4312 },
+  { name: 'ต.คู้ลำพัน', district: 'ศรีมโหสถ', lat: 13.8210, lng: 101.3920 }
+];
 
 // Standardized Unified SVG Icon System (Sections 19 & 20)
 const MARKER_ICONS = {
@@ -110,6 +183,7 @@ const EMPTY_GEOJSON: any = { type: 'FeatureCollection', features: [] };
 
 export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   monitoringSurface,
+  floodExtent,
   boundaryData,
   waterways,
   stations,
@@ -119,6 +193,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   selectedDistrict,
   onSelectDistrict,
   onSelectCell,
+  onSelectFloodFeature,
   onSelectMarker,
   surfaceOpacity = 0.50,
   basemap = 'satellite',
@@ -128,7 +203,31 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const activeMode = visibleLayers.floodExtent ? 'flood' : 'monitoring';
+  const activeModeRef = useRef(activeMode);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  const trackPopup = (popup: maplibregl.Popup) => {
+    popupRef.current?.remove();
+    popupRef.current = popup;
+    popup.on('close', () => {
+      if (popupRef.current === popup) popupRef.current = null;
+    });
+    return popup;
+  };
+
+  useEffect(() => {
+    if (activeModeRef.current === activeMode) return;
+    activeModeRef.current = activeMode;
+
+    popupRef.current?.remove();
+    popupRef.current = null;
+
+    const map = mapRef.current;
+    if (map?.getLayer('monitoring-surface-highlight')) {
+      map.setFilter('monitoring-surface-highlight', ['==', 'district', '']);
+    }
+  }, [activeMode]);
 
   // Administrative Labels GeoJSON
   const adminLabelsGeoJSON = useRef({
@@ -190,6 +289,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           type: 'geojson',
           data: monitoringSurface || EMPTY_GEOJSON
         },
+        'flood-extent-source': {
+          type: 'geojson',
+          data: floodExtent || EMPTY_GEOJSON
+        },
         'waterways-source': {
           type: 'geojson',
           data: waterways || EMPTY_GEOJSON
@@ -221,8 +324,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           source: 'outside-mask-source',
           layout: { visibility: visibleLayers.outsideMask ? 'visible' : 'none' },
           paint: {
-            'fill-color': '#0f172a',
-            'fill-opacity': 0.58
+            'fill-color': '#CBD5E1',
+            'fill-opacity': 0.48
           }
         },
         // 4. Prachin Buri Boundary Line
@@ -231,9 +334,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           type: 'line',
           source: 'boundary-source',
           paint: {
-            'line-color': '#38bdf8',
-            'line-width': 2.0,
-            'line-opacity': 0.95
+            'line-color': '#0EA5E9',
+            'line-width': 2.5,
+            'line-opacity': 1
           }
         },
         // 5. Monitoring Priority Surface (Color Fills: Red, Orange, Yellow, Green, Gray)
@@ -256,19 +359,6 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           paint: {
             'line-color': 'rgba(255, 255, 255, 0.42)',
             'line-width': 1.4
-          }
-        },
-        {
-          id: 'monitoring-surface-points',
-          type: 'circle',
-          source: 'monitoring-surface-source',
-          layout: { visibility: visibleLayers.monitoringSurface ? 'visible' : 'none' },
-          paint: {
-            'circle-radius': ['match', ['get', 'priority_level'], 'VERY_HIGH', 12, 'HIGH', 10, 'LOW', 8, 'RAINFALL_INPUT', 7, 8],
-            'circle-color': ['coalesce', ['get', 'color'], '#64748B'],
-            'circle-opacity': surfaceOpacity,
-            'circle-stroke-color': '#ffffff',
-            'circle-stroke-width': 2,
           }
         },
         // 7. Selected Cell Highlight Outline
@@ -323,6 +413,24 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             'line-width': ['coalesce', ['get', 'line_width'], 3.2],
             'line-opacity': 1.0
           }
+        },
+        // Baseline current flood extent polygons.
+        {
+          id: 'flood-extent-fill',
+          type: 'fill',
+          source: 'flood-extent-source',
+          layout: { visibility: visibleLayers.floodExtent ? 'visible' : 'none' },
+          paint: {
+            'fill-color': ['coalesce', ['get', 'flood_depth_color'], '#94A3B8'],
+            'fill-opacity': 0.3
+          }
+        },
+        {
+          id: 'flood-extent-outline',
+          type: 'line',
+          source: 'flood-extent-source',
+          layout: { visibility: visibleLayers.floodExtent ? 'visible' : 'none' },
+          paint: { 'line-color': '#0EA5E9', 'line-width': 2, 'line-opacity': 0.9 }
         },
         // 11. Waterway Labels along Line
         {
@@ -402,17 +510,6 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     });
 
     mapRef.current = map;
-    let mapDestroyed = false;
-    const resizeMap = () => {
-      requestAnimationFrame(() => {
-        if (!mapDestroyed && mapRef.current) mapRef.current.resize();
-      });
-    };
-    const resizeObserver = typeof ResizeObserver !== 'undefined' && mapContainerRef.current
-      ? new ResizeObserver(resizeMap)
-      : null;
-    if (resizeObserver && mapContainerRef.current) resizeObserver.observe(mapContainerRef.current);
-    window.addEventListener('resize', resizeMap);
 
     map.on('error', (e) => {
       console.warn('[MapLibre error/warning]:', e);
@@ -430,6 +527,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       safeSetData(map, 'outside-mask-source', boundaryData?.outside_mask);
       safeSetData(map, 'boundary-source', boundaryData?.boundary);
       safeSetData(map, 'monitoring-surface-source', monitoringSurface);
+      safeSetData(map, 'flood-extent-source', floodExtent);
       safeSetData(map, 'waterways-source', waterways);
 
       setTimeout(() => {
@@ -450,8 +548,6 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
       map.setFilter('monitoring-surface-highlight', ['==', 'district', props.district]);
 
-      if (popupRef.current) popupRef.current.remove();
-
       let factorsHtml = '';
       try {
         const factors = typeof props.contributing_factors === 'string' 
@@ -462,7 +558,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         }
       } catch (_) {}
 
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
+      const popup = trackPopup(new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' }))
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="p-3 font-sans space-y-2">
@@ -477,7 +573,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             </div>
             ${factorsHtml ? `<ul class="space-y-1 my-1 pl-1">${factorsHtml}</ul>` : ''}
             <div class="text-xs text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
-              <span>ความสดใหม่: ${props.freshness || 'ไม่มีข้อมูล'}</span>
+              <span>ความสดใหม่: ${props.freshness || 'ล่าสุด'}</span>
               <span class="text-[#0C65E8] font-bold">อ.${props.district}</span>
             </div>
           </div>
@@ -487,62 +583,48 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       popupRef.current = popup;
     });
 
+    map.on('click', 'flood-extent-fill', (e) => {
+      const properties = e.features?.[0]?.properties;
+      if (!properties) return;
+      if (properties.district) onSelectDistrict(String(properties.district));
+      onSelectFloodFeature?.(properties);
+
+      const content = document.createElement('div');
+      content.className = 'space-y-1.5 p-3 font-sans text-xs text-slate-700';
+      const title = document.createElement('p');
+      title.className = 'font-semibold text-slate-900';
+      title.textContent = properties.name || properties.district || 'พื้นที่ที่เลือก';
+      const layer = document.createElement('p');
+      layer.textContent = 'พื้นที่อ้างอิงน้ำท่วม';
+      const status = document.createElement('p');
+      status.textContent = 'ข้อมูลอ้างอิง / ยังไม่ได้ยืนยันสถานการณ์ปัจจุบัน';
+      const depth = document.createElement('p');
+      const depthValue = typeof properties.water_depth_est === 'string' && properties.water_depth_est.trim()
+        ? properties.water_depth_est
+        : 'ไม่ระบุในข้อมูลที่ได้รับ';
+      depth.textContent = `ช่วงระดับน้ำที่ระบุในข้อมูลอ้างอิง: ${depthValue}`;
+      content.append(title, layer, status, depth);
+
+      trackPopup(new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' }))
+        .setLngLat(e.lngLat)
+        .setDOMContent(content)
+        .addTo(map);
+    });
+
     map.on('mouseenter', 'monitoring-surface-fill', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
     map.on('mouseleave', 'monitoring-surface-fill', () => {
       map.getCanvas().style.cursor = '';
     });
-
-    map.on('click', 'monitoring-surface-points', (e) => {
-      if (!e.features?.[0]) return;
-      const props = e.features[0].properties as any;
-      if (onSelectCell) onSelectCell(props);
-      if (props.district) onSelectDistrict(props.district);
-    });
-    map.on('mouseenter', 'monitoring-surface-points', () => {
+    map.on('mouseenter', 'flood-extent-fill', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'monitoring-surface-points', () => {
-      map.getCanvas().style.cursor = '';
-    });
-
-    // Interaction: Click Outside Analysis Scope Mask (Section 13 & 85)
-    map.on('click', 'outside-mask-fill', (e) => {
-      if (popupRef.current) popupRef.current.remove();
-
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '280px' })
-        .setLngLat(e.lngLat)
-        .setHTML(`
-          <div class="p-3 font-sans space-y-1.5">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
-              <span class="text-sm font-bold text-slate-900">นอกพื้นที่วิเคราะห์</span>
-            </div>
-            <p class="text-xs text-slate-700 leading-relaxed font-medium">
-              Ruwaigon แสดงข้อมูลภายในขอบเขตจังหวัดปราจีนบุรี
-            </p>
-            <p class="text-2xs text-slate-400 pt-1 border-t border-slate-100 leading-normal">
-              พื้นที่สีเทาหมายถึงอยู่นอกขอบเขตการคำนวณของระบบ ไม่ได้หมายความว่าปลอดภัยหรือไม่มีน้ำท่วม
-            </p>
-          </div>
-        `)
-        .addTo(map);
-
-      popupRef.current = popup;
-    });
-
-    map.on('mouseenter', 'outside-mask-fill', () => {
-      map.getCanvas().style.cursor = 'help';
-    });
-    map.on('mouseleave', 'outside-mask-fill', () => {
+    map.on('mouseleave', 'flood-extent-fill', () => {
       map.getCanvas().style.cursor = '';
     });
 
     return () => {
-      mapDestroyed = true;
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', resizeMap);
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
       map.remove();
@@ -558,8 +640,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     safeSetData(map, 'outside-mask-source', boundaryData?.outside_mask);
     safeSetData(map, 'boundary-source', boundaryData?.boundary);
     safeSetData(map, 'monitoring-surface-source', monitoringSurface);
+    safeSetData(map, 'flood-extent-source', floodExtent);
     safeSetData(map, 'waterways-source', waterways);
-  }, [boundaryData, monitoringSurface, waterways, mapLoaded]);
+  }, [boundaryData, monitoringSurface, floodExtent, waterways, mapLoaded]);
 
   // Update Surface Opacity and Layer Visibilities
   useEffect(() => {
@@ -582,9 +665,12 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     if (map.getLayer('monitoring-surface-lines')) {
       map.setLayoutProperty('monitoring-surface-lines', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
     }
-    if (map.getLayer('monitoring-surface-points')) {
-      map.setLayoutProperty('monitoring-surface-points', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
-      map.setPaintProperty('monitoring-surface-points', 'circle-opacity', surfaceOpacity);
+    if (map.getLayer('monitoring-surface-highlight')) {
+      map.setLayoutProperty('monitoring-surface-highlight', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
+    }
+    if (map.getLayer('flood-extent-fill')) {
+      map.setLayoutProperty('flood-extent-fill', 'visibility', visibleLayers.floodExtent ? 'visible' : 'none');
+      map.setLayoutProperty('flood-extent-outline', 'visibility', visibleLayers.floodExtent ? 'visible' : 'none');
     }
     if (map.getLayer('outside-mask-fill')) {
       map.setLayoutProperty('outside-mask-fill', 'visibility', visibleLayers.outsideMask ? 'visible' : 'none');
@@ -680,7 +766,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(st);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([st.longitude, st.latitude])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
@@ -690,11 +776,12 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                 </div>
                 <div class="text-sm font-bold text-slate-900">${st.name_th || st.station_id}</div>
                 <div class="text-xs text-slate-700 space-y-1">
-                  <div>ระดับน้ำ: <strong class="text-slate-900">${st.water_level_msl != null ? `${st.water_level_msl.toFixed(2)} ม.รทก.` : 'ไม่มีข้อมูล'}</strong></div>
-                  ${st.warning_level_msl != null ? `<div class="text-slate-600">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
-                  <div class="text-slate-500">เวลาต้นทาง: <span class="text-slate-700 font-medium">${formatThaiTime(st.provenance?.source_updated_at)}</span></div>
-                  <div>สถานะ: <span class="font-medium text-slate-700">${st.status || 'ไม่สามารถยืนยันได้'}</span></div>
-                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">${st.provenance?.source_agency || 'ไม่สามารถยืนยันได้'}</span></div>
+                  <div>ระดับน้ำปัจจุบัน: <strong class="text-slate-900">${st.water_level_msl != null ? `${st.water_level_msl.toFixed(2)} ม.รทก.` : 'กำลังตรวจวัด'}</strong></div>
+                  ${st.warning_level_msl ? `<div class="text-slate-600">ระดับเฝ้าระวัง: ${st.warning_level_msl.toFixed(2)} ม.รทก.</div>` : ''}
+                  <div class="text-slate-500">วัดเมื่อ: <span class="text-slate-700 font-medium">${formatThaiTime(st.provenance?.source_updated_at || st.last_updated)}</span></div>
+                  <div class="text-slate-500">FloodTrace ดึงข้อมูล: <span class="text-slate-700 font-medium">${formatThaiTime(st.provenance?.floodtrace_updated_at || st.updated_at)}</span></div>
+                  <div>สถานะ: <span class="font-medium text-emerald-700">${st.status === 'ACTIVE' ? 'กำลังตรวจวัด (Fresh)' : st.status || 'ปกติ'}</span></div>
+                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">ThaiWater / ${st.provenance?.source_agency || 'กรมชลประทาน'}</span></div>
                 </div>
                 <div class="text-2xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                   <span>${st.district ? `อ.${st.district}` : 'จ.ปราจีนบุรี'}</span>
@@ -719,7 +806,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         // ORANGE is standard for rainfall station (Section 19)
         const bgColor = '#EA580C';
         const icon = MARKER_ICONS.rainCloud;
-        const rain24 = rs.rain_24h_mm;
+        const rain24 = rs.rain_24h_mm || 0;
 
         const el = createCircularMarkerEl(bgColor, icon, undefined, `สถานีวัดน้ำฝน: ${rs.name_th || rs.station_id}`);
 
@@ -731,7 +818,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(rs);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([rs.longitude, rs.latitude])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
@@ -741,10 +828,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                 </div>
                 <div class="text-sm font-bold text-slate-900">${rs.name_th || rs.station_id}</div>
                 <div class="text-xs text-slate-700 space-y-1">
-                  <div>ฝนสะสม 24 ชั่วโมง: <strong class="text-slate-900">${rain24 != null ? `${rain24.toFixed(1)} มม.` : 'ไม่มีข้อมูล'}</strong></div>
+                  <div>ฝนสะสม 24 ชั่วโมง: <strong class="text-slate-900">${rain24.toFixed(1)} มม.</strong></div>
                   ${rs.rain_1h_mm != null ? `<div class="text-slate-600">ฝน 1 ชม. ล่าสุด: ${rs.rain_1h_mm.toFixed(1)} มม.</div>` : ''}
-                  <div class="text-slate-500">เวลาต้นทาง: <span class="text-slate-700 font-medium">${formatThaiTime(rs.provenance?.source_updated_at)}</span></div>
-                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">${rs.provenance?.source_agency || rs.agency || 'ไม่สามารถยืนยันได้'}</span></div>
+                  <div class="text-slate-500">วัดเมื่อ: <span class="text-slate-700 font-medium">${formatThaiTime(rs.provenance?.source_updated_at || rs.last_updated)}</span></div>
+                  <div>แหล่งข้อมูล: <span class="font-medium text-slate-800">ThaiWater / ${rs.provenance?.source_agency || rs.agency || 'สสน.'}</span></div>
                 </div>
                 <div class="text-2xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                   <span>${rs.district ? `อ.${rs.district}` : 'จ.ปราจีนบุรี'}</span>
@@ -799,7 +886,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(cluster.lastObs);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([cluster.lng, cluster.lat])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">

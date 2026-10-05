@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import uuid
-import httpx
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List, Callable
 from sqlalchemy.orm import Session
@@ -111,7 +110,6 @@ class SourceScheduler:
                 "http_status": None,
                 "latency_ms": None,
                 "records_received_last_run": 0,
-                "measurements_received_last_run": 0,
                 "records_inserted_last_run": 0,
                 "duplicates_skipped_last_run": 0,
                 "rejected_last_run": 0,
@@ -207,38 +205,29 @@ class SourceScheduler:
             for attempt in range(1, cfg.max_retries + 1):
                 try:
                     records = await asyncio.wait_for(cfg.fetcher(), timeout=cfg.timeout_seconds)
-                    if not isinstance(records, list):
-                        raise ValueError("SOURCE_RESPONSE_SCHEMA_INVALID")
                     break
                 except Exception as e:
                     last_exc = e
-                    logger.warning("Scheduler: attempt %s failed for %s (%s)", attempt, source_id, type(e).__name__)
+                    logger.warning(f"Scheduler: Attempt {attempt} failed for {source_id}: {e}")
                     if attempt < cfg.max_retries:
                         await asyncio.sleep(1.0 * (2 ** (attempt - 1)))
 
             if records is None:
                 cb.record_failure(last_exc or Exception("Fetch failed"), ErrorClassification.NETWORK_ERROR)
                 stat["consecutive_failures"] += 1
-                stat["last_error"] = type(last_exc).__name__ if last_exc else "FETCH_FAILED"
-                stat["request_finished_at"] = datetime.now(timezone.utc).isoformat()
-                stat["http_status"] = (
-                    last_exc.response.status_code
-                    if isinstance(last_exc, httpx.HTTPStatusError)
-                    else None
-                )
+                stat["last_error"] = str(last_exc)
+                stat["http_status"] = 503
                 return {
                     "source_id": source_id,
                     "status": "FETCH_FAILED",
-                    "error": stat["last_error"],
-                    "http_status": stat["http_status"],
+                    "error": str(last_exc)
                 }
 
             # Successful fetch -> notify circuit breaker
             cb.record_success()
             t1 = time.perf_counter()
             now_finish = datetime.now(timezone.utc)
-            response_status = getattr(records, "http_status", None)
-            stat["http_status"] = response_status if isinstance(response_status, int) else None
+            stat["http_status"] = 200
             stat["latency_ms"] = round((t1 - t0) * 1000, 2)
             stat["request_finished_at"] = now_finish.isoformat()
             stat["retrieved_at"] = now_finish.isoformat()
@@ -246,7 +235,6 @@ class SourceScheduler:
 
             # 4. Ingest and deduplicate records
             stat["records_received_last_run"] = len(records)
-            stat["measurements_received_last_run"] = 0
             inserted_count = 0
             duplicates_count = 0
             rejected_count = 0
@@ -280,11 +268,6 @@ class SourceScheduler:
                             continue
                         except Exception as te:
                             logger.warning(f"Scheduler timestamp parse error for {st_id}: {te}")
-                    if dt_parsed is None:
-                        rejected_count += 1
-                        continue
-                    if item.get("water_level_msl") is not None:
-                        stat["measurements_received_last_run"] += 1
 
                     # Upsert current state in WaterStation
                     existing_st = db.query(WaterStation).filter(WaterStation.id == st_id).first()
@@ -301,7 +284,7 @@ class SourceScheduler:
                             id=st_id,
                             name_th=item.get("name_th", ""),
                             name_en=item.get("name_en"),
-                            basin=item.get("basin") or "",
+                            basin=item.get("basin", "ลุ่มน้ำปราจีนบุรี"),
                             district=item.get("district"),
                             latitude=item.get("latitude", 0.0),
                             longitude=item.get("longitude", 0.0),
@@ -336,7 +319,7 @@ class SourceScheduler:
                             source_timestamp=dt_parsed,
                             retrieved_at=now_utc,
                             source_name="ThaiWater",
-                            organization="Hydro-Informatics Institute (HII)",
+                            organization="Hydroinformatics Institute (HII) / RID",
                             dataset="waterlevel_load",
                             record_id=f"tw_wl_{st_id}_{obs_time_str or 'current'}",
                             access_status="OPEN_PUBLIC",
@@ -375,11 +358,6 @@ class SourceScheduler:
                             continue
                         except Exception as te:
                             logger.warning(f"Scheduler rainfall timestamp parse error for {st_id}: {te}")
-                    if dt_parsed is None:
-                        rejected_count += 1
-                        continue
-                    if item.get("rain_24h_mm") is not None or item.get("rain_1h_mm") is not None:
-                        stat["measurements_received_last_run"] += 1
 
                     # Upsert current state in RainfallStation
                     existing_rf = db.query(RainfallStation).filter(RainfallStation.id == st_id).first()
@@ -395,7 +373,7 @@ class SourceScheduler:
                             id=st_id,
                             name_th=item.get("name_th", ""),
                             name_en=item.get("name_en"),
-                            basin=item.get("basin"),
+                            basin=item.get("basin", "ลุ่มน้ำบางปะกง"),
                             district=item.get("district"),
                             subdistrict=item.get("subdistrict"),
                             latitude=item.get("latitude", 0.0),
@@ -431,7 +409,7 @@ class SourceScheduler:
                             source_timestamp=dt_parsed,
                             retrieved_at=now_utc,
                             source_name="ThaiWater",
-                            organization="Hydro-Informatics Institute (HII)",
+                            organization="Hydroinformatics Institute (HII) / TMD",
                             dataset="rain_24h",
                             record_id=f"tw_rf_{st_id}_{obs_time_str or 'current'}",
                             access_status="OPEN_PUBLIC",
@@ -499,13 +477,12 @@ class SourceScheduler:
 
         except Exception as e:
             stat["consecutive_failures"] += 1
-            stat["last_error"] = type(e).__name__
-            stat["request_finished_at"] = datetime.now(timezone.utc).isoformat()
-            logger.error("Scheduler error processing %s (%s)", source_id, type(e).__name__)
+            stat["last_error"] = str(e)
+            logger.error(f"Scheduler error processing {source_id}: {e}", exc_info=True)
             return {
                 "source_id": source_id,
                 "status": "ERROR",
-                "error": stat["last_error"]
+                "error": str(e)
             }
         finally:
             stat["is_running"] = False

@@ -34,10 +34,26 @@ def test_public_overview_contract_and_dynamic_fields():
     assert data["total_rainfall_stations"] >= 0
     assert isinstance(data["total_citizen_reports"], int)
     assert data["total_citizen_reports"] >= 0
-    assert data["total_monitoring_cells"] is None
-    assert data["priority_counts"] is None
-    assert data["system_updated_at_th"] is None
-    assert data["system_updated_at_iso"] is None
+    assert isinstance(data["total_monitoring_cells"], int)
+    assert data["total_monitoring_cells"] > 0  # Prachin Buri has 45 Voronoi cells
+
+    # Verify priority breakdown structure
+    priority_counts = data["priority_counts"]
+    for key in ["very_high", "high", "moderate", "low", "no_data"]:
+        assert key in priority_counts
+        assert isinstance(priority_counts[key], int)
+        assert priority_counts[key] >= 0
+
+    # Sum of priority counts should equal total cells
+    total_cells = sum(priority_counts.values())
+    assert total_cells == data["total_monitoring_cells"]
+
+    # Verify Thai formatted timestamp format
+    ts_th = data["system_updated_at_th"]
+    assert isinstance(ts_th, str)
+    assert len(ts_th) > 0
+    # Must contain Thai year BE 2569 or "น."
+    assert "2569" in ts_th or "น." in ts_th
 
 def test_public_overview_no_pii_or_prohibited_fields():
     response = client.get("/api/public/overview")

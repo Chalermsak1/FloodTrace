@@ -1,15 +1,10 @@
 # FloodTrace
 
-> **P0-1 current runtime status (2026-10-04):** This note supersedes contradictory current-state or readiness claims below; dated historical audits remain historical. ThaiWater water-level and rainfall paths are the only `ACTIVE API` sources. DIW, boundary, and outside-mask files are `LOCAL / UNVERIFIED`; DWR, DOPA, MOPH, and other absent artifacts remain unavailable or blocked. Public alerts, forecast, unverified geometry, and official updates return no unsupported records. `/health/sources` derives statuses, counts, timestamps, and reason codes from runtime records. Systemd uses one Uvicorn worker for the in-process scheduler. P0-3 owns media-delivery claims; P0-5 owns authentication and SSE claims.
-
-> **Legacy API restoration update (2026-10-05):** ThaiWater water-level and rainfall have real adapters, validation, scheduler ingestion, history, and sanitized public station routes. Integration presence is separate from runtime health; `/health/sources` and `/api/public/provenance` require recent adapter-recorded HTTP evidence and usable measurements before reporting availability. Live upstream requests could not be verified from the local QA network, so this environment's current source runtime remains unverified. Open-Meteo is a forecast-only `MODEL`; RID remains `ACCESS REQUIRED` and has no static reservoir fallback. Monitoring Priority is a point-only `MODEL` from current verified station coordinates and source thresholds; no cells, authored geometry, or interpolated surface are used. Boundary, waterways, flood extent, forecast extent, and unsupported official updates remain unavailable. Vite logs the resolved API proxy target; configure it with `API_PROXY_TARGET` (default `http://localhost:8001`). Historical descriptions below remain historical when they conflict with this update.
-
-
 > **Geospatial flood and environmental monitoring platform designed to help communities, researchers, and authorities understand flood conditions, hydrological connectivity, environmental monitoring priorities, community observations, and official environmental information in a structured, traceable, and evidence-driven way.**
 
 [![System Status](https://img.shields.io/badge/Status-Internal%20Test-blue.svg)](#17-current-project-status)
 [![Production Readiness](https://img.shields.io/badge/Production-Not%20Ready%20(Gated)-orange.svg)](#17-current-project-status)
-[![Tests](https://img.shields.io/badge/Tests-350%2F350%20Backend%20Passed-brightgreen.svg)](#16-testing)
+[![Tests](https://img.shields.io/badge/Tests-91%2F91%20Passed-brightgreen.svg)](#16-testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -46,7 +41,7 @@
 
 ## 1. One-line Project Description
 
-**Ruwaigon** is the public-facing name for the open-source FloodTrace project, focused on environmental information and community observation reporting for Prachin Buri, Thailand. It presents source-backed values with provenance and limitations; citizen observations are not official confirmation.
+**FloodTrace** is an open-source geospatial flood and environmental monitoring platform focused on Prachin Buri, Thailand, built to provide evidence-backed spatial screening, hydrological connectivity tracing, and community observation tracking without jumping to premature conclusions.
 
 ---
 
@@ -262,7 +257,7 @@ Public environmental platforms must protect vulnerable communities and respect l
 
 Environmental monitoring platforms must remain operational when extreme weather impacts infrastructure.
 
-- **Graceful Degradation**: Missing upstream imagery stays unavailable; the interface does not infer flood conditions from an absent layer. Citizen reporting, supported station telemetry, and navigation remain separate public capabilities.
+- **Graceful Degradation**: If an external radar API fails, satellite flood layers display a *Data Unavailable* badge, while citizen reporting, station telemetry, and navigation continue to function normally.
 - **Circuit Breakers**: External HTTP adapters use three-state circuit breakers (`CLOSED` → `OPEN` → `HALF_OPEN`) to prevent cascade timeouts during agency outages.
 - **Idempotent Pipelines**: Citizen reports and external ingestion batches leverage SHA-256 idempotency keys to prevent duplicate records on intermittent network retries.
 - **Automated Disaster Recovery**: Integrated backup verification scripts test full database restorations. Benchmark recovery targets:

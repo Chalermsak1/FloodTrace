@@ -13,7 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY apps/api /app/apps/api
 COPY data /app/data
-RUN mkdir -p /app/data/private-media && chmod 0700 /app/data/private-media
 
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1

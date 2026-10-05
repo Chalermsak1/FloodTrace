@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Eye, 
   MapPin, 
@@ -13,13 +13,11 @@ import {
   Compass
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { EvidenceLabel } from '../components/ui/EvidenceLabel';
-import { FeedbackState } from '../components/ui/FeedbackState';
-import { PageHeader } from '../components/ui/PageHeader';
 
 const FILTER_TABS = [
   { id: 'all', label: 'ทั้งหมด' },
-  { id: 'in_review', label: 'ยังไม่ยืนยัน' },
+  { id: 'near_me', label: 'ใกล้ฉัน' },
+  { id: 'in_review', label: 'กำลังตรวจสอบ' },
   { id: 'verified', label: 'ตรวจสอบแล้ว' }
 ];
 
@@ -39,42 +37,20 @@ export const CasesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ทั้งหมด');
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadError, setLoadError] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const focusReturnRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setLoading(true);
     fetch('/api/public/observations')
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('Observations unavailable')))
+      .then(res => res.json())
       .then(data => {
         setObservations(Array.isArray(data) ? data : []);
-        setLoadError(false);
         setLoading(false);
       })
       .catch(err => {
         console.error('Failed to load observations:', err);
-        setLoadError(true);
         setLoading(false);
       });
   }, []);
-
-  useEffect(() => {
-    if (!selectedReport) return;
-    const restoreFocus = focusReturnRef.current;
-    const focusable = () => modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], [tabindex="0"]');
-    const handleDialogKeys = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setSelectedReport(null); return; }
-      if (event.key !== 'Tab') return;
-      const items = focusable();
-      if (!items?.length) return;
-      if (event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items[items.length - 1].focus(); }
-      else if (!event.shiftKey && document.activeElement === items[items.length - 1]) { event.preventDefault(); items[0].focus(); }
-    };
-    requestAnimationFrame(() => focusable()?.[0]?.focus());
-    document.addEventListener('keydown', handleDialogKeys);
-    return () => { document.removeEventListener('keydown', handleDialogKeys); restoreFocus?.focus(); };
-  }, [selectedReport]);
 
   // Filter logic
   const filteredReports = observations.filter(item => {
@@ -96,21 +72,35 @@ export const CasesPage: React.FC = () => {
   });
 
   return (
-    <div className="rw-page-shell space-y-4">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       
       {/* Page Header (Section 20) */}
-      <PageHeader eyebrow="ข้อสังเกตจากประชาชน" title="รายงานจากประชาชน"
-        description="รายงานเป็นข้อสังเกตจากผู้ส่ง ไม่ใช่การยืนยันผลตรวจหรือข้อสรุปทางการ"
-        actions={<Link
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold mb-2 border border-amber-200">
+            <Eye className="w-3.5 h-3.5 text-amber-600" />
+            <span>รายงานข้อสังเกตจากชุมชน</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
+            รายงานจากประชาชน
+          </h1>
+          <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-2xl leading-relaxed">
+            ข้อมูลสังเกตการณ์เบื้องต้นจากชุมชนในจังหวัดปราจีนบุรี เพื่อสนับสนุนการจัดลำดับการเฝ้าระวังและการสุ่มเก็บตัวอย่างน้ำ
+          </p>
+        </div>
+
+        {/* Primary CTA Button */}
+        <Link
           to="/report"
-          className="px-4 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 min-h-[48px]"
+          className="px-5 py-3 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
         >
           <Plus className="w-4 h-4" />
-          <span>ส่งรายงาน</span>
-        </Link>} />
+          <span>+ รายงานเหตุการณ์ใหม่</span>
+        </Link>
+      </div>
 
       {/* Horizontal Filter Bar (Section 20) */}
-      <div className="rw-card flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         
         {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
@@ -119,7 +109,7 @@ export const CasesPage: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveFilterTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap min-h-[44px] ${
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap min-h-[40px] ${
                 activeFilterTab === tab.id
                   ? 'bg-[#063B70] text-white shadow-xs font-semibold'
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
@@ -136,7 +126,7 @@ export const CasesPage: React.FC = () => {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full sm:w-auto bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[44px]"
+            className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[40px]"
           >
             {CATEGORIES.map(c => (
               <option key={c} value={c}>{c}</option>
@@ -149,11 +139,11 @@ export const CasesPage: React.FC = () => {
       {/* Report List Cards */}
       <div className="space-y-3">
         {loading ? (
-          <FeedbackState kind="loading" title="กำลังโหลดรายงานจากประชาชน" />
-        ) : loadError ? (
-          <FeedbackState kind="error" title="โหลดรายงานไม่สำเร็จ" detail="ลองใหม่ภายหลัง" />
+          <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 text-base">
+            กำลังโหลดข้อมูลรายงานจากประชาชน...
+          </div>
         ) : filteredReports.length === 0 ? (
-                <div className="rw-card p-8 text-center space-y-2">
+          <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 space-y-2">
             <Eye className="w-8 h-8 text-slate-400 mx-auto" />
             <p className="text-base font-bold text-slate-700">ไม่พบรายงานในหมวดหมู่นี้</p>
             <p className="text-sm text-slate-500">ยังไม่มีรายงานที่ตรงกับตัวกรองที่เลือก</p>
@@ -161,11 +151,10 @@ export const CasesPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredReports.map((item, idx) => (
-              <button
+              <div
                 key={item.id || idx}
-                type="button"
-                onClick={(event) => { focusReturnRef.current = event.currentTarget; setSelectedReport(item); }}
-                className="rw-card w-full text-left hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
+                onClick={() => setSelectedReport(item)}
+                className="bg-white rounded-2xl p-5 border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
               >
                 <div className="flex items-start gap-4">
                   
@@ -180,7 +169,9 @@ export const CasesPage: React.FC = () => {
 
                   <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2"><EvidenceLabel family="COMMUNITY" /><span className="max-w-full break-words text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">{item.category}</span></div>
+                      <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                        {item.category}
+                      </span>
 
                       {/* Status Badge */}
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -188,7 +179,7 @@ export const CasesPage: React.FC = () => {
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}>
-                        {item.status_label || (item.status === 'VERIFIED' ? 'ตรวจสอบแล้ว' : item.status ? 'ยังไม่ยืนยัน' : 'ไม่สามารถยืนยันได้')}
+                        {item.status_label || (item.status === 'VERIFIED' ? 'ตรวจสอบแล้ว' : 'กำลังตรวจสอบ')}
                       </span>
                     </div>
 
@@ -198,7 +189,7 @@ export const CasesPage: React.FC = () => {
 
                     <div className="flex items-center gap-1.5 text-sm text-slate-500 pt-1">
                       <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{item.observation_time ? new Date(item.observation_time).toLocaleString('th-TH') : 'ไม่มีข้อมูลเวลา'}</span>
+                      <span>{item.observation_time ? new Date(item.observation_time).toLocaleDateString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'เมื่อเร็วๆ นี้'}</span>
                     </div>
                   </div>
 
@@ -208,7 +199,7 @@ export const CasesPage: React.FC = () => {
                   <span>ดูรายละเอียดข้อสังเกต</span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -216,13 +207,15 @@ export const CasesPage: React.FC = () => {
 
       {/* Detail Modal (Opens after click - Privacy Protected) */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="report-detail-title" tabIndex={-1} className="bg-white rounded-2xl p-5 max-w-lg w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto border border-slate-200 shadow-2xl space-y-4 text-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 text-slate-800">
             
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div>
-                <EvidenceLabel family="COMMUNITY" detail="ข้อสังเกต" />
-                <h3 id="report-detail-title" className="font-bold text-lg text-[#063B70] mt-1">
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider block">
+                  รายงานข้อสังเกตจากประชาชน
+                </span>
+                <h3 className="font-bold text-lg text-[#063B70] mt-0.5">
                   {selectedReport.category}
                 </h3>
               </div>

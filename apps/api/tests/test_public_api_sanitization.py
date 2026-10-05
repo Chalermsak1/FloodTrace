@@ -101,9 +101,15 @@ def test_public_zones_uses_polygons_not_circles():
     assert response.status_code == 200
     data = response.json()
     assert data["type"] == "FeatureCollection"
-    assert data["features"] == []
-    assert data["status"] == "UNAVAILABLE"
-    assert data["reason_code"] == "LOCAL_PROVENANCE_UNVERIFIED"
+    assert len(data["features"]) > 0
+    for feature in data["features"]:
+        geom = feature["geometry"]
+        assert geom["type"] in ["Polygon", "MultiPolygon"], f"Invalid geometry type: {geom['type']}"
+        # Properties check
+        props = feature["properties"]
+        assert "radius" not in props, "Circles or radius buffers are strictly prohibited in public watch zones"
+        assert props["verification_priority"] in ["สูง", "ปานกลาง", "ต่ำ"]
+        assert "ลำดับความสำคัญในการตรวจสอบ:" in props["verification_priority_label"]
 
 def test_public_three_classifications_enforced():
     """
