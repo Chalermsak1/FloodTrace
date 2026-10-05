@@ -1,4 +1,6 @@
 # SYSTEM HEALTH & AUTOMATED REFRESH ARCHITECTURE
+
+> **Current runtime status:** `/health/sources` emits evidence-backed source status, counts, timestamps, and reconciled aggregates. Staff health consumes source, metrics, and authenticated scheduler responses; missing or malformed data is `UNKNOWN`, stopped scheduling is `INACTIVE`, and degraded evidence stays partial or degraded. The supported systemd deployment uses one Uvicorn worker and one in-process scheduler owner. Staff operations use the fixed active `staff_admin_01` / `admin_user` `ADMIN` record; the console refreshes data through authenticated requests and does not use query-token SSE.
 **FLOODTRACE / RUWAIGON — PRACHIN BURI PROVINCE**
 
 ---
@@ -52,10 +54,18 @@ The FloodTrace operational system implements comprehensive, fail-closed observab
    - Publicly accessible with zero sensitive internal paths or credentials.
 
 2. **Internal Scheduler Status**: `GET /api/v1/admin/scheduler/status`
-   - Protected by `X-Admin-Key` and RBAC (`ADMIN` / `OPERATOR`).
+   - Protected by accepted staff credentials and server-side permission checks for the fixed `ADMIN` principal.
    - Returns thread execution state, next scheduled invocation, execution duration, and recent error traces.
 
-3. **System Readiness Gate**: `GET /health`
+3. **Telemetry Read and Manual Sync**:
+   - Telemetry GET routes read persisted rows only; empty tables return empty results without upstream requests or writes.
+   - `POST /api/v1/telemetry/sync` requires the `modify_workflow` permission before upstream requests or database mutation.
+
+4. **Governance Mode**:
+   - `GET /api/v1/governance/mode` returns the mode only.
+   - `POST /api/v1/governance/mode` requires the `modify_workflow` permission before changing settings, requesting sources, or changing datasets.
+
+5. **System Readiness Gate**: `GET /health`
    - Validates PostgreSQL connection pool, PostGIS spatial extension availability, and disk write integrity.
 
 ---

@@ -1,4 +1,6 @@
 # ระเบียบวิธีการพิสูจน์ข้อเท็จจริงรายงานประชาชน (Citizen Report Verification Methodology)
+
+> **P0-1 current verification contract:** This note supersedes contradictory claims about client-synthesized evidence below; historical audits remain unchanged. Blank, null, and whitespace assessment values persist as null. `UNVERIFIED` stays unverified; `PARTIALLY_VERIFIED` moves only to `UNDER_VERIFICATION`. `VERIFIED_OBSERVATION` requires non-empty observed evidence and a permitted method. `OFFICIAL_CONFIRMED` additionally requires an official source citation. Invalid legacy records display `LEGACY_UNVALIDATED` and cannot establish verified-public eligibility. P0-2 owns the public publication filter; P0-3 owns media delivery; P0-5 owns authentication and SSE.
 **ระบบ:** FloodTrace Verification Framework  
 **มาตรฐานทางวิชาการ:** Mandatory 6-Dimension Structured Assessment  
 **วันที่ประกาศ:** 2026-10-02  

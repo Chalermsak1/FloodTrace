@@ -1,24 +1,21 @@
-from fastapi import APIRouter, Query
-from apps.api.app.adapters.openmeteo import fetch_openmeteo_forecast, STATIONS_COORDINATES
+from fastapi import APIRouter, Query, HTTPException
+from apps.api.app.adapters.openmeteo import STATIONS_COORDINATES, get_forecast_selector
 
 router = APIRouter(prefix="/forecast", tags=["Meteorological & Flood Forecast"])
 
 @router.get("/")
 async def get_forecast(
-    station: str = Query("prachin_mueang", description="prachin_mueang, kabin_buri, or si_maha_phot"),
-    test_mode: bool = Query(False, description="Isolated development/test execution only; blocked in production")
+    station: str = Query("prachin_mueang", description="Deprecated alias for an application forecast selector")
 ):
-    """
-    Returns 7-day numerical weather prediction and flood risk projection.
-    Master Prompt Section 2 & 10:
-    In PRODUCTION: Returns FORECAST_UNAVAILABLE / ACCESS_REQUIRED because public endpoints are blocked.
-    In TEST: Allows isolated test execution.
-    """
-    return await fetch_openmeteo_forecast(station, is_test_mode=test_mode)
+    try:
+        selector = get_forecast_selector(station)
+    except ValueError:
+        raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "Unknown forecast selector"})
+    return {"status": "FORECAST_UNAVAILABLE", "reason": "ACCESS_BLOCKED", "forecast_days": [], "selector": selector, "source_provenance": None}
 
 @router.get("/stations")
 def get_available_forecast_stations():
     return [
-        {"key": k, "name": v["name"], "lat": v["lat"], "lon": v["lon"]}
+        get_forecast_selector(k)
         for k, v in STATIONS_COORDINATES.items()
     ]

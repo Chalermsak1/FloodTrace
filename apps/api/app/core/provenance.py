@@ -117,6 +117,31 @@ def compute_freshness(
     except Exception:
         return default_status or FreshnessStatus.UNKNOWN, None
 
+
+def compute_source_freshness(original_timestamp: Optional[Any], max_fresh_hours: float = 3.0) -> tuple[FreshnessStatus, Optional[float]]:
+    """Classify a source timestamp, rejecting malformed and future values."""
+    if original_timestamp is None or (isinstance(original_timestamp, str) and not original_timestamp.strip()):
+        return FreshnessStatus.UNKNOWN, None
+    try:
+        if isinstance(original_timestamp, datetime):
+            parsed = original_timestamp
+            if parsed.tzinfo is None:
+                from apps.api.app.core.datetime_utils import BANGKOK_TZ
+                parsed = parsed.replace(tzinfo=BANGKOK_TZ)
+        elif isinstance(original_timestamp, str):
+            value = original_timestamp.strip().replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(value)
+            if parsed.tzinfo is None:
+                from apps.api.app.core.datetime_utils import BANGKOK_TZ
+                parsed = parsed.replace(tzinfo=BANGKOK_TZ)
+        else:
+            return FreshnessStatus.UNKNOWN, None
+        if parsed.astimezone(timezone.utc) > datetime.now(timezone.utc):
+            return FreshnessStatus.UNKNOWN, None
+        return compute_freshness(parsed, max_fresh_hours=max_fresh_hours)
+    except (TypeError, ValueError, OverflowError):
+        return FreshnessStatus.UNKNOWN, None
+
 class ProvenanceMetadata(BaseModel):
     category: DataCategory = Field(..., description="Strict classification of data nature")
     source_agency: str = Field(..., description="Official government entity or scientific consortium")

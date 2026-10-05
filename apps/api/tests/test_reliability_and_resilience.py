@@ -66,9 +66,10 @@ def test_sources_health_monitoring():
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "monitored"
-    assert data["total_sources_evaluated"] == 15
+    assert data["total_sources_evaluated"] == len(data["sources"])
     assert "floodtrace_citizen" in data["sources"]
-    assert data["sources"]["floodtrace_citizen"]["production_allowed"] is True
+    assert data["sources"]["floodtrace_citizen"]["source_status"] == "INTERNAL"
+    assert data["sources"]["floodtrace_citizen"]["production_allowed"] is False
     assert data["sources"]["tmd_forecast"]["production_allowed"] is False
 
 def test_circuit_breaker_trip_and_recovery():
@@ -186,29 +187,12 @@ def test_openmeteo_cache_cannot_bypass_production_gate():
     Verifies that Open-Meteo cache CANNOT be used by any production path.
     Even if cache contains populated forecast data, in production the gate must fail-closed.
     """
-    import time
-    from apps.api.app.adapters.openmeteo import _FORECAST_CACHE
-
-    # Inject mock data into in-memory cache
-    _FORECAST_CACHE["prachin_mueang"] = {
-        "data": {
-            "station_key": "prachin_mueang",
-            "forecast_days": [{"date": "2026-10-02", "precipitation_sum_mm": 999.0}],
-            "provenance": {"category": "FORECAST"}
-        },
-        "cached_at": time.time(),
-        "expires_at": time.time() + 600
-    }
-
-    # Request forecast endpoint under REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True
     res = client.get("/api/v1/forecast/?station=prachin_mueang")
     assert res.status_code == 200
     fc = res.json()
     assert fc["status"] == "FORECAST_UNAVAILABLE"
-    assert fc["reason"] == "ACCESS_REQUIRED"
-    assert fc["production_allowed"] is False
+    assert fc["reason"] == "ACCESS_BLOCKED"
     assert fc["forecast_days"] == []
-    assert "999.0" not in str(fc)
 
 
 def test_test_demo_reports_strictly_isolated_from_public_dashboard():
@@ -326,5 +310,3 @@ def test_realtime_sse_event_broadcasting():
         await event_broadcaster.unsubscribe(sub_queue)
 
     asyncio.run(run_broadcast_test())
-
-

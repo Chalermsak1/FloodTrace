@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Droplets, 
   ShieldCheck, 
@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   FileText
 } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface TopicItem {
   id: string;
@@ -170,27 +171,37 @@ const TOPICS: TopicItem[] = [
 
 export const KnowledgePage: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<TopicItem | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const focusReturnRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!selectedTopic) return;
+    const restoreFocus = focusReturnRef.current;
+    const focusable = () => modalRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), [tabindex="0"]',
+    );
+    const handleDialogKeys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setSelectedTopic(null); return; }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    requestAnimationFrame(() => focusable()?.[0]?.focus());
+    document.addEventListener('keydown', handleDialogKeys);
+    return () => { document.removeEventListener('keydown', handleDialogKeys); restoreFocus?.focus(); };
+  }, [selectedTopic]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <div className="rw-page-shell space-y-5">
       
       {/* Page Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-3 border border-blue-100">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ศูนย์ข้อมูลความรู้และสุขอนามัยชุมชน</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
-            ความรู้และคำแนะนำ
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-2 leading-relaxed">
-            คู่มือการดูแลสุขภาพตนเองและครอบครัว การสังเกตสภาวะแวดล้อม และแนวทางปฏิบัติตนอย่างปลอดภัยในพื้นที่เฝ้าระวัง
-          </p>
-        </div>
-
-        {/* Emergency Hotline Button */}
-        <div className="shrink-0 flex flex-col items-start sm:items-end gap-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+      <PageHeader eyebrow="ความรู้และคำแนะนำ" title="ความรู้และคำแนะนำ"
+        description="คู่มือการดูแลสุขภาพตนเองและครอบครัว การสังเกตสภาวะแวดล้อม และแนวทางปฏิบัติตนอย่างปลอดภัยในพื้นที่เฝ้าระวัง"
+        actions={<div className="flex flex-col items-start gap-1.5">
           <span className="text-sm text-slate-600 font-medium">พบเหตุมลพิษฉุกเฉิน แจ้งสายด่วน:</span>
           <a
             href="tel:1650"
@@ -199,18 +210,18 @@ export const KnowledgePage: React.FC = () => {
             <PhoneCall className="w-4 h-4" />
             <span>สายด่วนมลพิษ 1650</span>
           </a>
-        </div>
-      </div>
+        </div>} />
 
       {/* 6 Large Educational Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {TOPICS.map((topic) => {
           const Icon = topic.icon;
           return (
-            <div
+            <button
               key={topic.id}
-              onClick={() => setSelectedTopic(topic)}
-              className="bg-white rounded-2xl p-6 border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer group flex flex-col justify-between"
+              type="button"
+              onClick={(event) => { focusReturnRef.current = event.currentTarget; setSelectedTopic(topic); }}
+              className="rw-card w-full text-left hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -235,15 +246,15 @@ export const KnowledgePage: React.FC = () => {
                 <span>อ่านคำแนะนำฉบับเต็ม</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
       {/* Detail Modal */}
       {selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[88vh] overflow-y-auto border border-slate-200 shadow-2xl space-y-5 text-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="knowledge-dialog-title" tabIndex={-1} className="bg-white rounded-2xl p-5 sm:p-6 max-w-2xl w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto border border-slate-200 shadow-2xl space-y-5 text-slate-800">
             
             {/* Modal Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
@@ -255,7 +266,7 @@ export const KnowledgePage: React.FC = () => {
                   <span className="text-xs font-semibold text-[#0C65E8] uppercase tracking-wider">
                     {selectedTopic.badge}
                   </span>
-                  <h3 className="font-bold text-lg sm:text-xl text-[#063B70]">
+                  <h3 id="knowledge-dialog-title" className="font-bold text-lg sm:text-xl text-[#063B70]">
                     {selectedTopic.title}
                   </h3>
                 </div>

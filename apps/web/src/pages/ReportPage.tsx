@@ -15,6 +15,7 @@ import {
   Copy
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { EvidenceLabel } from '../components/ui/EvidenceLabel';
 
 const REPORT_CATEGORIES = [
   { id: 'น้ำเปลี่ยนสี', label: 'น้ำเปลี่ยนสี', desc: 'น้ำมีสีดำ คล้ำ เขียวข้น หรือมีตะกอนขุ่นผิดปกติ' },
@@ -26,25 +27,18 @@ const REPORT_CATEGORIES = [
   { id: 'อื่น ๆ', label: 'ข้อสังเกตอื่น ๆ', desc: 'ข้อสังเกตสภาพแวดล้อมทางน้ำอื่นๆ ที่ควรเฝ้าระวัง' }
 ];
 
-const DISTRICT_COORDS: Record<string, [number, number]> = {
-  'กบินทร์บุรี': [13.995, 101.725],
-  'ศรีมหาโพธิ': [13.882, 101.518],
-  'เมืองปราจีนบุรี': [14.053, 101.372],
-  'บ้านสร้าง': [13.985, 101.215],
-  'ประจันตคาม': [14.112, 101.552],
-  'นาดี': [14.135, 101.882],
-  'ศรีมโหสถ': [13.865, 101.415]
-};
+const REPORT_DISTRICTS = ['กบินทร์บุรี', 'ศรีมหาโพธิ', 'เมืองปราจีนบุรี', 'บ้านสร้าง', 'ประจันตคาม', 'นาดี', 'ศรีมโหสถ'];
 
 type DraftStatus = 'DRAFT' | 'PENDING_UPLOAD' | 'SUBMITTING' | 'SUBMITTED' | 'FAILED';
 
 export const ReportPage: React.FC = () => {
   const [step, setStep] = useState<number>(1);
-  const [category, setCategory] = useState<string>('น้ำเปลี่ยนสี');
-  const [district, setDistrict] = useState<string>('กบินทร์บุรี');
+  const [category, setCategory] = useState<string>('');
+  const [district, setDistrict] = useState<string>('');
   const [subdistrict, setSubdistrict] = useState<string>('');
-  const [latitude, setLatitude] = useState<number>(13.995);
-  const [longitude, setLongitude] = useState<number>(101.725);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationStatus, setLocationStatus] = useState('');
   const [description, setDescription] = useState<string>('');
   const [waterDepth, setWaterDepth] = useState<string>('');
   const [declaration, setDeclaration] = useState<boolean>(false);
@@ -120,17 +114,36 @@ export const ReportPage: React.FC = () => {
 
   const handleDistrictChange = (d: string) => {
     setDistrict(d);
-    const coords = DISTRICT_COORDS[d];
-    if (coords) {
-      setLatitude(coords[0]);
-      setLongitude(coords[1]);
+    setLatitude(null);
+    setLongitude(null);
+    setLocationStatus('ระบุตำแหน่งที่พบใหม่หลังเปลี่ยนอำเภอ');
+    setErrorMessage(null);
+  };
+
+  const handleUseDeviceLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง');
+      return;
     }
+    setLocationStatus('กำลังขอตำแหน่งจากอุปกรณ์');
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
+        setErrorMessage(null);
+        setLocationStatus('ได้ตำแหน่งจากอุปกรณ์แล้ว โปรดตรวจสอบอำเภอก่อนส่ง');
+      },
+      () => setLocationStatus('ไม่สามารถอ่านตำแหน่งจากอุปกรณ์ได้ ระบุตำแหน่งด้วยตนเองได้'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      setUploadedFilename(null);
+      setErrorMessage(null);
       setDraftStatus('PENDING_UPLOAD');
 
       const formData = new FormData();
@@ -147,9 +160,14 @@ export const ReportPage: React.FC = () => {
           setDraftStatus('DRAFT');
         } else {
           setUploadedFilename(null);
+          setDraftStatus('FAILED');
+          setErrorMessage('อัปโหลดภาพไม่สำเร็จ คุณยังส่งรายงานโดยไม่แนบภาพได้');
         }
       } catch (err) {
         console.warn('Photo upload fallback:', err);
+        setUploadedFilename(null);
+        setDraftStatus('FAILED');
+        setErrorMessage('อัปโหลดภาพไม่สำเร็จ คุณยังส่งรายงานโดยไม่แนบภาพได้');
       }
     }
   };
@@ -158,6 +176,10 @@ export const ReportPage: React.FC = () => {
     e.preventDefault();
     if (!declaration) {
       setErrorMessage('กรุณากดยืนยันคำรับรองก่อนส่งข้อมูล');
+      return;
+    }
+    if (!category || !REPORT_DISTRICTS.includes(district) || latitude === null || longitude === null) {
+      setErrorMessage('กรุณาเลือกสิ่งที่พบ อำเภอ และระบุตำแหน่งจริงก่อนส่งรายงาน');
       return;
     }
 
@@ -176,12 +198,12 @@ export const ReportPage: React.FC = () => {
         body: JSON.stringify({
           category,
           district,
-          subdistrict: subdistrict.trim() || 'ในพื้นที่',
+          ...(subdistrict.trim() ? { subdistrict: subdistrict.trim() } : {}),
           latitude,
           longitude,
           description: description.trim(),
           photo_filename: uploadedFilename,
-          water_depth_cm: waterDepth ? parseFloat(waterDepth) : 0.0,
+          ...(waterDepth.trim() ? { water_depth_cm: parseFloat(waterDepth) } : {}),
           declaration_confirmed: declaration
         })
       });
@@ -205,6 +227,13 @@ export const ReportPage: React.FC = () => {
 
   const handleReset = () => {
     setStep(1);
+    setCategory('');
+    setDistrict('');
+    setSubdistrict('');
+    setLatitude(null);
+    setLongitude(null);
+    setWaterDepth('');
+    setLocationStatus('');
     setDescription('');
     setSelectedFile(null);
     setUploadedFilename(null);
@@ -216,16 +245,19 @@ export const ReportPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-0 py-4 space-y-4">
       
       {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-3 border border-emerald-200">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <EvidenceLabel family="COMMUNITY" detail="ข้อสังเกต" />
+          </div>
+          <div className="sr-only">
             <Eye className="w-4 h-4" />
             ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
             รายงานและติดตามข้อสังเกตสภาพน้ำ
           </h1>
           <p className="text-sm sm:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
@@ -339,16 +371,16 @@ export const ReportPage: React.FC = () => {
                 <div>
                   <span className="text-xs text-slate-500 block">พื้นที่สังเกตการณ์</span>
                   <span className="font-semibold text-slate-900">
-                    ต.{trackingResult.subdistrict || 'ในพื้นที่'} อ.{trackingResult.district || 'กบินทร์บุรี'}
+                    ต.{trackingResult.subdistrict || 'ไม่ระบุ'} อ.{trackingResult.district || 'ไม่ระบุ'}
                   </span>
                 </div>
                 <div>
                   <span className="text-xs text-slate-500 block">เวลาที่แจ้งเรื่อง</span>
-                  <span className="font-semibold text-slate-900">{trackingResult.created_at_human || 'เมื่อเร็วๆ นี้'}</span>
+                  <span className="font-semibold text-slate-900">{trackingResult.created_at_human || 'ไม่มีข้อมูลเวลา'}</span>
                 </div>
                 <div>
                   <span className="text-xs text-slate-500 block">ระดับการตรวจสอบ (Verification Level)</span>
-                  <span className="font-semibold text-slate-900">{trackingResult.verification_level_th || 'รอการตรวจสอบ'}</span>
+                  <span className="font-semibold text-slate-900">{trackingResult.verification_level_th || 'ไม่สามารถยืนยันได้'}</span>
                 </div>
               </div>
 
@@ -458,7 +490,7 @@ export const ReportPage: React.FC = () => {
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setCategory(cat.id)}
+                    onClick={() => { setCategory(cat.id); setErrorMessage(null); }}
                     className={`p-4 rounded-2xl text-left border transition-all min-h-[72px] flex flex-col justify-center ${
                       category === cat.id
                         ? 'border-[#0C57C7] bg-blue-50/60 shadow-xs'
@@ -475,7 +507,8 @@ export const ReportPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
+                  disabled={!category}
+                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] disabled:bg-slate-300 text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
                 >
                   ถัดไป: ระบุตำแหน่ง <ChevronRight className="w-4 h-4" />
                 </button>
@@ -501,7 +534,8 @@ export const ReportPage: React.FC = () => {
                     onChange={(e) => handleDistrictChange(e.target.value)}
                     className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                   >
-                    {Object.keys(DISTRICT_COORDS).map(d => (
+                    <option value="">เลือกอำเภอ</option>
+                    {REPORT_DISTRICTS.map(d => (
                       <option key={d} value={d}>อ.{d}</option>
                     ))}
                   </select>
@@ -519,6 +553,28 @@ export const ReportPage: React.FC = () => {
                 </div>
               </div>
 
+              <section className="space-y-3 rounded-xl border border-slate-200 p-4" aria-labelledby="report-location-title">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 id="report-location-title" className="font-semibold text-slate-900">ตำแหน่งที่พบ</h3>
+                    <p className="text-sm text-slate-600">ใช้ตำแหน่งอุปกรณ์โดยสมัครใจ หรือกรอกพิกัดที่ทราบเอง</p>
+                  </div>
+                  <button type="button" onClick={handleUseDeviceLocation} className="min-h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-[#063B70] hover:bg-slate-50">
+                    ใช้ตำแหน่งอุปกรณ์
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block text-sm font-medium text-slate-700">ละติจูด
+                    <input type="number" inputMode="decimal" step="any" value={latitude ?? ''} onChange={(event) => { setLatitude(event.target.value === '' ? null : Number(event.target.value)); setLocationStatus('ระบุตำแหน่งด้วยตนเอง'); setErrorMessage(null); }} className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base" />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">ลองจิจูด
+                    <input type="number" inputMode="decimal" step="any" value={longitude ?? ''} onChange={(event) => { setLongitude(event.target.value === '' ? null : Number(event.target.value)); setLocationStatus('ระบุตำแหน่งด้วยตนเอง'); setErrorMessage(null); }} className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base" />
+                  </label>
+                </div>
+                <p role="status" className="text-sm text-slate-600">{locationStatus || (latitude !== null && longitude !== null ? 'ระบุตำแหน่งแล้ว' : 'ยังไม่ได้ระบุตำแหน่ง')}</p>
+                <p className="text-xs text-slate-500">พิกัดที่ส่งใช้เพื่อบันทึกรายงานส่วนตัว ระบบแสดงตำแหน่งทั่วไปแก่สาธารณะตามขอบเขตที่อนุมัติ</p>
+              </section>
+
               <div>
                 <label className="block text-base font-semibold text-slate-800 mb-1.5">
                   ความลึกน้ำโดยประมาณ (ซม.) ถ้ามี
@@ -534,7 +590,7 @@ export const ReportPage: React.FC = () => {
 
               <div className="p-3.5 bg-sky-50 border border-sky-200/60 rounded-xl text-sm text-sky-900 flex items-start gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-[#0C57C7] mt-0.5 shrink-0" />
-                <span className="leading-relaxed">พิกัดอ้างอิง: ละติจูด {latitude.toFixed(3)}, ลองจิจูด {longitude.toFixed(3)} (แปลงเป็นจุดกว้างระดับอนุภูมิภาคอัตโนมัติ)</span>
+                <span className="leading-relaxed">{latitude !== null && longitude !== null ? 'ระบุตำแหน่งแล้ว' : 'ยังไม่ได้ระบุตำแหน่งจริง'} พิกัดแน่นอนจะไม่แสดงในข้อมูลสาธารณะ</span>
               </div>
 
               <div className="pt-4 flex justify-between">
@@ -548,7 +604,8 @@ export const ReportPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
+                  disabled={!REPORT_DISTRICTS.includes(district) || latitude === null || longitude === null}
+                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] disabled:bg-slate-300 text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
                 >
                   ถัดไป: ตรวจสอบและส่ง <ChevronRight className="w-4 h-4" />
                 </button>
@@ -586,6 +643,7 @@ export const ReportPage: React.FC = () => {
                       รองรับ JPG, PNG, WebP (สูงสุด 5MB, ระบบจะตัดข้อมูลระบุพิกัดกล้องออกทั้งหมด)
                     </span>
                   </label>
+                  <p role="status" className="mt-3 text-sm text-slate-600">{draftStatus === 'PENDING_UPLOAD' ? 'กำลังอัปโหลดภาพ' : uploadedFilename ? 'ภาพพร้อมแนบในรายงาน' : selectedFile ? 'อัปโหลดไม่สำเร็จ ภาพจะไม่แนบ' : 'ยังไม่ได้แนบภาพ'}</p>
                 </div>
               </div>
 
@@ -606,7 +664,7 @@ export const ReportPage: React.FC = () => {
               {/* Summary Review */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-sm space-y-1.5 text-slate-700">
                 <div><strong>สิ่งที่พบ:</strong> {category}</div>
-                <div><strong>พื้นที่:</strong> ต.{subdistrict || 'ไม่ระบุ'} อ.{district} จ.ปราจีนบุรี</div>
+                <div><strong>พื้นที่:</strong> {subdistrict ? `ต.${subdistrict} ` : ''}อ.{district} จ.ปราจีนบุรี</div>
                 {waterDepth && <div><strong>ความลึกน้ำ:</strong> {waterDepth} ซม.</div>}
               </div>
 

@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { HomeMapPreview } from '../components/map/HomeMapPreview';
 import { AUTHENTIC_TAMBONS } from '../components/map/MapLibreMapView';
+import { EvidenceLabel } from '../components/ui/EvidenceLabel';
+import { FeedbackState } from '../components/ui/FeedbackState';
 
 const PRACHIN_DISTRICTS = [
   'กบินทร์บุรี',
@@ -53,6 +55,7 @@ export const OverviewPage: React.FC = () => {
   // Live Overview Telemetry & Summary State
   const [overviewData, setOverviewData] = useState<any>(null);
   const [officialUpdates, setOfficialUpdates] = useState<any[]>([]);
+  const [updatesLoadState, setUpdatesLoadState] = useState<'loading' | 'loaded' | 'unavailable'>('loading');
   const [loading, setLoading] = useState<boolean>(true);
   const [fetchError, setFetchError] = useState<boolean>(false);
 
@@ -63,9 +66,10 @@ export const OverviewPage: React.FC = () => {
 
     Promise.all([
       fetch('/api/public/overview').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/public/official-updates').then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch('/api/public/official-updates').then(r => r.ok ? r.json() : null).catch(() => null)
     ])
       .then(([overviewRes, updatesRes]) => {
+        setUpdatesLoadState(Array.isArray(updatesRes) ? 'loaded' : 'unavailable');
         if (!overviewRes) {
           setFetchError(true);
         } else {
@@ -121,17 +125,18 @@ export const OverviewPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-10 lg:space-y-12 animate-fadeIn">
+    <div className="rw-page-shell space-y-6 animate-fadeIn">
+      {!loading && fetchError && <FeedbackState kind="unavailable" title="ภาพรวมไม่พร้อมใช้งาน" detail="ตัวเลขที่ไม่มีข้อมูลจะแสดงเป็นไม่มีข้อมูล ไม่ใช่ศูนย์" />}
       
       {/* ============================================================ */}
       {/* SECTION C & 6: HERO SECTION                                  */}
       {/* ============================================================ */}
-      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#F0F7FF] via-[#F8FAFC] to-[#EFF6FF] border border-[#BFDBFE]/60 p-6 sm:p-10 lg:p-12 shadow-sm">
+      <section className="relative rounded-2xl overflow-visible bg-gradient-to-br from-[#F0F7FF] via-white to-[#EFF6FF] border border-[#BFDBFE]/60 p-5 sm:p-6 lg:p-7 shadow-sm">
         
         {/* Subtle decorative water gradient backdrop */}
-        <div className="absolute -right-20 -top-20 w-96 h-96 bg-[#0C65E8]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-0 -top-20 w-96 h-96 bg-[#0C65E8]/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-7 items-center">
           
           {/* LEFT ~50-55%: Text + Scope Indicator + Search */}
           <div className="lg:col-span-7 space-y-5">
@@ -143,20 +148,19 @@ export const OverviewPage: React.FC = () => {
             >
               <MapPin className="w-4 h-4 text-[#0C65E8] shrink-0" />
               <span className="text-xs sm:text-sm font-semibold text-slate-800">
-                ขอบเขตการวิเคราะห์ปัจจุบัน: <span className="text-[#0C65E8] font-bold">จังหวัดปราจีนบุรี</span>
+                ขอบเขตข้อมูล: <span className="text-[#0C65E8] font-bold">จังหวัดปราจีนบุรี</span>
               </span>
               <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
 
             {/* Primary Headline (Section 7 & 50.7: Desktop 40-48px, Mobile 28-34px, weight 700) */}
-            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-[#063B70] leading-[1.25] tracking-normal">
-              เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม<br />
-              <span className="text-[#0C65E8]">เพื่อชุมชนที่ปลอดภัย</span>
+            <h1 className="text-2xl sm:text-3xl lg:text-[36px] font-bold text-[#063B70] leading-[1.25] tracking-normal max-w-3xl">
+              พื้นที่นี้ควรได้รับการเฝ้าระวังหรือตรวจสอบเพิ่มเติมหรือไม่?
             </h1>
 
             {/* Supporting Explanation (Section 7 & 50.7: 16-18px, comfortable line-height, max-w-2xl) */}
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl prose-readable">
-              แพลตฟอร์มที่รวบรวมข้อมูลจากหน่วยงานภาครัฐ ข้อมูลด้านอุทกวิทยา ข้อมูลสิ่งแวดล้อม รายงานจากประชาชน และการวิเคราะห์เชิงพื้นที่ เพื่อช่วยเฝ้าระวังและตรวจสอบพื้นที่ที่ควรติดตาม
+              Ruwaigon แสดงข้อมูลสิ่งแวดล้อมที่มี พร้อมแหล่งที่มาและข้อจำกัด เพื่อช่วยพิจารณาว่าควรติดตามเพิ่มเติมหรือไม่ การแสดงผลไม่ใช่การยืนยันการปนเปื้อนหรือความปลอดภัย
             </p>
 
             {/* Prominent Hero Search Bar (Section 9 & 50.12: input 16px, button 16px) */}
@@ -225,23 +229,18 @@ export const OverviewPage: React.FC = () => {
 
           </div>
 
-          {/* RIGHT ~45-50%: Environmental Visual (Section 6) */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-[480px] rounded-3xl overflow-hidden shadow-lg border border-slate-200 bg-white group">
-              <img 
-                src="/assets/hero_landscape.jpg" 
-                alt="ทัศนียภาพสิ่งแวดล้อมลุ่มน้ำปราจีนบุรี" 
-                className="w-full h-64 sm:h-72 lg:h-80 object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#063B70]/85 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-200 mb-1">
-                  ระบบนิเวศลุ่มน้ำและการติดตามสิ่งแวดล้อม
-                </span>
-                <p className="text-sm text-white/95 leading-relaxed font-normal">
-                  ติดตามสภาพลุ่มน้ำบางปะกง-ปราจีนบุรี เชื่อมโยงข้อมูลโทรมาตรระดับน้ำและคุณภาพสิ่งแวดล้อม
-                </p>
+          <div className="lg:col-span-5">
+            <div className="rw-card space-y-3">
+              <h2 className="text-base font-bold text-[#063B70]">อ่านสถานะข้อมูล</h2>
+              <div className="flex flex-wrap gap-2">
+                <EvidenceLabel family="OFFICIAL" />
+                <EvidenceLabel family="COMMUNITY" />
+                <EvidenceLabel family="MODEL" />
               </div>
+              <p className="text-sm text-slate-600">ชนิดหลักฐาน สถานะการให้บริการ การยืนยัน และความสดใหม่เป็นคนละข้อมูลกัน ช่องที่ไม่มีหลักฐานจะแสดงว่าไม่มีข้อมูล</p>
+              <Link to="/data-methodology" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#0C65E8] hover:underline">
+                ดูแหล่งข้อมูลและข้อจำกัด <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
           </div>
 
@@ -258,7 +257,7 @@ export const OverviewPage: React.FC = () => {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl font-bold text-[#063B70]">
-            ทางลัดการใช้งานระบบ (Quick Access)
+            เริ่มต้นใช้งาน
           </h2>
           <span className="text-xs sm:text-sm text-slate-500 font-medium hidden sm:inline">
             เลือกส่วนงานที่ต้องการสำรวจหรือส่งข้อมูล
@@ -282,7 +281,7 @@ export const OverviewPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                ตรวจสอบภาพรวมและระดับความสำคัญในการเฝ้าระวังเชิงพื้นที่
+                ดูข้อมูลพื้นที่และปัจจัยที่ระบบรายงานได้
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0C65E8]">
@@ -306,7 +305,7 @@ export const OverviewPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                ข้อมูลโทรมาตรระดับน้ำ ปริมาณฝน และข้อมูลสิ่งแวดล้อมทางการ
+                ดูรายการข้อมูลจากหน่วยงานและสถานะที่มีหลักฐาน
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0284C7]">
@@ -325,12 +324,13 @@ export const OverviewPage: React.FC = () => {
                 <span className="text-base font-bold text-slate-800 group-hover:text-[#0D9488] transition-colors">
                   รายงานจากประชาชน
                 </span>
+                <EvidenceLabel family="COMMUNITY" />
                 <span className="w-8 h-8 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center">
                   <Users className="w-4 h-4" />
                 </span>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                รวบรวมข้อสังเกตสภาพน้ำและสิ่งแวดล้อมจากชุมชนในพื้นที่
+                ดูข้อสังเกตจากประชาชน โดยแยกจากข้อมูลทางการ
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0D9488]">
@@ -354,7 +354,7 @@ export const OverviewPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                สำรวจข้อมูลพื้นที่ 7 อำเภอที่ควรได้รับการติดตามและตรวจสอบ
+                บันทึกอำเภอในปราจีนบุรีไว้ดูภายหลัง
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#7C3AED]">
@@ -371,25 +371,25 @@ export const OverviewPage: React.FC = () => {
             <div className="pt-2 md:pt-0 md:px-3 first:pl-0">
               <span className="text-xs text-slate-500 block mb-1">สถานีตรวจวัดอัตโนมัติ:</span>
               <span className="text-sm sm:text-base font-bold text-slate-900">
-                {loading ? '...' : `${overviewData?.total_water_stations ?? 27} สถานีน้ำ + ${overviewData?.total_rainfall_stations ?? 77} สถานีฝน`}
+                {loading ? '...' : `${overviewData?.total_water_stations ?? 'ไม่มีข้อมูล'} สถานีน้ำ + ${overviewData?.total_rainfall_stations ?? 'ไม่มีข้อมูล'} สถานีฝน`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">
               <span className="text-xs text-slate-500 block mb-1">พื้นที่ที่ควรติดตาม:</span>
               <span className="text-sm sm:text-base font-bold text-orange-600">
-                {loading ? '...' : `${overviewData?.priority_counts?.high ?? 3} โซนเฝ้าระวัง`}
+                {loading ? '...' : `${overviewData?.priority_counts?.high == null ? 'ไม่มีข้อมูล' : `${overviewData.priority_counts.high} โซน`}`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">
               <span className="text-xs text-slate-500 block mb-1">รายงานชุมชนที่ได้รับ:</span>
               <span className="text-sm sm:text-base font-bold text-teal-700">
-                {loading ? '...' : `${overviewData?.total_citizen_reports ?? 0} รายการ`}
+                {loading ? 'กำลังโหลด' : typeof overviewData?.total_citizen_reports === 'number' ? `${overviewData.total_citizen_reports} รายการ` : 'ไม่มีข้อมูล'}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">
               <span className="text-xs text-slate-500 block mb-1">ข้อมูลล่าสุดในระบบ:</span>
               <span className="text-sm sm:text-base font-bold text-slate-700">
-                {loading ? '...' : (overviewData?.system_updated_at_th ?? overviewData?.last_updated ?? 'ตรวจสอบเวลาล่าสุด')}
+                {loading ? '...' : (overviewData?.system_updated_at_th ?? overviewData?.last_updated ?? 'ไม่มีข้อมูล')}
               </span>
             </div>
           </div>
@@ -410,11 +410,12 @@ export const OverviewPage: React.FC = () => {
         <section className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-card space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
+              <EvidenceLabel family="OFFICIAL" />
               <h3 className="text-xl sm:text-2xl font-bold text-[#063B70]">
-                ข่าวสารและข้อมูลล่าสุด
+                ประกาศจากหน่วยงาน
               </h3>
               <p className="text-sm text-slate-500 mt-1">
-                รายงานผลตรวจวัดและประกาศทางการจากหน่วยงานราชการที่รับผิดชอบ
+                แสดงรายการที่ API ส่งกลับ พร้อมเวลาเผยแพร่เมื่อมีข้อมูล
               </p>
             </div>
             <Link
@@ -426,7 +427,10 @@ export const OverviewPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {updatesLoadState === 'loading' ? <FeedbackState kind="loading" title="กำลังโหลดประกาศ" />
+            : updatesLoadState === 'unavailable' ? <FeedbackState kind="unavailable" title="ประกาศไม่พร้อมใช้งาน" detail="ตรวจสอบสถานะในหน้าแหล่งข้อมูลและวิธีวิทยา" />
+            : officialUpdates.length === 0 ? <FeedbackState kind="empty" title="ไม่มีรายการประกาศที่ API ส่งกลับ" />
+            : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {officialUpdates.slice(0, 3).map((item) => (
               <div
                 key={item.id}
@@ -435,11 +439,11 @@ export const OverviewPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                     <span className="font-semibold text-[#0C65E8] bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100 truncate max-w-[130px]">
-                      {item.agency || 'กรมควบคุมมลพิษ'}
+                      {item.agency || 'หน่วยงานไม่ระบุ'}
                     </span>
                     <span className="flex items-center gap-1 text-slate-400 font-medium">
                       <Clock className="w-3.5 h-3.5" />
-                      <span>{item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'ล่าสุด'}</span>
+                      <span>{item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'ไม่มีข้อมูลเวลา'}</span>
                     </span>
                   </div>
 
@@ -448,7 +452,7 @@ export const OverviewPage: React.FC = () => {
                   </h4>
 
                   <p className="text-sm text-slate-600 mt-2 line-clamp-3 leading-relaxed">
-                    {item.factual_summary || item.related_area}
+                    {item.factual_summary || 'ไม่มีข้อมูลสรุป'}
                   </p>
                 </div>
 
@@ -462,12 +466,7 @@ export const OverviewPage: React.FC = () => {
               </div>
             ))}
 
-            {officialUpdates.length === 0 && (
-              <div className="col-span-3 text-center py-10 text-sm text-slate-400">
-                ยังไม่มีประกาศใหม่ในขณะนี้
-              </div>
-            )}
-          </div>
+          </div>}
         </section>
 
         {/* CITIZEN PARTICIPATION PANEL (~35% -> 4 cols - Section 19 & 50.12) */}
@@ -532,7 +531,7 @@ export const OverviewPage: React.FC = () => {
               ความโปร่งใสและที่มาของข้อมูล (Data Provenance & Trust)
             </h4>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-              เชื่อมต่อข้อมูลเปิดจากสถาบันสารสนเทศทรัพยากรน้ำ (HII / ThaiWater), กรมควบคุมมลพิษ (PCD), GISTDA, รายงานจากประชาชน และแบบจำลอง FloodTrace
+              แสดงสถานะแหล่งข้อมูลตามหลักฐานที่ระบบมี พร้อมรายงานจากประชาชนเมื่อมีข้อมูล
             </p>
           </div>
         </div>

@@ -1,5 +1,7 @@
-# สถาปัตยกรรมและการทำงานของหน้าหลัก (FLOODTRACE HOME DASHBOARD)
-**ขอบเขต:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
+# สถาปัตยกรรมและการทำงานของหน้าหลัก (RUWAIGON HOME DASHBOARD)
+
+> **P0-1 current runtime status:** This note supersedes contradictory active-content descriptions below; historical audits remain unchanged. Home counts appear only when API supplies real counts. Priority, freshness, update time, map geometry, and announcements remain unavailable without eligible evidence. ThaiWater is the only active external API source. P0-3 owns media delivery; P0-5 owns authentication and SSE.
+**ขอบเขต:** Ruwaigon — ข้อมูลจังหวัดปราจีนบุรี (โครงการภายใน: FloodTrace)
 **เส้นทาง URL:** `/overview` (หรือ `/`)  
 **วัตถุประสงค์หลัก:** สื่อสารสถานการณ์สิ่งแวดล้อมและน้ำท่วมของจังหวัดปราจีนบุรีอย่างโปร่งใส เข้าถึงง่าย น่าเชื่อถือ อิงข้อมูลความจริงแบบพลวัต (Dynamic Data) โดยปราศจากการกุสถิติหรือสร้างความตื่นตระหนกเกินจริง
 
@@ -16,7 +18,7 @@
 │    - วันเวลาอัปเดตระบบล่าสุดตามจริง (dynamic พ.ศ. 2569)                  │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 2. MAIN NAVIGATION HEADER                                              │
-│    - โลโก้ FloodTrace (Ruwaigon) + คำบรรยายระบบ                         │
+│    - โลโก้ Ruwaigon + คำบรรยายระบบ                                      │
 │    - ลิงก์นำทาง: หน้าหลัก, แผนที่, ข้อมูล, รายงาน, เกี่ยวกับเรา             │
 │    - กล่องค้นหาพิกัด/ตำบล/อำเภอส่วนหัว                                    │
 ├────────────────────────────────────────────────────────────────────────┤

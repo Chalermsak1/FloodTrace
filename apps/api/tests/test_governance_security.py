@@ -91,6 +91,12 @@ def test_public_private_data_separation_and_gps_generalization():
     data = post_res.json()
     report_id = data["id"]
 
+    # This test covers public DTO sanitization; publication is explicit under P0-2.
+    with SessionLocal() as db:
+        report = db.query(CitizenReport).filter(CitizenReport.id == report_id).first()
+        report.publication_state = "PUBLIC_SAFE_SUMMARY"
+        db.commit()
+
     # Verify public response generalization
     gen_lat, gen_lon = generalize_coordinates(exact_lat, exact_lon, decimals=settings.COORDINATE_GENERALIZE_DECIMALS)
     assert data["public_latitude"] == gen_lat
@@ -242,33 +248,12 @@ def test_missing_evidence_blocks_publication():
 # -------------------------------------------------------------
 # 6. Model Output Always Labeled & Source Localization Safety
 # -------------------------------------------------------------
-def test_model_output_always_labeled_and_insufficient_data():
-    """
-    Model results must expose model_type, model_version, methodology, assumptions,
-    limitations, and confidence. When physical chemical assays are absent,
-    the model must fail-closed and return INSUFFICIENT_DATA with null confidence.
-    """
+def test_public_source_estimation_route_is_not_mounted():
     res = client.post(
         "/api/v1/risk/source-estimation",
         json={"incident_lat": 14.05, "incident_lon": 101.37, "physical_samples_available": False}
     )
-    assert res.status_code == 200
-    data = res.json()
-
-    assert data["status"] == "INSUFFICIENT_DATA"
-    assert data["message"] == "Insufficient data for source estimation."
-    assert data["confidence"] is None # Never fabricate a confidence score!
-    assert data["estimated_source_area"] is None
-
-    # Verify model metadata fields
-    meta = data["model_metadata"]
-    assert meta["model_type"] == "HYDROLOGICAL_UPSTREAM_CORRIDOR_TRACING"
-    assert meta["model_version"] == "v2.0-Audit"
-    assert "methodology" in meta
-    assert "assumptions" in meta
-    assert "uncertainty" in meta
-    assert "limitations" in meta
-    assert any("Cannot establish causation" in lim for lim in meta["limitations"])
+    assert res.status_code == 404
 
 
 # -------------------------------------------------------------
@@ -318,9 +303,7 @@ def test_fabricated_fallback_values_impossible():
     In production without private credential, DIW public data is blocked.
     """
     res = client.get("/api/v1/factories/")
-    assert res.status_code == 200
-    facilities = res.json()
-    assert len(facilities) == 0  # Blocked under private-only production mandate
+    assert res.status_code == 404
 
     # Inspect the 112 snapshot dataset directly to verify zero fabricated toxicity
     import json, os
@@ -420,8 +403,7 @@ def test_sql_injection_attempts_rejected():
     ]
     for sqli in sqli_payloads:
         res = client.get(f"/api/v1/risk/screening?priority={sqli}")
-        # Must return valid HTTP response (empty or filtered), never 500 database error
-        assert res.status_code == 200
+        assert res.status_code == 404
 
 
 # -------------------------------------------------------------

@@ -1,4 +1,6 @@
 # เอกสารแจกแจงแหล่งข้อมูลภายนอกและการเชื่อมต่อระดับใช้งานจริง (DATA SOURCES)
+
+> **P0-1 current source matrix:** This note supersedes contradictory availability, verification, count, license, and refresh claims below; historical audits remain unchanged. ThaiWater water-level and rainfall are `ACTIVE API`. DIW is `LOCAL / UNVERIFIED` while its local snapshot lacks required provenance proof. DWR waterways and DOPA/MOPH artifacts are `UNAVAILABLE / UNVERIFIED`; access-gated integrations remain `BLOCKED`; citizen reports are `INTERNAL`. Missing counts and timestamps are null with reason codes. Registry rows and configured URLs do not prove integration.
 **โครงการ:** FloodTrace — ระบบภูมิสารสนเทศติดตามน้ำท่วมและการเชื่อมต่อทางอุทกวิทยา  
 **พื้นที่เป้าหมาย:** ลุ่มน้ำปราจีนบุรีและบางปะกง จังหวัดปราจีนบุรี ประเทศไทย  
 **สถานะการตรวจสอบ:** ผ่านการตรวจสอบความสัจจริงระดับ Production (Final Production Truth Audit Passed)  

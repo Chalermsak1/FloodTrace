@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -57,11 +58,15 @@ class Settings(BaseSettings):
     # Security, Auth & Upload Limits
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
     ADMIN_API_KEY: str = os.getenv("ADMIN_API_KEY", "dev-admin-secret-key-change-in-prod")
+    STAFF_CONTAINMENT_PRINCIPAL_ID: str = "staff_admin_01"
+    # On-demand research only; an empty allowlist disables RSS discovery.
+    RESEARCH_RSS_FEEDS: list[str] = []
     PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "")
     CLOUDFLARE_TUNNEL_TOKEN: str | None = os.getenv("CLOUDFLARE_TUNNEL_TOKEN", None)
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
     SUBMIT_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("SUBMIT_RATE_LIMIT_PER_MINUTE", "60"))
     MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(5 * 1024 * 1024))) # 5 MB max
+    PRIVATE_MEDIA_ROOT: Path = Path(__file__).resolve().parents[4] / "data" / "private-media"
     DATA_RETENTION_DAYS: int = int(os.getenv("DATA_RETENTION_DAYS", "365"))
     COORDINATE_GENERALIZE_DECIMALS: int = int(os.getenv("COORDINATE_GENERALIZE_DECIMALS", "2")) # ~1.1km blur
     
@@ -145,4 +150,3 @@ class Settings(BaseSettings):
     }
 
 settings = Settings()
-

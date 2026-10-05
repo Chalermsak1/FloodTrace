@@ -5,14 +5,14 @@ system cross-checking, structured verification, escalation, and resolution.
 Strictly isolated from public visibility.
 """
 
-import os
 import uuid
 import json
 import asyncio
+from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc, asc
@@ -45,6 +45,12 @@ from apps.api.app.core.report_workflow import (
     log_audit_event,
     perform_automatic_triage,
 )
+from apps.api.app.core.publication import verification_is_valid
+from apps.api.app.core.private_media import (
+    PrivateMediaNotFound,
+    PrivateMediaUnavailable,
+    read_private_media,
+)
 from apps.api.app.core.system_crosscheck import (
     build_system_crosscheck_context,
     haversine_distance_km,
@@ -53,7 +59,8 @@ from apps.api.app.core.pipeline import event_broadcaster
 
 router = APIRouter(prefix="/admin", tags=["Staff Operations & Citizen Reports Management"])
 
-UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../data/uploads"))
+def staff_media_url(report: CitizenReport) -> Optional[str]:
+    return f"/api/v1/admin/reports/{quote(report.id, safe='')}/media" if report.photo_url else None
 
 # ==============================================================================
 # Request & Response Schemas
@@ -80,13 +87,14 @@ class VerificationCreate(BaseModel):
     verification_status: str = Field(..., description="PARTIALLY_VERIFIED, VERIFIED_OBSERVATION, OFFICIAL_CONFIRMED, UNVERIFIED")
     verification_method: str = Field(..., description="VISUAL_REVIEW, CROSS_CHECKED_SYSTEM_DATA, MULTIPLE_REPORTS, FIELD_VERIFICATION, OFFICIAL_SOURCE, OTHER")
     notes: Optional[str] = None
-    what_was_reported: str = Field(..., description="Original citizen statement")
-    what_was_observed: str = Field(..., description="Facts directly established by reviewer")
-    what_system_data_shows: str = Field(..., description="Official telemetry correlation")
-    what_model_suggests: str = Field(..., description="Model and hydrological assessment")
-    what_is_unknown: str = Field(..., description="Facts not currently establishable")
-    what_should_be_verified: str = Field(..., description="Next verification action")
+    what_was_reported: Optional[str] = Field(None, description="Original citizen statement")
+    what_was_observed: Optional[str] = Field(None, description="Facts directly established by reviewer")
+    what_system_data_shows: Optional[str] = Field(None, description="Eligible system evidence")
+    what_model_suggests: Optional[str] = Field(None, description="Eligible model evidence")
+    what_is_unknown: Optional[str] = Field(None, description="Facts not currently establishable")
+    what_should_be_verified: Optional[str] = Field(None, description="Next verification action")
     official_source_evidence: Optional[str] = Field(None, description="Official citation/letter if OFFICIAL_CONFIRMED")
+
 
 class EscalationCreate(BaseModel):
     destination_team: str = Field(..., description="REGIONAL_WATER_OFFICE, PROVINCIAL_DISASTER_PREVENTION, POLLUTION_CONTROL_CENTER_7, LOCAL_ADMIN_ORG")
@@ -355,6 +363,15 @@ def list_admin_reports(
             perform_automatic_triage(db, r)
             db.commit()
 
+        latest_verification = db.query(CitizenReportVerification).filter(CitizenReportVerification.report_id == r.id).order_by(desc(CitizenReportVerification.verified_at)).first()
+        displayed_verification_status = r.verification_status
+        if r.verification_status in {"VERIFIED_OBSERVATION", "OFFICIAL_CONFIRMED"} and not verification_is_valid(
+            latest_verification.verification_status if latest_verification else r.verification_status,
+            latest_verification.structured_assessment if latest_verification else None,
+            latest_verification.verification_method if latest_verification else None,
+            latest_verification.official_source_evidence if latest_verification else None,
+        ):
+            displayed_verification_status = "LEGACY_UNVALIDATED"
         results.append({
             "id": r.id,
             "category": r.category or "ข้อสังเกตทั่วไป",
@@ -369,13 +386,13 @@ def list_admin_reports(
             "water_flow_speed": r.water_flow_speed,
             "contamination_signs": r.contamination_signs,
             "description": r.description,
-            "photo_url": r.photo_url,
+            "photo_url": staff_media_url(r),
             "has_evidence": bool(r.photo_url),
             "assigned_to": r.assigned_to,
             "assigned_at": r.assigned_at.isoformat() if r.assigned_at else None,
             "cluster_id": r.cluster_id,
             "cluster_role": r.cluster_role,
-            "verification_status": r.verification_status,
+            "verification_status": displayed_verification_status,
             "publication_state": r.publication_state or "PRIVATE",
             "observed_at": r.observed_at.isoformat() if r.observed_at else None,
             "submitted_at": r.created_at.isoformat() if r.created_at else None,
@@ -530,7 +547,7 @@ def get_report_detail(
             "water_flow_speed": report.water_flow_speed,
             "contamination_signs": report.contamination_signs,
             "description": report.description,
-            "photo_url": report.photo_url,
+            "photo_url": staff_media_url(report),
             "observed_at": report.observed_at.isoformat() if report.observed_at else None,
             "submitted_at": report.created_at.isoformat() if report.created_at else None,
         },
@@ -558,7 +575,12 @@ def get_report_detail(
         
         # Verification record
         "verification": {
-            "status": report.verification_status,
+            "status": report.verification_status if verification_is_valid(
+                verification.verification_status,
+                verification.structured_assessment,
+                verification.verification_method,
+                verification.official_source_evidence,
+            ) else "LEGACY_UNVALIDATED",
             "method": verification.verification_method if verification else None,
             "verified_by": verification.verified_by if verification else None,
             "verified_at": verification.verified_at.isoformat() if verification and verification.verified_at else None,
@@ -661,7 +683,7 @@ def get_related_reports(
                 "status": r.status,
                 "priority": r.priority,
                 "verification_status": r.verification_status,
-                "photo_url": r.photo_url,
+                "photo_url": staff_media_url(r),
                 "created_at": r.created_at.isoformat() if r.created_at else None
             })
 
@@ -810,6 +832,19 @@ def change_report_status(
 
     current_st = report.status or ReportStatus.NEW.value
     target_st = data.new_status.upper()
+
+    if target_st in {ReportStatus.VERIFIED_OBSERVATION.value, ReportStatus.OFFICIAL_CONFIRMED.value}:
+        latest_verification = db.query(CitizenReportVerification).filter(
+            CitizenReportVerification.report_id == report_id
+        ).order_by(desc(CitizenReportVerification.verified_at)).first()
+        required_status = target_st
+        if not latest_verification or latest_verification.verification_status != required_status or not verification_is_valid(
+            latest_verification.verification_status,
+            latest_verification.structured_assessment,
+            latest_verification.verification_method,
+            latest_verification.official_source_evidence,
+        ):
+            raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "A valid verification record is required for this status"})
 
     is_valid, error_msg = validate_state_transition(
         current_status=current_st,
@@ -973,39 +1008,58 @@ def verify_report(
         raise HTTPException(status_code=404, detail="ไม่พบรายงานที่ระบุในระบบ")
 
     # Enforce official source evidence if claiming OFFICIAL_CONFIRMED
-    if data.verification_status == "OFFICIAL_CONFIRMED":
-        if not data.official_source_evidence or len(data.official_source_evidence.strip()) < 5:
+    status_value = (data.verification_status or "").strip().upper()
+    method_value = (data.verification_method or "").strip().upper()
+    allowed_statuses = {"UNVERIFIED", "PARTIALLY_VERIFIED", "VERIFIED_OBSERVATION", "OFFICIAL_CONFIRMED"}
+    allowed_observation_methods = {"VISUAL_REVIEW", "FIELD_VERIFICATION", "MULTIPLE_REPORTS", "CROSS_CHECKED_SYSTEM_DATA"}
+    clean = {key: (value.strip() or None) if isinstance(value, str) else None for key, value in {
+        "what_was_reported": data.what_was_reported,
+        "what_was_observed": data.what_was_observed,
+        "what_system_data_shows": data.what_system_data_shows,
+        "what_model_suggests": data.what_model_suggests,
+        "what_is_unknown": data.what_is_unknown,
+        "what_should_be_verified": data.what_should_be_verified,
+        "official_source_evidence": data.official_source_evidence,
+        "notes": data.notes,
+    }.items()}
+    if status_value not in allowed_statuses:
+        raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "Unknown verification status"})
+    if status_value == "VERIFIED_OBSERVATION":
+        if not clean["what_was_observed"] or method_value not in allowed_observation_methods:
+            raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "Observed evidence and a permitted verification method are required"})
+    if status_value == "OFFICIAL_CONFIRMED":
+        if (not clean["what_was_observed"] or method_value != "OFFICIAL_SOURCE"
+                or not clean["official_source_evidence"] or len(clean["official_source_evidence"]) < 5):
             raise HTTPException(
                 status_code=400,
-                detail="การยืนยันสถานะ OFFICIAL_CONFIRMED ต้องระบุแหล่งที่มา/หนังสือจากหน่วยงานทางการ"
+                detail={"error": "INVALID_REQUEST", "message": "OFFICIAL_CONFIRMED requires valid official source evidence"}
             )
 
     now = datetime.now(timezone.utc)
     verification = CitizenReportVerification(
         id=f"ver_{uuid.uuid4().hex[:10]}",
         report_id=report_id,
-        verification_status=data.verification_status,
-        verification_method=data.verification_method,
+        verification_status=status_value,
+        verification_method=method_value,
         verified_by=staff.username,
         verified_at=now,
-        notes=data.notes,
-        structured_assessment={
-            "what_was_reported": data.what_was_reported,
-            "what_was_observed": data.what_was_observed,
-            "what_system_data_shows": data.what_system_data_shows,
-            "what_model_suggests": data.what_model_suggests,
-            "what_is_unknown": data.what_is_unknown,
-            "what_should_be_verified": data.what_should_be_verified
-        },
-        official_source_evidence=data.official_source_evidence
+        notes=clean["notes"],
+        structured_assessment={key: clean[key] for key in ("what_was_reported", "what_was_observed", "what_system_data_shows", "what_model_suggests", "what_is_unknown", "what_should_be_verified")},
+        official_source_evidence=clean["official_source_evidence"]
     )
 
     prev_status = report.status
-    report.verification_status = data.verification_status
-    report.review_status = "HUMAN_VERIFIED"
-    if data.verification_status == "OFFICIAL_CONFIRMED":
+    report.verification_status = status_value
+    if status_value == "UNVERIFIED":
+        report.review_status = "PENDING_REVIEW"
+    elif status_value == "PARTIALLY_VERIFIED":
+        report.status = ReportStatus.UNDER_VERIFICATION.value
+        report.review_status = "IN_REVIEW"
+    elif status_value == "OFFICIAL_CONFIRMED":
+        report.review_status = "HUMAN_VERIFIED"
         report.status = ReportStatus.OFFICIAL_CONFIRMED.value
-    else:
+    elif status_value == "VERIFIED_OBSERVATION":
+        report.review_status = "HUMAN_VERIFIED"
         report.status = ReportStatus.VERIFIED_OBSERVATION.value
     report.updated_at = now
 
@@ -1017,11 +1071,11 @@ def verify_report(
         action="VERIFICATION_UPDATED",
         previous_status=prev_status,
         new_status=report.status,
-        reason=f"Verification status set to {data.verification_status} via {data.verification_method}",
-        evidence_reference=data.official_source_evidence,
+        reason=f"Verification status set to {status_value} via {method_value}",
+        evidence_reference=clean["official_source_evidence"],
         details={
-            "verification_status": data.verification_status,
-            "method": data.verification_method,
+            "verification_status": status_value,
+            "method": method_value,
             "structured_assessment": verification.structured_assessment
         },
         commit=False
@@ -1032,7 +1086,7 @@ def verify_report(
 
     event_broadcaster.notify_event_sync(
         event_type="REPORT_VERIFICATION_UPDATED",
-        payload={"report_id": report.id, "verification_status": data.verification_status}
+        payload={"report_id": report.id, "verification_status": status_value}
     )
 
     return {
@@ -1181,6 +1235,22 @@ def update_publication_state(
     target_state = data.publication_state.upper()
     if target_state not in PublicationState._value2member_map_:
         raise HTTPException(status_code=400, detail="สถานะการเผยแพร่ไม่ถูกต้อง")
+    if target_state == "PUBLIC_VERIFIED":
+        latest_verification = db.query(CitizenReportVerification).filter(
+            CitizenReportVerification.report_id == report_id
+        ).order_by(desc(CitizenReportVerification.verified_at)).first()
+        if (
+            not latest_verification
+            or report.verification_status != latest_verification.verification_status
+            or not verification_is_valid(
+                latest_verification.verification_status,
+                latest_verification.structured_assessment,
+                latest_verification.verification_method,
+                latest_verification.official_source_evidence,
+            )
+            or latest_verification.verification_status not in {"VERIFIED_OBSERVATION", "OFFICIAL_CONFIRMED"}
+        ):
+            raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "A valid verification record is required for PUBLIC_VERIFIED"})
 
     old_state = report.publication_state
     now = datetime.now(timezone.utc)
@@ -1255,22 +1325,35 @@ def query_audit_logs(
     }
 
 
-@router.get("/evidence/{filename}")
-def get_authorized_evidence_file(
-    filename: str,
-    staff: StaffPrincipal = Depends(get_current_staff_user)
+@router.get("/reports/{report_id}/media")
+def get_staff_report_media(
+    report_id: str,
+    staff: StaffPrincipal = Depends(require_permission("view_reports")),
+    db: Session = Depends(get_db),
 ):
-    """
-    Authorized evidence file viewer.
-    Requires staff authentication to view sensitive evidence.
-    """
-    # Prevent directory traversal
-    clean_filename = os.path.basename(filename)
-    file_path = os.path.join(UPLOAD_DIR, clean_filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="ไม่พบไฟล์หลักฐานในระบบจัดเก็บ")
-
-    return FileResponse(file_path)
+    report = db.query(CitizenReport).filter(CitizenReport.id == report_id).first()
+    if not report or not report.photo_url:
+        raise HTTPException(status_code=404, detail="Media not found")
+    try:
+        content, media_type = read_private_media(report.photo_url)
+    except PrivateMediaUnavailable:
+        raise HTTPException(status_code=503, detail="Private media storage unavailable")
+    except PrivateMediaNotFound:
+        raise HTTPException(status_code=404, detail="Media not found")
+    log_audit_event(
+        db=db,
+        report_id=report.id,
+        actor_id=staff.username,
+        actor_role=staff.role.value,
+        action="EVIDENCE_MEDIA_VIEWED",
+        reason="Authorized staff viewed report media",
+        commit=True,
+    )
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.get("/events")

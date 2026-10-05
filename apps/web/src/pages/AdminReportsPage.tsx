@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  User,
   UserCheck,
   MapPin,
   Droplets,
@@ -117,11 +116,8 @@ interface OperationalSummary {
 }
 
 export const AdminReportsPage: React.FC = () => {
-  // Staff Role & Authentication context
-  const [currentRole, setCurrentRole] = useState<'ADMIN' | 'REVIEWER' | 'OPERATOR' | 'READ_ONLY'>('ADMIN');
-  const [currentUsername, setCurrentUsername] = useState<string>('admin_user');
+  // Authentication context is server-resolved for the fixed staff principal.
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
-  const [sseConnected, setSseConnected] = useState<boolean>(false);
 
   // Staff Authentication Gate (Eliminate hardcoded client secrets)
   const [staffKey, setStaffKey] = useState<string>(() => {
@@ -152,6 +148,7 @@ export const AdminReportsPage: React.FC = () => {
   // Selected report detail
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [reportDetail, setReportDetail] = useState<any | null>(null);
+  const [evidenceMediaUrl, setEvidenceMediaUrl] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [systemContext, setSystemContext] = useState<any | null>(null);
   const [auditTimeline, setAuditTimeline] = useState<any[]>([]);
@@ -176,16 +173,13 @@ export const AdminReportsPage: React.FC = () => {
       setSystemHealthData({ sources, metrics, scheduler });
     } catch (err) {
       console.error('Failed to load system health:', err);
+      setSystemHealthData(null);
     } finally {
       setHealthLoading(false);
     }
   };
 
   const handleTriggerSource = async (sourceId: string) => {
-    if (currentRole !== 'ADMIN') {
-      alert('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถกระตุ้นการดึงข้อมูลได้');
-      return;
-    }
     setTriggeringSource(sourceId);
     try {
       const resp = await fetch(`/api/v1/admin/scheduler/trigger/${sourceId}`, {
@@ -238,7 +232,7 @@ export const AdminReportsPage: React.FC = () => {
   const [officialEvidenceInput, setOfficialEvidenceInput] = useState<string>('');
 
   const [verifyModalOpen, setVerifyModalOpen] = useState<boolean>(false);
-  const [verStatusInput, setVerStatusInput] = useState<string>('VERIFIED_OBSERVATION');
+  const [verStatusInput, setVerStatusInput] = useState<string>('UNVERIFIED');
   const [verMethodInput, setVerMethodInput] = useState<string>('CROSS_CHECKED_SYSTEM_DATA');
   const [verNotesInput, setVerNotesInput] = useState<string>('');
   const [verReportedInput, setVerReportedInput] = useState<string>('');
@@ -274,10 +268,33 @@ export const AdminReportsPage: React.FC = () => {
   // Common Headers helper (No hardcoded credentials)
   const getAuthHeaders = () => ({
     'X-Admin-Key': staffKey,
-    'X-Staff-Role': currentRole,
-    'X-Staff-User': currentUsername,
     'Content-Type': 'application/json'
   });
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+    const reportId = reportDetail?.id;
+    const hasMedia = Boolean(reportDetail?.original_submission?.photo_url);
+    setEvidenceMediaUrl(null);
+    if (staffKey && reportId && hasMedia) {
+      fetch(`/api/v1/admin/reports/${encodeURIComponent(reportId)}/media`, {
+        headers: getAuthHeaders()
+      })
+        .then((response) => response.ok ? response.blob() : null)
+        .then((blob) => {
+          if (!blob) return;
+          objectUrl = URL.createObjectURL(blob);
+          if (active) setEvidenceMediaUrl(objectUrl);
+          else URL.revokeObjectURL(objectUrl);
+        })
+        .catch(() => setEvidenceMediaUrl(null));
+    }
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [staffKey, reportDetail?.id, reportDetail?.original_submission?.photo_url]);
 
   // Staff Login Handler
   const handleLogin = async (e: React.FormEvent) => {
@@ -293,8 +310,6 @@ export const AdminReportsPage: React.FC = () => {
       const resp = await fetch('/api/v1/admin/auth/me', {
         headers: {
           'X-Admin-Key': candidateKey,
-          'X-Staff-Role': 'ADMIN',
-          'X-Staff-User': 'admin_user',
           'Content-Type': 'application/json'
         }
       });
@@ -319,15 +334,6 @@ export const AdminReportsPage: React.FC = () => {
     setIsAuthenticated(false);
     setKeyInput('');
     setAuthError(null);
-  };
-
-  // Switch role helper
-  const handleRoleSwitch = (role: 'ADMIN' | 'REVIEWER' | 'OPERATOR' | 'READ_ONLY') => {
-    setCurrentRole(role);
-    if (role === 'ADMIN') setCurrentUsername('admin_user');
-    else if (role === 'REVIEWER') setCurrentUsername('reviewer_01');
-    else if (role === 'OPERATOR') setCurrentUsername('operator_01');
-    else setCurrentUsername('readonly_01');
   };
 
   // 1. Fetch Staff Directory & Summary
@@ -443,62 +449,17 @@ export const AdminReportsPage: React.FC = () => {
   useEffect(() => {
     fetchSummary();
     fetchStaffUsers();
-  }, [currentRole]);
+  }, []);
 
   useEffect(() => {
     fetchReports();
-  }, [page, statusFilter, priorityFilter, districtFilter, sortBy, currentRole]);
+  }, [page, statusFilter, priorityFilter, districtFilter, sortBy]);
 
   useEffect(() => {
     if (selectedReportId) {
       fetchReportDetail(selectedReportId);
     }
-  }, [selectedReportId, currentRole]);
-
-  // Setup SSE realtime listener
-  useEffect(() => {
-    if (!isAuthenticated || !staffKey) {
-      setSseConnected(false);
-      return;
-    }
-    const sse = new EventSource(`/api/v1/admin/events?token=${encodeURIComponent(staffKey)}`);
-    sse.onopen = () => setSseConnected(true);
-    sse.onerror = () => setSseConnected(false);
-
-    sse.addEventListener('REPORT_STATUS_UPDATED', () => {
-      fetchReports();
-      fetchSummary();
-      if (selectedReportId) fetchReportDetail(selectedReportId);
-    });
-
-    sse.addEventListener('REPORT_ASSIGNMENT_UPDATED', () => {
-      fetchReports();
-      fetchSummary();
-      if (selectedReportId) fetchReportDetail(selectedReportId);
-    });
-
-    sse.addEventListener('REPORT_VERIFICATION_UPDATED', () => {
-      fetchReports();
-      fetchSummary();
-      if (selectedReportId) fetchReportDetail(selectedReportId);
-    });
-
-    sse.addEventListener('REPORT_ESCALATED', () => {
-      fetchReports();
-      fetchSummary();
-      if (selectedReportId) fetchReportDetail(selectedReportId);
-    });
-
-    sse.addEventListener('REPORT_RESOLVED', () => {
-      fetchReports();
-      fetchSummary();
-      if (selectedReportId) fetchReportDetail(selectedReportId);
-    });
-
-    return () => {
-      sse.close();
-    };
-  }, [isAuthenticated, staffKey, selectedReportId]);
+  }, [selectedReportId]);
 
   // Map Initialization & Marker Updates
   useEffect(() => {
@@ -672,12 +633,12 @@ export const AdminReportsPage: React.FC = () => {
           verification_status: verStatusInput,
           verification_method: verMethodInput,
           notes: verNotesInput,
-          what_was_reported: verReportedInput || 'ตามคำให้การผู้แจ้ง',
-          what_was_observed: verObservedInput || 'ตรวจสอบภาพถ่ายและพื้นที่',
-          what_system_data_shows: verSystemInput || 'ข้อมูลระดับน้ำและฝนในเกณฑ์ปกติ',
-          what_model_suggests: verModelInput || 'แบบจำลองแสดงความเสี่ยงปานกลาง',
-          what_is_unknown: verUnknownInput || 'รอผลตรวจทางเคมี',
-          what_should_be_verified: verActionInput || 'เก็บตัวอย่างน้ำส่งตรวจเพิ่มเติม',
+          what_was_reported: verReportedInput.trim() || null,
+          what_was_observed: verObservedInput.trim() || null,
+          what_system_data_shows: verSystemInput.trim() || null,
+          what_model_suggests: verModelInput.trim() || null,
+          what_is_unknown: verUnknownInput.trim() || null,
+          what_should_be_verified: verActionInput.trim() || null,
           official_source_evidence: verOfficialCitation || null
         })
       });
@@ -819,7 +780,7 @@ export const AdminReportsPage: React.FC = () => {
             <Shield className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold text-center text-slate-900 mb-1">
-            FloodTrace Staff Operations Console
+            Ruwaigon Staff Operations Console
           </h2>
           <p className="text-xs text-center text-slate-500 mb-6">
             ระบบบริหารจัดการและตรวจสอบข้อเท็จจริงสำหรับเจ้าหน้าที่ (Internal Back-Office)
@@ -889,7 +850,7 @@ export const AdminReportsPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base sm:text-lg tracking-wide">FloodTrace Staff Operations Console</span>
+                <span className="font-bold text-base sm:text-lg tracking-wide">Ruwaigon Staff Operations Console</span>
                 <span className="px-2.5 py-0.5 text-xs rounded bg-blue-500/30 text-blue-200 border border-blue-400/30 font-mono font-semibold">
                   INTERNAL
                 </span>
@@ -898,37 +859,8 @@ export const AdminReportsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Role Switcher & Live Indicator */}
+          {/* Explicit refresh; this console does not claim continuous updates. */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-700/50 text-xs sm:text-sm">
-              <span className={`w-2.5 h-2.5 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-              <span className="text-blue-100 text-xs sm:text-sm font-medium">
-                {sseConnected ? 'เรียลไทม์ (SSE Connected)' : 'ออฟไลน์'}
-              </span>
-            </div>
-
-            <div className="flex items-center bg-blue-950/80 rounded-lg p-1 border border-blue-800/60 text-xs">
-              <span className="text-blue-300 px-2 font-medium">สิทธิ์:</span>
-              {(['ADMIN', 'REVIEWER', 'OPERATOR', 'READ_ONLY'] as const).map(role => (
-                <button
-                  key={role}
-                  onClick={() => handleRoleSwitch(role)}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                    currentRole === role
-                      ? 'bg-[#0C65E8] text-white shadow-sm font-semibold'
-                      : 'text-blue-200 hover:text-white'
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2 pl-2 border-l border-blue-800/80 text-xs text-blue-100">
-              <User className="w-4 h-4 text-blue-300" />
-              <span className="font-medium font-mono">{currentUsername}</span>
-            </div>
-
             <button
               onClick={() => {
                 fetchReports();
@@ -1312,7 +1244,6 @@ export const AdminReportsPage: React.FC = () => {
                   <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-slate-200/80">
                     <button
                       onClick={() => setAssignModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 transition flex items-center gap-1"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
@@ -1321,7 +1252,6 @@ export const AdminReportsPage: React.FC = () => {
 
                     <button
                       onClick={() => setInfoModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40 transition flex items-center gap-1"
                     >
                       <HelpCircle className="w-3.5 h-3.5" />
@@ -1330,7 +1260,6 @@ export const AdminReportsPage: React.FC = () => {
 
                     <button
                       onClick={() => setVerifyModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition flex items-center gap-1"
                     >
                       <CheckSquare className="w-3.5 h-3.5" />
@@ -1339,7 +1268,6 @@ export const AdminReportsPage: React.FC = () => {
 
                     <button
                       onClick={() => setEscalateModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-40 transition flex items-center gap-1"
                     >
                       <Send className="w-3.5 h-3.5" />
@@ -1348,7 +1276,6 @@ export const AdminReportsPage: React.FC = () => {
 
                     <button
                       onClick={() => setResolveModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
                       className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-40 transition flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1357,22 +1284,19 @@ export const AdminReportsPage: React.FC = () => {
 
                     <button
                       onClick={() => setStatusModalOpen(true)}
-                      disabled={currentRole === 'READ_ONLY'}
                       className="px-2.5 py-1 text-xs font-medium rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
                     >
                       เปลี่ยนสถานะ...
                     </button>
 
-                    {currentRole === 'ADMIN' && (
-                      <button
-                        onClick={() => setPubModalOpen(true)}
-                        className="px-2 py-1 text-xs font-medium rounded-lg bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1"
-                        title="ควบคุมการเปิดเผยต่อสาธารณะ"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        เผยแพร่
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setPubModalOpen(true)}
+                      className="px-2 py-1 text-xs font-medium rounded-lg bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1"
+                      title="ควบคุมการเปิดเผยต่อสาธารณะ"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      เผยแพร่
+                    </button>
                   </div>
                 </div>
 
@@ -1470,7 +1394,7 @@ export const AdminReportsPage: React.FC = () => {
                           <div className="space-y-2">
                             <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
                               <img
-                                src={reportDetail.original_submission.photo_url}
+                                src={evidenceMediaUrl || undefined}
                                 alt="หลักฐานจากประชาชน"
                                 className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300"
                               />
@@ -1478,7 +1402,7 @@ export const AdminReportsPage: React.FC = () => {
                             <div className="flex items-center justify-between text-xs text-slate-500">
                               <span className="text-emerald-600 font-medium">✓ ลบ EXIF พิกัดส่วนบุคคลแล้ว</span>
                               <a
-                                href={reportDetail.original_submission.photo_url}
+                                href={evidenceMediaUrl || undefined}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-blue-600 hover:underline flex items-center gap-0.5"
@@ -1523,9 +1447,10 @@ export const AdminReportsPage: React.FC = () => {
                               <div>ระดับน้ำ: <strong className="text-slate-900">{systemContext.primary_water_station.water_level_msl ?? 'ไม่มี'} m MSL</strong></div>
                               <div>ระดับเตือนภัย: <strong className="text-slate-900">{systemContext.primary_water_station.warning_level_msl ?? '-'} m</strong></div>
                             </div>
+                            <div className="text-xs text-slate-500">Source time: {systemContext.primary_water_station.source_timestamp ?? 'Timestamp unavailable'}</div>
                           </div>
                         ) : (
-                          <div className="text-slate-400 text-sm">ไม่มีสถานีระดับน้ำในระยะใกล้เคียง</div>
+                          <div className="text-slate-400 text-sm">ไม่มีข้อมูลสถานีระดับน้ำใกล้เคียงที่ใช้ได้</div>
                         )}
 
                         {systemContext?.primary_rain_station && (
@@ -1540,8 +1465,9 @@ export const AdminReportsPage: React.FC = () => {
                               {systemContext.primary_rain_station.name_th}
                             </div>
                             <div className="text-xs text-slate-700 pt-0.5">
-                              ฝนสะสม 24 ชม.: <strong className="text-slate-900">{systemContext.primary_rain_station.rain_24h_mm ?? 0} มม.</strong>
+                              ฝนสะสม 24 ชม.: <strong className="text-slate-900">{systemContext.primary_rain_station.rain_24h_mm ?? 'ไม่มีข้อมูล'}{systemContext.primary_rain_station.rain_24h_mm != null ? ' มม.' : ''}</strong>
                             </div>
+                            <div className="text-xs text-slate-500">Source time: {systemContext.primary_rain_station.source_timestamp ?? 'Timestamp unavailable'}</div>
                           </div>
                         )}
 
@@ -1606,7 +1532,6 @@ export const AdminReportsPage: React.FC = () => {
                             ยังไม่มีการขอข้อมูลเพิ่มเติม
                             <button
                               onClick={() => setInfoModalOpen(true)}
-                              disabled={currentRole === 'READ_ONLY'}
                               className="block mx-auto mt-2 text-sm text-amber-600 font-bold hover:underline disabled:opacity-30"
                             >
                               + ขอข้อมูลเพิ่มเติมจากประชาชน
@@ -1682,7 +1607,6 @@ export const AdminReportsPage: React.FC = () => {
                             ยังไม่มีการบันทึกการพิสูจน์ข้อเท็จจริง
                             <button
                               onClick={() => setVerifyModalOpen(true)}
-                              disabled={currentRole === 'READ_ONLY' || currentRole === 'OPERATOR'}
                               className="block mx-auto mt-2 text-sm text-blue-600 font-bold hover:underline disabled:opacity-30"
                             >
                               + บันทึกการพิสูจน์ข้อเท็จจริง
@@ -1806,301 +1730,67 @@ export const AdminReportsPage: React.FC = () => {
         </div>
           </>
         ) : (
-          /* System Health & Automated Refresh Monitoring View (Section 53 & 54) */
-          <div className="space-y-6">
-            {/* Top Status & Metrics */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-slate-900">สถานะระบบตรวจวัดและไปป์ไลน์ข้อมูล (System Health & Observability)</h2>
-                    <span className="px-2.5 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      {systemHealthData?.metrics?.status === 'healthy' ? 'ระบบทำงานปกติ (All Pipelines Healthy)' : 'ระบบทำงานปกติ (Monitored)'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    ตรวจสอบการทำงานของ Background Scheduler, Circuit Breakers, และการเชื่อมต่อแหล่งข้อมูลภายนอกแบบอัตโนมัติ (Automated Refresh)
-                  </p>
-                </div>
-                <button
-                  onClick={fetchSystemHealth}
-                  disabled={healthLoading}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
-                  <span>{healthLoading ? 'กำลังตรวจสอบ...' : 'รีเฟรชสถานะ'}</span>
-                </button>
-              </div>
-
-              {/* High-level status cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Background Scheduler</span>
-                  </div>
-                  <div className="text-lg font-bold text-slate-800 mt-1 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span>ACTIVE (กำลังทำงาน)</span>
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1 font-mono">รอบการทำงาน: ทุก 15 นาที (900s)</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Ingestion Pipeline</span>
-                  </div>
-                  <div className="text-lg font-bold text-slate-800 mt-1">
-                    {systemHealthData?.metrics?.pipeline?.total_processed ?? 103}
-                    <span className="text-xs font-normal text-slate-500 ml-1">records</span>
-                  </div>
-                  <div className="text-xs text-emerald-600 mt-1 font-mono">
-                    สำเร็จ {systemHealthData?.metrics?.pipeline?.successful_ingestions ?? 103} | ผิดพลาด {systemHealthData?.metrics?.pipeline?.failed_ingestions ?? 0}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Circuit Breakers</span>
-                  </div>
-                  <div className="text-lg font-bold text-emerald-700 mt-1">
-                    CLOSED (ปกติ)
-                  </div>
-                  <div className="text-xs text-slate-500 mt-1">ไม่มีแหล่งข้อมูลที่ถูกระงับชั่วคราว</div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Queue Depth</span>
-                  </div>
-                  <div className="text-lg font-bold text-slate-800 mt-1">
-                    {systemHealthData?.metrics?.pipeline?.queue_depth ?? 0}
-                    <span className="text-xs font-normal text-slate-500 ml-1">in queue</span>
-                  </div>
-                  <div className="text-xs text-slate-500 mt-1">Dead letter: {systemHealthData?.metrics?.pipeline?.dead_letter_count ?? 0}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 1: Automated Refresh External Sources (High Frequency) */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-blue-600" /> แหล่งข้อมูลอัปเดตอัตโนมัติ (Automated Refresh Sources)
-                  </h3>
-                  <p className="text-xs text-slate-500">ข้อมูลเชื่อมต่อตรงผ่าน REST API จากหน่วยงานภาครัฐ พร้อมระบบตรวจสอบความสดใหม่ (Freshness Validation)</p>
-                </div>
-                <span className="px-2.5 py-1 text-xs rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
-                  2 แหล่งข้อมูลสด (Automated Refresh ทุก 15 นาที)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ThaiWater Water Level */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Droplets className="w-4 h-4 text-sky-600" />
-                          <h4 className="font-bold text-sm text-slate-900">ThaiWater — ระดับน้ำในทางน้ำ (RID Runoff)</h4>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">สถาบันสารสนเทศทรัพยากรน้ำ (สสน.) / กรมชลประทาน</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        🟢 กำลังอัปเดตอัตโนมัติ
-                      </span>
+          /* Evidence-backed system health view */
+          <div className="space-y-4">
+            {(() => {
+              const sources = systemHealthData?.sources;
+              const metrics = systemHealthData?.metrics;
+              const scheduler = systemHealthData?.scheduler;
+              const entries = sources?.sources && typeof sources.sources === 'object' ? Object.values(sources.sources) as any[] : null;
+              const expectedCounts = entries ? {
+                TOTAL_EXTERNAL_SOURCES: entries.length,
+                REAL_EXTERNAL_API_SOURCES: entries.filter((item) => item.source_status === 'ACTIVE API').length,
+                AUTOMATED_PRODUCTION_SOURCES: entries.filter((item) => item.AUTOMATED_REFRESH === true).length,
+                PRODUCTION_REFERENCE_SOURCES: entries.filter((item) => item.source_status === 'LOCAL / VERIFIED REFERENCE').length,
+                LOCAL_ONLY_SOURCES: entries.filter((item) => item.source_status === 'LOCAL / UNVERIFIED').length,
+                BLOCKED_SOURCES: entries.filter((item) => item.source_status === 'BLOCKED').length,
+                TEST_ONLY_SOURCES: entries.filter((item) => item.source_status === 'INTERNAL').length,
+              } : null;
+              const statusMap: Record<string, string> = {
+                'ACTIVE API': 'PRODUCTION_ACTIVE', 'LOCAL / VERIFIED REFERENCE': 'PRODUCTION_REFERENCE',
+                'LOCAL / UNVERIFIED': 'LOCAL_UNVERIFIED', INTERNAL: 'INTERNAL', BLOCKED: 'PRODUCTION_BLOCKED',
+                'UNAVAILABLE / UNVERIFIED': 'UNAVAILABLE_UNVERIFIED',
+              };
+              const reasonCodes = new Set(['LOCAL_ARTIFACT_ABSENT', 'LOCAL_PROVENANCE_UNVERIFIED', 'ACCESS_BLOCKED', 'COUNT_NOT_APPLICABLE', 'TIMESTAMP_UNAVAILABLE', 'EVIDENCE_UNKNOWN']);
+              const recordsValid = !!entries && entries.every((item) => {
+                const countValid = (typeof item?.database_records === 'number' && Number.isInteger(item.database_records) && item.database_records >= 0) || item?.database_records === null;
+                const timestampValid = item?.latest_source_timestamp === null || typeof item?.latest_source_timestamp === 'string';
+                const missingEvidenceHasReason = (item?.database_records === null || item?.latest_source_timestamp === null)
+                  ? reasonCodes.has(item?.reason_code)
+                  : true;
+                return !!item && typeof item.source_id === 'string' && statusMap[item.source_status] === item.production_status &&
+                  typeof item.SOURCE_EXISTS === 'boolean' && countValid && timestampValid && missingEvidenceHasReason;
+              });
+              const reconciled = !!expectedCounts && Object.entries(expectedCounts).every(([key, value]) => sources.production_counts?.[key] === value) &&
+                sources.total_sources_evaluated === entries!.length && recordsValid;
+              const valid = !!entries && reconciled && !!metrics && ['healthy', 'degraded'].includes(metrics.status) && !!metrics.pipeline && typeof metrics.pipeline === 'object' &&
+                !!scheduler && typeof scheduler.scheduler_active === 'boolean' && !!scheduler.sources && typeof scheduler.sources === 'object';
+              const status = !valid ? 'UNKNOWN' : scheduler.scheduler_active === false ? 'INACTIVE' : metrics.status === 'healthy' && metrics.alert_level === 'INFO' ? 'HEALTHY' : metrics.status === 'degraded' ? 'DEGRADED' : 'PARTIAL';
+              const color = status === 'HEALTHY' ? 'text-emerald-700 bg-emerald-50' : status === 'UNKNOWN' ? 'text-slate-700 bg-slate-100' : 'text-amber-800 bg-amber-50';
+              const number = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? value : '—';
+              return <>
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">System Health & Observability</h2>
+                      <p className="text-xs text-slate-500 mt-1">Status uses source, metrics, and scheduler responses.</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
-                      <div>
-                        <span className="text-slate-400 block">โหมดการดึงข้อมูล:</span>
-                        <span className="font-mono font-medium text-slate-700">EXTERNAL_API (15 นาที)</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">สถานีในฐานข้อมูล:</span>
-                        <span className="font-bold text-slate-900">
-                          {systemHealthData?.sources?.sources?.thaiwater_rid_runoff?.database_records ?? 26} สถานี (จ.ปราจีนบุรี)
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">เวลาตรวจวัดล่าสุด:</span>
-                        <span className="font-mono text-slate-700">
-                          {systemHealthData?.sources?.sources?.thaiwater_rid_runoff?.latest_source_timestamp
-                            ? new Date(systemHealthData.sources.sources.thaiwater_rid_runoff.latest_source_timestamp).toLocaleString('th-TH')
-                            : 'ตามรอบตรวจวัด'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">Circuit Breaker:</span>
-                        <span className="font-mono font-semibold text-emerald-600">
-                          {systemHealthData?.sources?.sources?.thaiwater_rid_runoff?.circuit_breaker?.state ?? 'CLOSED'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-2xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
-                    <button
-                      onClick={() => handleTriggerSource('thaiwater_rid_runoff')}
-                      disabled={triggeringSource === 'thaiwater_rid_runoff'}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold flex items-center gap-1 transition disabled:opacity-50"
-                    >
-                      <Play className="w-3 h-3" />
-                      <span>{triggeringSource === 'thaiwater_rid_runoff' ? 'กำลังดึงข้อมูล...' : 'ดึงข้อมูลเดี๋ยวนี้'}</span>
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${color}`}>{status}</div>
+                    <button onClick={fetchSystemHealth} disabled={healthLoading} className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold disabled:opacity-50">
+                      <RefreshCw className={`w-3.5 h-3.5 inline mr-1 ${healthLoading ? 'animate-spin' : ''}`} />{healthLoading ? 'Loading' : 'Refresh'}
                     </button>
                   </div>
+                  {!valid && <p role="status" className="text-sm text-slate-600">Health evidence is unavailable or malformed.</p>}
+                  {valid && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100"><div className="text-xs text-slate-500">Scheduler</div><div className="font-semibold">{scheduler.scheduler_active ? 'ACTIVE' : 'INACTIVE'}</div><div className="text-xs text-slate-500">{scheduler.system_time ?? 'Timestamp unavailable'}</div></div>
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100"><div className="text-xs text-slate-500">Pipeline</div><div className="font-semibold">{metrics.status.toUpperCase()}</div><div className="text-xs text-slate-500">Processed: {number(metrics.pipeline.total_processed)} · Failed: {number(metrics.pipeline.failed_ingestions)}</div></div>
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100"><div className="text-xs text-slate-500">Source records</div><div className="font-semibold">{entries!.length}</div><div className="text-xs text-slate-500">Counts reconcile with source records.</div></div>
+                  </div>}
+                  {valid && Array.isArray(metrics.alert_reasons) && metrics.alert_reasons.length > 0 && <ul className="text-sm text-amber-800 list-disc pl-5">{metrics.alert_reasons.map((reason: string, index: number) => <li key={index}>{reason}</li>)}</ul>}
                 </div>
-
-                {/* ThaiWater Rainfall */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <CloudRain className="w-4 h-4 text-orange-600" />
-                          <h4 className="font-bold text-sm text-slate-900">ThaiWater — ปริมาณน้ำฝน (Rainfall Observations)</h4>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">สถาบันสารสนเทศทรัพยากรน้ำ (องค์การมหาชน) - สสน.</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        🟢 กำลังอัปเดตอัตโนมัติ
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
-                      <div>
-                        <span className="text-slate-400 block">โหมดการดึงข้อมูล:</span>
-                        <span className="font-mono font-medium text-slate-700">EXTERNAL_API (15 นาที)</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">สถานีในฐานข้อมูล:</span>
-                        <span className="font-bold text-slate-900">
-                          {systemHealthData?.sources?.sources?.thaiwater_rainfall?.database_records ?? 77} สถานี (จ.ปราจีนบุรี)
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">เวลาตรวจวัดล่าสุด:</span>
-                        <span className="font-mono text-slate-700">
-                          {systemHealthData?.sources?.sources?.thaiwater_rainfall?.latest_source_timestamp
-                            ? new Date(systemHealthData.sources.sources.thaiwater_rainfall.latest_source_timestamp).toLocaleString('th-TH')
-                            : 'ตามรอบตรวจวัด'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">Circuit Breaker:</span>
-                        <span className="font-mono font-semibold text-emerald-600">
-                          {systemHealthData?.sources?.sources?.thaiwater_rainfall?.circuit_breaker?.state ?? 'CLOSED'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-2xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
-                    <button
-                      onClick={() => handleTriggerSource('thaiwater_rainfall')}
-                      disabled={triggeringSource === 'thaiwater_rainfall'}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold flex items-center gap-1 transition disabled:opacity-50"
-                    >
-                      <Play className="w-3 h-3" />
-                      <span>{triggeringSource === 'thaiwater_rainfall' ? 'กำลังดึงข้อมูล...' : 'ดึงข้อมูลเดี๋ยวนี้'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Reference & Blocked Sources */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Reference Data */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
-                <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <Database className="w-4 h-4 text-indigo-600" /> ชุดข้อมูลอ้างอิงภายใน (Reference Datasets)
-                </h3>
-                <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">DIW ผู้ประกอบกิจการกำจัดของเสียอันตราย</div>
-                      <div className="text-slate-500 mt-0.5">กรมโรงงานอุตสาหกรรม (1,326 โรงงาน)</div>
-                      <div className="text-amber-800 bg-amber-50 rounded px-2 py-0.5 mt-1 inline-block text-2xs border border-amber-200">
-                        ข้อมูลอ้างอิงทางการ — พฤษภาคม 2563 (ไม่ใช่ข้อพิสูจน์มลพิษ)
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
-                      🔵 ข้อมูลอ้างอิง
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">DWR โครงข่ายทางน้ำและลุ่มน้ำปราจีนบุรี</div>
-                      <div className="text-slate-500 mt-0.5">กรมทรัพยากรน้ำ (3 เครือข่ายทางน้ำ)</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
-                      🔵 ข้อมูลอ้างอิง
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">DOPA ข้อมูลหมู่บ้าน / MOPH สถานพยาบาล</div>
-                      <div className="text-slate-500 mt-0.5">กรมการปกครอง (65 หมู่บ้าน) / สธ. (11 โรงพยาบาล)</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
-                      🔵 ข้อมูลอ้างอิง
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Blocked / Inaccessible Sources */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
-                <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-slate-400" /> แหล่งข้อมูลที่ยังรอการอนุญาต (Pending / Blocked)
-                </h3>
-                <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">GISTDA — ขอบเขตน้ำท่วมจากดาวเทียม</div>
-                      <div className="text-slate-500 mt-0.5">ต้องใช้กุญแจ API องค์กรระดับสูง</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
-                      ⚪ ยังรอการอนุญาต
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">TMD — เรดาร์ตรวจวัดกลุ่มฝนความละเอียดสูง</div>
-                      <div className="text-slate-500 mt-0.5">กรมอุตุนิยมวิทยา</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
-                      ⚪ ยังรอการอนุญาต
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-slate-800">PCD — คุณภาพน้ำในแหล่งน้ำผิวดิน</div>
-                      <div className="text-slate-500 mt-0.5">กรมควบคุมมลพิษ</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
-                      ⚪ ยังรอการอนุญาต
-                    </span>
-                  </div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-100 text-slate-600 text-2xs leading-relaxed">
-                  <strong>หลักการ Fail-Closed:</strong> ระบบ FloodTrace จะไม่สร้างหรือสังเคราะห์ข้อมูลจำลอง (Mock) มาทดแทนแหล่งข้อมูลที่ไม่สามารถเข้าถึงได้เด็ดขาด
-                </div>
-              </div>
-            </div>
+                {valid && <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm"><h3 className="font-bold text-sm mb-3">Source evidence</h3><div className="space-y-2">{entries!.map((source: any) => <div key={source.source_id} className="grid grid-cols-1 md:grid-cols-4 gap-2 border-b border-slate-100 py-2 text-xs"><span className="font-semibold">{source.source_name}</span><span>{source.source_status}</span><span>Records: {number(source.database_records)}</span><span>{source.latest_source_timestamp ?? source.reason_code ?? 'Timestamp unavailable'}</span></div>)}</div></div>}
+              </>;
+            })()}
           </div>
         )}
       </main>

@@ -1,4 +1,6 @@
 # การแสดงผลแผนที่เชิงพื้นที่ (MAP VISUALIZATION ARCHITECTURE)
+
+> **P0-1 current map contract:** This note supersedes contradictory claims that code-authored geometry is verified or current; historical audits remain unchanged. Public map boundary, priority surface, zones, forecast extent, and waterways return empty geometry while provenance is unverified or source access is blocked. Hand-authored district/subdistrict centroids are not rendered. Actual eligible telemetry and community observations remain separate evidence classes. P0-3 owns media delivery; P0-5 owns authentication and SSE.
 **ระบบ:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
 **เครื่องมือแสดงผลหลัก:** MapLibre GL JS v6.11.2  
 **รูปแบบข้อมูลเชิงพื้นที่:** GeoJSON Vector Features & Continuous Voronoi Polygons

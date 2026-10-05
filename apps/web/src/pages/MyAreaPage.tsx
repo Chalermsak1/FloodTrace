@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Bell, 
   Plus, 
   Trash2, 
   MapPin, 
@@ -12,9 +11,18 @@ import {
   Compass, 
   ShieldCheck,
   CheckCircle2,
-  BellRing,
   X
 } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
+import { FeedbackState } from '../components/ui/FeedbackState';
+import { EvidenceLabel } from '../components/ui/EvidenceLabel';
+import {
+  fetchDistrictSummary,
+  formatSummaryCount,
+  getSummaryText,
+  type DistrictSummaryState,
+  type PublicAreaSummary,
+} from './myAreaSummary';
 
 const ALL_DISTRICTS = [
   'กบินทร์บุรี',
@@ -26,31 +34,24 @@ const ALL_DISTRICTS = [
   'ศรีมโหสถ'
 ];
 
-interface AreaStatusMap {
-  [district: string]: {
-    priority: string;
-    priorityLabel: string;
-    watchStatus: string;
-    lastUpdated: string;
-    alertEnabled: boolean;
-  };
-}
-
 export const MyAreaPage: React.FC = () => {
   // Followed districts stored in localStorage
   const [savedDistricts, setSavedDistricts] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('ruwaigon_followed_areas');
-      return stored ? JSON.parse(stored) : ['บ้านสร้าง', 'กบินทร์บุรี'];
+      if (!stored) return [];
+      const parsed: unknown = JSON.parse(stored);
+      return Array.isArray(parsed) ? [...new Set(parsed.filter((item): item is string => typeof item === 'string' && ALL_DISTRICTS.includes(item)))] : [];
     } catch {
-      return ['บ้านสร้าง', 'กบินทร์บุรี'];
+      return [];
     }
   });
 
-  const [areaDetails, setAreaDetails] = useState<AreaStatusMap>({});
+  const [districtSummaries, setDistrictSummaries] = useState<Record<string, DistrictSummaryState>>({});
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const addAreaTriggerRef = useRef<HTMLButtonElement>(null);
+  const addAreaDialogRef = useRef<HTMLDivElement>(null);
   const [selectedToAdd, setSelectedToAdd] = useState<string>('เมืองปราจีนบุรี');
-  const [loading, setLoading] = useState<boolean>(true);
 
   // Sync to localStorage
   useEffect(() => {
@@ -61,32 +62,50 @@ export const MyAreaPage: React.FC = () => {
     }
   }, [savedDistricts]);
 
-  // Fetch status for all followed districts
+  // Fetch the sanitized public summary independently for every saved district.
   useEffect(() => {
-    setLoading(true);
-    fetch('/api/public/zones')
-      .then(res => res.json())
-      .then(data => {
-        const statusMap: AreaStatusMap = {};
-        if (data?.features) {
-          data.features.forEach((f: any) => {
-            const props = f.properties;
-            statusMap[props.district] = {
-              priority: props.verification_priority,
-              priorityLabel: props.verification_priority_label,
-              watchStatus: props.watch_status,
-              lastUpdated: '02 ต.ค. 2569 22:00 น.',
-              alertEnabled: true
-            };
-          });
-        }
-        setAreaDetails(statusMap);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
+    let active = true;
+    setDistrictSummaries(Object.fromEntries(savedDistricts.map(district => [district, { status: 'loading' }])));
+
+    Promise.all(savedDistricts.map(async district => [district, await fetchDistrictSummary(district)] as const))
+      .then(entries => {
+        if (active) setDistrictSummaries(Object.fromEntries(entries));
       });
-  }, []);
+
+    return () => { active = false; };
+  }, [savedDistricts]);
+
+  useEffect(() => {
+    if (!showAddModal) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const focusable = () => addAreaDialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex="0"]',
+    );
+    const handleDialogKeys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowAddModal(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    requestAnimationFrame(() => focusable()?.[0]?.focus());
+    document.addEventListener('keydown', handleDialogKeys);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeys);
+      previousFocus?.focus();
+    };
+  }, [showAddModal]);
 
   const handleAddArea = () => {
     if (!savedDistricts.includes(selectedToAdd)) {
@@ -99,51 +118,39 @@ export const MyAreaPage: React.FC = () => {
     setSavedDistricts(savedDistricts.filter(item => item !== d));
   };
 
-  const toggleNotification = (district: string) => {
-    setAreaDetails(prev => ({
-      ...prev,
-      [district]: {
-        ...prev[district],
-        alertEnabled: !prev[district]?.alertEnabled
-      }
-    }));
-  };
-
   const getPriorityBadgeClass = (priority: string) => {
     if (priority === 'สูงมาก') return 'bg-rose-100 text-rose-800 border-rose-200';
     if (priority === 'สูง') return 'bg-red-50 text-red-700 border-red-200';
     if (priority === 'ปานกลาง') return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
   };
 
+  const unavailable = 'ไม่มีข้อมูล';
+  const field = (label: string, value: React.ReactNode) => (
+    <div className="min-w-0 space-y-0.5">
+      <dt className="text-xs font-medium text-slate-500">{label}</dt>
+      <dd className="break-words [overflow-wrap:anywhere] text-sm text-slate-700">{value}</dd>
+    </div>
+  );
+
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <div className="rw-page-shell space-y-5">
       
       {/* Page Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-2 border border-blue-100">
-            <Compass className="w-3.5 h-3.5" />
-            <span>การติดตามสถานะพื้นที่ส่วนบุคคล</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
-            พื้นที่ของฉัน
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-1">
-            ปักหมุดติดตามตำบลและอำเภอที่คุณสนใจ เพื่อรับการแจ้งเตือนการเปลี่ยนแปลงสถานการณ์น้ำและสิ่งแวดล้อม
-          </p>
-        </div>
-
-        {/* Primary Action Button */}
-        <button
+      <PageHeader
+        eyebrow="บันทึกไว้ในอุปกรณ์นี้"
+        title="พื้นที่ของฉัน"
+        description="เลือกอำเภอในจังหวัดปราจีนบุรีเพื่อบันทึกไว้ดูข้อมูลที่ระบบรายงานได้ พร้อมสถานะและข้อจำกัด"
+        actions={<button
+          ref={addAreaTriggerRef}
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="px-6 py-3 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
+          className="px-4 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 min-h-[48px]"
         >
           <Plus className="w-5 h-5" />
-          <span>+ เพิ่มพื้นที่ติดตาม</span>
-        </button>
-      </div>
+          <span>เพิ่มพื้นที่</span>
+        </button>}
+      />
 
       {/* Followed Area Cards Grid (Section 25: Clean cards, NO large charts) */}
       <div className="space-y-4">
@@ -156,84 +163,97 @@ export const MyAreaPage: React.FC = () => {
             <MapPin className="w-8 h-8 text-slate-300 mx-auto" />
             <h3 className="font-bold text-slate-700 text-base">ยังไม่มีพื้นที่ที่ติดตาม</h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              กดปุ่ม "+ เพิ่มพื้นที่ติดตาม" เพื่อเลือกอำเภอในจังหวัดปราจีนบุรีที่คุณต้องการเฝ้าระวัง
+              ใช้ปุ่ม “เพิ่มพื้นที่” เพื่อเลือกอำเภอที่ต้องการบันทึก
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {savedDistricts.map(districtName => {
-              const status = areaDetails[districtName] || {
-                priority: 'กำลังประเมิน',
-                priorityLabel: 'ระดับเฝ้าระวัง',
-                watchStatus: 'ติดตามสถานการณ์',
-                lastUpdated: 'วันนี้',
-                alertEnabled: true
-              };
+              const state = districtSummaries[districtName] || { status: 'loading' };
+              const summary = state.status === 'populated' ? state.summary : null;
+              const priority = summary ? getSummaryText(summary.verification_priority) : null;
+              const category = summary ? getSummaryText(summary.provenance?.category) : null;
+              const supportedCategory = category === 'OFFICIAL' || category === 'COMMUNITY' || category === 'MODEL'
+                ? category
+                : null;
 
               return (
                 <div
                   key={districtName}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-subtle hover:shadow-card transition-all flex flex-col justify-between space-y-4"
+                  className="min-w-0 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-subtle hover:shadow-card transition-all flex flex-col justify-between space-y-4"
                 >
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#0C65E8]" />
-                        <h3 className="text-lg font-bold text-[#063B70]">
-                          อำเภอ{districtName}
+                        <MapPin className="w-4 h-4 shrink-0 text-[#0C65E8]" />
+                        <h3 className="min-w-0 break-words text-lg font-bold text-[#063B70]">
+                          อำเภอ{summary?.district || districtName}
                         </h3>
                       </div>
-                      <span className="text-sm text-slate-500 mt-0.5 block">
-                        จังหวัดปราจีนบุรี
+                    </div>
+
+                    <div className="ml-2 flex max-w-[48%] shrink-0 flex-col items-end gap-1">
+                      {supportedCategory
+                        ? <EvidenceLabel family={supportedCategory} detail={getSummaryText(summary?.provenance?.category_th) || undefined} />
+                        : <span className="text-xs text-slate-500">ประเภทข้อมูล: {unavailable}</span>}
+                      <span className={`max-w-full break-words rounded-full border px-3 py-1 text-right text-xs font-semibold ${getPriorityBadgeClass(priority || '')}`}>
+                        {priority || unavailable}
                       </span>
                     </div>
-
-                    {/* Current Watch Level Badge */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityBadgeClass(status.priority)}`}>
-                      {status.priority || 'ระดับเฝ้าระวังต่ำ'}
-                    </span>
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-slate-400" />
-                      <span>อัปเดตล่าสุด: {status.lastUpdated}</span>
+                  {state.status === 'loading' && (
+                    <div role="status" className="rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-sm text-slate-600">
+                      กำลังโหลดสรุปของอำเภอนี้…
                     </div>
-                    <span className="text-slate-600 font-medium">
-                      {status.watchStatus}
-                    </span>
-                  </div>
+                  )}
+                  {state.status === 'error' && (
+                    <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">
+                      โหลดสรุปของอำเภอนี้ไม่สำเร็จ ข้อมูลยังไม่พร้อมใช้งาน
+                    </div>
+                  )}
+                  {state.status === 'unavailable' && (
+                    <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900">
+                      สรุปของอำเภอนี้ไม่มีข้อมูลที่พร้อมแสดง
+                    </div>
+                  )}
+                  {summary && (
+                    <dl className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3.5">
+                      {field('สถานะพื้นที่', getSummaryText(summary.current_status) || unavailable)}
+                      {field('จำนวนรายงานจากประชาชน', formatSummaryCount(summary.community_observation_count) ?? unavailable)}
+                      {field('สรุปรายงานจากประชาชน', getSummaryText(summary.community_observation_summary) || unavailable)}
+                      {field('สถานะน้ำท่วม', getSummaryText(summary.flood_status) || unavailable)}
+                      {field('การเก็บตัวอย่างจากหน่วยงาน', getSummaryText(summary.official_sampling_status) || unavailable)}
+                      {field('สรุปการเฝ้าระวังจากพยากรณ์', getSummaryText(summary.forecast_watch_summary) || unavailable)}
+                      {field('ความเชื่อมั่นของข้อมูล', getSummaryText(summary.data_confidence) || unavailable)}
+                      {field('ความสดใหม่ของข้อมูล', getSummaryText(summary.data_freshness) || unavailable)}
+                      {field(
+                        'ปรับปรุงล่าสุด',
+                        <span className="inline-flex min-w-0 items-start gap-1.5">
+                          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                          <span>{getSummaryText(summary.last_updated) || unavailable}</span>
+                        </span>,
+                      )}
+                    </dl>
+                  )}
 
-                  {/* Footer Action & Notification Toggle */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                    
-                    {/* Notification toggle */}
-                    <button
-                      type="button"
-                      onClick={() => toggleNotification(districtName)}
-                      className={`text-sm font-semibold flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-colors ${
-                        status.alertEnabled
-                          ? 'text-[#0C65E8] bg-blue-50'
-                          : 'text-slate-400 bg-slate-100'
-                      }`}
-                    >
-                      <BellRing className="w-4 h-4" />
-                      <span>{status.alertEnabled ? 'แจ้งเตือนเปิดอยู่' : 'ปิดแจ้งเตือน'}</span>
-                    </button>
+                  {/* Saved area actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500"><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> บันทึกในอุปกรณ์นี้</span>
 
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleRemoveArea(districtName)}
                         aria-label={`ยกเลิกติดตามอำเภอ${districtName}`}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:text-rose-600 rounded-lg hover:bg-slate-50 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
 
                       <Link
                         to={`/area-detail?district=${encodeURIComponent(districtName)}`}
-                        className="text-sm font-semibold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 py-1 px-2"
+                        className="inline-flex min-h-11 items-center gap-1 break-words py-1 px-2 text-sm font-semibold text-[#0C65E8] hover:text-[#063B70]"
                       >
                         <span>ดูรายละเอียด</span>
                         <ChevronRight className="w-4 h-4" />
@@ -249,52 +269,15 @@ export const MyAreaPage: React.FC = () => {
       </div>
 
       {/* Section 2: Recent Important Changes (Section 25) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-          <Bell className="w-5 h-5 text-[#0C65E8]" />
-          <h2 className="text-lg font-bold text-[#063B70]">การแจ้งเตือนล่าสุดในพื้นที่ของคุณ</h2>
-        </div>
-
-        <div className="space-y-3">
-          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-950 space-y-1">
-              <div className="font-bold text-base text-amber-900">
-                อ.บ้านสร้าง: มีมวลน้ำหลากระบายลงสู่ทุ่งรับน้ำตามฤดูกาล
-              </div>
-              <p className="text-slate-600 leading-relaxed text-sm">
-                สถานีตรวจวัดระดับน้ำปากคลองบางพลวงบันทึกระดับน้ำเพิ่มขึ้น 12 ซม. ใน 24 ชม. ที่ผ่านมา แนะนำเกษตรกรเฝ้าระวังแปลงเพาะเลี้ยง
-              </p>
-              <div className="text-xs text-slate-500 pt-1">
-                2 ชั่วโมงที่ผ่านมา • OFFICIAL กรมชลประทาน
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-[#0C65E8] shrink-0 mt-0.5" />
-            <div className="text-sm text-slate-800 space-y-1">
-              <div className="font-bold text-base text-[#063B70]">
-                อ.กบินทร์บุรี: รายงานผลตรวจคุณภาพน้ำผิวดินรอบประจำเดือน
-              </div>
-              <p className="text-slate-600 leading-relaxed text-sm">
-                สำนักงานสิ่งแวดล้อมและควบคุมมลพิษที่ 7 (สคพ.7) เผยแพร่ผลวิเคราะห์ตัวอย่างน้ำจุดบรรจบแม่น้ำพระปรง-หนุมาน อยู่ในเกณฑ์มาตรฐานแหล่งน้ำประเภท 3
-              </p>
-              <div className="text-xs text-slate-500 pt-1">
-                เมื่อวานนี้ • OFFICIAL กรมควบคุมมลพิษ
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FeedbackState kind="unavailable" title="การแจ้งเตือนยังไม่พร้อมให้บริการ" detail="การบันทึกพื้นที่เก็บไว้ในอุปกรณ์นี้ และไม่ได้เปิดการส่งการแจ้งเตือน" />
 
       {/* Add Area Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+          <div ref={addAreaDialogRef} role="dialog" aria-modal="true" aria-labelledby="add-area-title" tabIndex={-1} className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto border border-slate-200 shadow-2xl space-y-4">
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-[#063B70]">เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี</h3>
+              <h3 id="add-area-title" className="font-bold text-lg text-[#063B70]">เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}

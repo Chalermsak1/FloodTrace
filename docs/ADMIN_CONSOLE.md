@@ -1,7 +1,9 @@
 # คู่มือการใช้งานคอนโซลปฏิบัติการเจ้าหน้าที่ (Staff Operations Console Manual)
+
+> **Current staff-console contract:** Staff health uses source, metrics, and scheduler responses; missing or malformed data is `UNKNOWN`, and stopped scheduling is `INACTIVE`. Verification inputs normalize blanks to null; status changes require matching evidence. The console uses the existing active `staff_admin_01` / `admin_user` `ADMIN` database record and accepts `X-Admin-Key` or bearer credentials. This is a shared containment principal, not per-person identity assurance. Console updates are request-driven with explicit refresh; it does not use query-token SSE.
 **ระบบ:** FloodTrace Internal Operations  
 **URL เข้าถึง:** `/admin/reports`  
-**สถานะ:** Production-Ready Operational System  
+**สถานะ:** Staff operations console with fixed-principal containment
 
 ---
 
@@ -26,7 +28,7 @@ FloodTrace Staff Operations Console ได้รับการออกแบ�
    - ส่วนพับเก็บได้ 8 ส่วน (Collapsible Accordions):
      1. ข้อความดั้งเดิมจากประชาชน (Preserved Submission)
      2. พิกัดและขอบเขตพื้นที่ตรวจสอบ (Exact GPS & Public Generalized)
-     3. หลักฐานที่ได้รับ (Secure Evidence Viewer พร้อมการลบ EXIF)
+     3. หลักฐานที่ได้รับ (sanitized private media ผ่าน report-bound staff endpoint; ต้องมี `view_reports`; การเปิดดูถูกบันทึก audit)
      4. ข้อมูลระบบประกอบการตรวจสอบ (System Context Telemetry)
      5. บันทึกการพิสูจน์ข้อเท็จจริง (Structured 6-Dimension Verification)
      6. การส่งต่อหน่วยงานภายนอก (Escalation Records)
@@ -35,11 +37,11 @@ FloodTrace Staff Operations Console ได้รับการออกแบ�
 
 ---
 
-## 2. การทำงานแบบเรียลไทม์ (Real-Time SSE Synchronization)
+## 2. การอัปเดตข้อมูล
 
-ระบบเชื่อมต่อกับ Server-Sent Events (SSE) ผ่าน endpoint `/api/v1/admin/events`:
-- เมื่อมีรายงานใหม่ หรือมีการเปลี่ยนสถานะ มอบหมายงาน หรือพิสูจน์ข้อเท็จจริง คอนโซลของเจ้าหน้าที่ทุกคนจะได้รับการอัปเดตทันทีโดยไม่ต้องกดรีเฟรช
-- จุดแสดงสถานะมุมขวาบนจะแสดง **"🟢 เรียลไทม์ (SSE Connected)"** เพื่อยืนยันการเชื่อมต่อ
+คอนโซลโหลดข้อมูลตามคำขอ และเจ้าหน้าที่กดปุ่มรีเฟรชเพื่อโหลดคิว สรุป และรายละเอียดปัจจุบันอีกครั้ง ไม่มีการอ้างว่าหน้าจออัปเดตต่อเนื่องแบบเรียลไทม์
+
+เส้นทาง `/api/v1/admin/events` ไม่รับ credential ผ่าน query string; เบราว์เซอร์ `EventSource` ของคอนโซลไม่ได้เชื่อมต่อเส้นทางนี้
 
 ---
 

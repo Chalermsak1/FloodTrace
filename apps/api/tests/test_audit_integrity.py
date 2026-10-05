@@ -281,17 +281,11 @@ def test_live_api_endpoints_provenance():
 
     # 3. Factories (DIW)
     resp_fac = client.get("/api/v1/factories/?limit=5")
-    assert resp_fac.status_code == 200
-    factories = resp_fac.json()
-    if len(factories) > 0:
-        prov_fac = factories[0]["provenance"]
-        assert "112 facilities in the DIW May 2020 dataset snapshot" in prov_fac["audit_notes"]
+    assert resp_fac.status_code == 404
 
     # 4. Risk Hotspots
     resp_hotspots = client.get("/api/v1/risk/hotspots?limit=5")
-    assert resp_hotspots.status_code == 200
-    data_hotspots = resp_hotspots.json()
-    assert "hotspots" in data_hotspots
+    assert resp_hotspots.status_code == 404
 
     # 5. Forecast
     resp_fc = client.get("/api/v1/forecast/?station=prachin_mueang")
@@ -311,4 +305,3 @@ def test_live_api_endpoints_provenance():
     if len(reports) > 0:
         prov_rep = reports[0]["provenance"]
         assert prov_rep["category"] in ["CITIZEN_REPORTED", "TEST_DEMO", "COMMUNITY"]
-

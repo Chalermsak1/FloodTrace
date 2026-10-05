@@ -31,6 +31,7 @@ from apps.api.app.models.entities import (
     WaterLevelObservation,
     RainfallObservation
 )
+from apps.api.app.core.publication import public_report_predicate
 
 logger = logging.getLogger(__name__)
 
@@ -271,10 +272,10 @@ class SpatialMonitoringService:
 
         # 2. Fetch Real Citizen Reports (only public visible, not suppressed/rejected, excluding test fixtures)
         public_reports = db.query(CitizenReport).filter(
+            public_report_predicate(),
             CitizenReport.public_latitude.isnot(None),
             CitizenReport.public_longitude.isnot(None),
             CitizenReport.status.notin_(["REJECTED", "SPAM", "DISMISSED"]),
-            CitizenReport.publication_state != "SUPPRESSED",
             CitizenReport.verification_status.notin_(["TEST_DEMO", "REJECTED"]),
             CitizenReport.reporter_role != "TEST/DEMO",
             not_(CitizenReport.reporter_name.ilike("%Test%")),

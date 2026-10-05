@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -12,11 +11,16 @@ from apps.api.app.models.entities import CitizenReport, SecurityAuditLog
 from apps.api.app.core.provenance import make_provenance, DataCategory, SourceVerification, ValueNature
 from apps.api.app.core.security import generalize_coordinates, sanitize_and_strip_exif_image, validate_prachin_coordinates
 from apps.api.app.core.config import settings
+from apps.api.app.core.publication import public_report_predicate
+from apps.api.app.core.private_media import (
+    PrivateMediaNotFound,
+    PrivateMediaUnavailable,
+    normalize_media_reference,
+    read_private_media,
+    write_private_media,
+)
 
 router = APIRouter(prefix="/reports", tags=["Citizen Evidence & Crowdsourcing"])
-
-UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../data/uploads"))
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # In-memory idempotency cache for duplicate submission prevention (Section 18)
 IDEMPOTENCY_CACHE: dict[str, tuple[float, dict]] = {}
@@ -54,14 +58,13 @@ def get_public_reports(
     - Status is clearly labeled UNVERIFIED or UNDER_REVIEW until certified by human authorities.
     - TEST/DEMO records are strictly isolated and never shown on public dashboard in production.
     """
-    query = db.query(CitizenReport)
+    query = db.query(CitizenReport).filter(public_report_predicate())
     # Strictly exclude TEST/DEMO records from public dashboard
     if not (include_demo and settings.DATA_ENV != "PRODUCTION" and not settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION):
         query = query.filter(
             CitizenReport.verification_status != "TEST_DEMO",
             CitizenReport.review_status != "TEST_DEMO",
-            CitizenReport.reporter_role != "TEST/DEMO",
-            CitizenReport.publication_state != "WITHHELD"
+            CitizenReport.reporter_role != "TEST/DEMO"
         )
     if district:
         query = query.filter(CitizenReport.district.ilike(f"%{district}%"))
@@ -80,7 +83,7 @@ def get_public_reports(
             "water_flow_speed": r.water_flow_speed,
             "contamination_signs": r.contamination_signs,
             "description": r.description,
-            "photo_url": r.photo_url,
+            "photo_url": f"/api/public/reports/{r.id}/media" if r.photo_url else None,
             "verification_status": r.verification_status,
             "review_status": r.review_status,
             "created_at": r.created_at.isoformat() if r.created_at else None,
@@ -117,6 +120,16 @@ def submit_citizen_report(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="พิกัดที่ระบุอยู่นอกพื้นที่ลุ่มน้ำจังหวัดปราจีนบุรีที่รองรับ (กรุณาระบุพิกัดในพื้นที่จริง)"
         )
+
+    photo_reference = None
+    if data.photo_url and data.photo_url.strip():
+        try:
+            photo_reference = normalize_media_reference(data.photo_url)
+            read_private_media(photo_reference)
+        except PrivateMediaUnavailable:
+            raise HTTPException(status_code=503, detail="Private media storage unavailable")
+        except PrivateMediaNotFound:
+            raise HTTPException(status_code=400, detail="Invalid or unavailable media reference")
 
     report_id = f"rpt_{uuid.uuid4().hex[:8]}"
     
@@ -159,7 +172,7 @@ def submit_citizen_report(
         water_flow_speed=data.water_flow_speed,
         contamination_signs=data.contamination_signs,
         description=data.description,
-        photo_url=data.photo_url,
+        photo_url=photo_reference,
         verification_status="UNVERIFIED", # Enforces Section 10: initial state is UNVERIFIED
         review_status="PENDING_REVIEW",
         created_at=datetime.now(timezone.utc),
@@ -207,14 +220,17 @@ async def upload_evidence_photo(photo: UploadFile = File(...)):
         content, max_bytes=settings.MAX_UPLOAD_SIZE_BYTES
     )
     
-    dest_path = os.path.join(UPLOAD_DIR, filename)
-    with open(dest_path, "wb") as f:
-        f.write(clean_bytes)
+    try:
+        write_private_media(clean_bytes, filename)
+    except PrivateMediaUnavailable:
+        raise HTTPException(status_code=503, detail="Private media storage unavailable")
+    except PrivateMediaNotFound:
+        raise HTTPException(status_code=409, detail="Media reference already exists")
         
     return {
         "status": "success",
         "filename": filename,
-        "photo_url": f"/uploads/{filename}",
+        "photo_url": filename,
         "message": "Image verified, EXIF metadata stripped, and saved with randomized filename."
     }
 
@@ -235,6 +251,7 @@ def get_community_observation_clusters(db: Session = Depends(get_db)):
     PROOF_OF_CONTAMINATION
     """
     reports = db.query(CitizenReport).filter(
+        public_report_predicate(),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
         CitizenReport.reporter_role != "TEST/DEMO"

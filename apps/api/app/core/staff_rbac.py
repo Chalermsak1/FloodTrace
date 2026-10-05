@@ -13,12 +13,14 @@ Roles:
 """
 
 from enum import Enum
+import hmac
 from typing import List, Optional, Set
 from fastapi import Request, HTTPException, Depends, Security, status
 from fastapi.security import APIKeyHeader, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from apps.api.app.core.database import get_db
 from apps.api.app.core.config import settings
+from apps.api.app.core.security import reject_prohibited_staff_inputs
 from apps.api.app.models.entities import StaffUser
 
 class StaffRole(str, Enum):
@@ -57,6 +59,7 @@ ROLE_PERMISSIONS: dict[str, Set[StaffRole]] = {
 
 api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error=False)
 bearer_scheme = HTTPBearer(auto_error=False)
+STAFF_CONTAINMENT_USERNAME = "admin_user"
 
 class StaffPrincipal:
     """Authenticated staff context attached to the request."""
@@ -94,68 +97,40 @@ def get_current_staff_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
     db: Session = Depends(get_db)
 ) -> StaffPrincipal:
-    """
-    Resolves the authenticated staff user and enforces role.
-    Accepts:
-    1. X-Admin-Key matching settings.ADMIN_API_KEY with optional X-Staff-User / X-Staff-Role header
-    2. Bearer token matching ADMIN_API_KEY
-    3. Direct lookup in staff_users table if username passed via X-Staff-User
-    """
-    provided_key = None
-    if header_key:
-        provided_key = header_key
-    elif credentials and credentials.credentials:
-        provided_key = credentials.credentials
-    elif request.query_params.get("token"):
-        provided_key = request.query_params.get("token")
-    elif request.query_params.get("key"):
-        provided_key = request.query_params.get("key")
+    """Resolve the fixed active staff principal; caller identity and role are never trusted."""
+    reject_prohibited_staff_inputs(request)
 
-    # Validate key - MUST be valid admin key unconditionally
-    if not provided_key or provided_key != settings.ADMIN_API_KEY:
+    provided_credentials = []
+    if header_key and header_key.strip():
+        provided_credentials.append(header_key)
+    if credentials and credentials.credentials:
+        provided_credentials.append(credentials.credentials)
+    if not provided_credentials or any(not hmac.compare_digest(value, settings.ADMIN_API_KEY) for value in provided_credentials):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Staff authentication required. Provide valid 'X-Admin-Key' or 'Authorization: Bearer <token>'."
         )
-
-    # Optional role/user overrides sent by authorized staff client
-    client_staff_user = request.headers.get("X-Staff-User")
-    client_staff_role = request.headers.get("X-Staff-Role")
-
-    # Look up requested staff user if specified
-    if client_staff_user:
-        staff_record = db.query(StaffUser).filter(StaffUser.username == client_staff_user).first()
-        if staff_record and staff_record.is_active:
-            role = StaffRole(client_staff_role) if (client_staff_role in StaffRole._value2member_map_) else StaffRole(staff_record.role)
-            return StaffPrincipal(
-                user_id=staff_record.id,
-                username=staff_record.username,
-                display_name=staff_record.display_name,
-                role=role,
-                department=staff_record.department,
-                email=staff_record.email
-            )
-
-    # If role is explicitly requested by authenticated client
-    if client_staff_role and client_staff_role in StaffRole._value2member_map_:
-        req_role = StaffRole(client_staff_role)
-        return StaffPrincipal(
-            user_id=f"staff_{req_role.value.lower()}",
-            username=f"{req_role.value.lower()}_user",
-            display_name=f"Staff Operator ({req_role.value})",
-            role=req_role,
-            department="Operations & Verification",
-            email=f"{req_role.value.lower()}@floodtrace.internal"
-        )
-
-    # Default to ADMIN for authenticated key
+    configured_principal_id = settings.STAFF_CONTAINMENT_PRINCIPAL_ID
+    if not configured_principal_id or not configured_principal_id.strip():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Configured staff principal is unavailable.")
+    matches = db.query(StaffUser).filter(StaffUser.id == configured_principal_id).all()
+    if len(matches) != 1:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Configured staff principal is unavailable.")
+    staff_record = matches[0]
+    if (
+        staff_record.id != configured_principal_id
+        or staff_record.username != STAFF_CONTAINMENT_USERNAME
+        or staff_record.role != StaffRole.ADMIN.value
+        or staff_record.is_active is not True
+    ):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Configured staff principal is unavailable.")
     return StaffPrincipal(
-        user_id="staff_admin_01",
-        username="admin_user",
-        display_name="System Administrator (ผู้ดูแลระบบ)",
-        role=StaffRole.ADMIN,
-        department="Executive & Platform Operations",
-        email="admin@floodtrace.internal"
+        user_id=staff_record.id,
+        username=staff_record.username,
+        display_name=staff_record.display_name,
+        role=StaffRole(staff_record.role),
+        department=staff_record.department,
+        email=staff_record.email,
     )
 
 

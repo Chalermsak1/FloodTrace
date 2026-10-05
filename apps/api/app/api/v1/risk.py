@@ -7,6 +7,7 @@ from apps.api.app.core.database import get_db
 from apps.api.app.models.entities import IndustrialFacility, WaterStation
 from apps.api.app.services.risk_engine import run_exposure_screening_pipeline, RIVER_CORRIDORS
 from apps.api.app.adapters.openmeteo import fetch_openmeteo_forecast
+from apps.api.app.core.publication import public_report_predicate
 
 router = APIRouter(prefix="/risk", tags=["Environmental Spatial Exposure Screening"])
 
@@ -255,11 +256,11 @@ async def get_public_area_card(
 
     # 3. Citizen observations (exclude TEST_DEMO)
     reports = db.query(CitizenReport).filter(
+        public_report_predicate(),
         CitizenReport.district.ilike(f"%{target_district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
         CitizenReport.reporter_role != "TEST/DEMO",
-        CitizenReport.publication_state != "WITHHELD"
     ).all()
     citizen_count = len(reports)
 
@@ -432,11 +433,11 @@ async def get_evidence_packet(
 
     stations = db.query(WaterStation).all()
     reports = db.query(CitizenReport).filter(
+        public_report_predicate(),
         CitizenReport.district.ilike(f"%{district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
         CitizenReport.reporter_role != "TEST/DEMO",
-        CitizenReport.publication_state != "WITHHELD"
     ).all()
 
     forecast = await fetch_openmeteo_forecast("prachin_mueang")
@@ -586,11 +587,11 @@ async def get_my_area_summary(
 
     # Query reports (exclude TEST_DEMO)
     reports = db.query(CitizenReport).filter(
+        public_report_predicate(),
         CitizenReport.district.ilike(f"%{district}%"),
         CitizenReport.verification_status != "TEST_DEMO",
         CitizenReport.review_status != "TEST_DEMO",
         CitizenReport.reporter_role != "TEST/DEMO",
-        CitizenReport.publication_state != "WITHHELD"
     ).all()
 
     # Forecast
@@ -643,4 +644,3 @@ async def get_my_area_summary(
         },
         "disclaimer": "This summary does not establish contamination, causation, or criminal responsibility."
     }
-

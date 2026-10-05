@@ -54,6 +54,9 @@ services:
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-https://${DOMAIN:-localhost}}
       ENABLE_SCHEDULER: "true"
       THAIWATER_API_KEY: ${THAIWATER_API_KEY:-}
+      PRIVATE_MEDIA_ROOT: /app/data/private-media
+    volumes:
+      - ruwaigon_private_media:/app/data/private-media
     depends_on:
       db:
         condition: service_healthy
@@ -76,6 +79,8 @@ volumes:
   floodtrace_pgdata:
   floodtrace_caddy_data:
   floodtrace_caddy_config:
+  ruwaigon_private_media:
+    name: ruwaigon_private_media
 
 networks:
   floodtrace_net:

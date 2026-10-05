@@ -3,6 +3,7 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 import os
+from pathlib import Path
 
 class AccessAuthorizationStatus(str, Enum):
     PRIVATE_AUTHORIZED = "PRIVATE_AUTHORIZED"       # Private authenticated channel verified with project credential/MOU
@@ -553,12 +554,18 @@ def evaluate_source_access(
     )
 
 def evaluate_production_eligibility(source_id: str) -> SourceAccessRecord:
-    """Evaluates source under Section 1 Production Data Policy: PRIVATE_AUTHORIZED or OFFICIAL_PUBLIC + VERIFIED_LICENSE."""
-    return evaluate_source_access(
+    """Evaluate access policy without promoting an unimplemented or unverified source."""
+    record = evaluate_source_access(
         source_id,
         enforce_private_production=True,
         allow_official_public=True
     )
+    source_status, _, _ = canonical_source_status(source_id)
+    if source_status not in {"ACTIVE API", "LOCAL / VERIFIED REFERENCE"}:
+        record.production_eligible = False
+        record.verified_license_for_production = False
+        record.ingestion_action = IngestionAction.BLOCK_PRODUCTION_INGESTION
+    return record
 
 def get_all_source_access_evaluations(enforce_private_production: bool = True) -> List[SourceAccessRecord]:
     """Returns evaluation records for all 15 candidate sources in the matrix."""
@@ -573,3 +580,18 @@ def get_all_production_eligibility_evaluations() -> List[SourceAccessRecord]:
         evaluate_production_eligibility(sid)
         for sid in CANDIDATE_SOURCES_REGISTRY.keys()
     ]
+
+
+def canonical_source_status(source_id: str, repo_root: Optional[Path] = None) -> tuple[str, bool, Optional[str]]:
+    """Classify sources from implemented endpoints and artifact presence only."""
+    root = repo_root or Path(__file__).resolve().parents[4]
+    if source_id in {"thaiwater_rid_runoff", "thaiwater_rainfall"}:
+        return "ACTIVE API", True, None
+    if source_id == "diw_industrial_waste":
+        present = (root / "data/prachinburi_industrial_waste_diw.json").is_file()
+        return ("LOCAL / UNVERIFIED", True, "LOCAL_PROVENANCE_UNVERIFIED") if present else ("UNAVAILABLE / UNVERIFIED", False, "LOCAL_ARTIFACT_ABSENT")
+    if source_id == "floodtrace_citizen":
+        return "INTERNAL", True, None
+    if source_id in {"gistda_disaster", "tmd_forecast", "official_dem", "diw_all_factories", "pcd_reo7_inspection", "pcd_water_quality", "dgr_groundwater", "ldd_landuse"}:
+        return "BLOCKED", False, "ACCESS_BLOCKED"
+    return "UNAVAILABLE / UNVERIFIED", False, "LOCAL_ARTIFACT_ABSENT"

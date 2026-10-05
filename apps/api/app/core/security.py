@@ -2,6 +2,7 @@ import io
 import time
 import uuid
 import hashlib
+import hmac
 from typing import Optional, Tuple, Dict, Any
 from datetime import datetime, timezone
 from fastapi import Request, HTTPException, Security, status
@@ -16,7 +17,25 @@ from apps.api.app.core.config import settings
 api_key_header = APIKeyHeader(name="X-Admin-Key", auto_error=False)
 bearer_scheme = HTTPBearer(auto_error=False)
 
+_PROHIBITED_QUERY_IDENTITY_KEYS = {
+    "token", "key", "user", "username", "user_id", "principal", "principal_id", "role", "staff_user", "staff_role",
+}
+_PROHIBITED_IDENTITY_HEADERS = {
+    "x-staff-user", "x-staff-role", "x-user", "x-username", "x-user-id", "x-principal-id", "x-role",
+}
+
+
+def reject_prohibited_staff_inputs(request: Request) -> None:
+    query_keys = {key.casefold() for key in request.query_params.keys()}
+    header_keys = set(request.headers.keys())
+    if query_keys & _PROHIBITED_QUERY_IDENTITY_KEYS or header_keys & _PROHIBITED_IDENTITY_HEADERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "INVALID_REQUEST", "message": "Credentials and staff identity must not be supplied in query parameters or identity headers."},
+        )
+
 def verify_admin_key(
+    request: Request,
     header_key: Optional[str] = Security(api_key_header),
     credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme)
 ) -> str:
@@ -24,18 +43,20 @@ def verify_admin_key(
     Enforces RBAC / least privilege on sensitive admin and moderation endpoints.
     Requires matching ADMIN_API_KEY.
     """
-    provided_key = None
-    if header_key:
-        provided_key = header_key
-    elif credentials and credentials.credentials:
-        provided_key = credentials.credentials
-
-    if not provided_key or provided_key != settings.ADMIN_API_KEY:
+    reject_prohibited_staff_inputs(request)
+    provided_credentials = []
+    if header_key and header_key.strip():
+        provided_credentials.append(header_key)
+    if credentials and credentials.credentials:
+        provided_credentials.append(credentials.credentials)
+    if not provided_credentials or any(
+        not hmac.compare_digest(value, settings.ADMIN_API_KEY) for value in provided_credentials
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Admin authentication required. Provide valid 'X-Admin-Key' or 'Authorization: Bearer <token>'."
         )
-    return provided_key
+    return provided_credentials[0]
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):

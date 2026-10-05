@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.core.config import settings
 from apps.api.app.core.database import get_db
+from apps.api.app.core.staff_rbac import StaffPrincipal, require_permission
 from apps.api.app.core.safety_policy import PUBLIC_METHODOLOGY_DISCLAIMER
 from apps.api.app.models.entities import ClaimPublication, TakedownRequest, SecurityAuditLog
 
@@ -198,33 +199,18 @@ class ModeSwitchRequest(BaseModel):
 
 
 @router.get("/mode")
-def get_system_mode(db: Session = Depends(get_db)):
-    """Returns the current data environment and active record counts."""
-    from apps.api.app.models.entities import IndustrialFacility, WaterStation, Reservoir
-    fac_count = db.query(IndustrialFacility).count()
-    st_count = db.query(WaterStation).count()
-    res_count = db.query(Reservoir).count()
-    
+def get_system_mode():
+    """Return the current governance mode without exposing operational details."""
     current_mode = "PRODUCTION" if settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION else "DEVELOPMENT"
-    return {
-        "mode": current_mode,
-        "data_env": settings.DATA_ENV,
-        "require_private_access": settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION,
-        "active_records": {
-            "facilities": fac_count,
-            "stations": st_count,
-            "reservoirs": res_count
-        },
-        "description": (
-            "Strict Production Isolation (Fail-Closed: external uncredentialed sources blocked)"
-            if settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION
-            else "Research & Testing Mode (Active Real Data: 112 DIW plants, 14 stations, 7 reservoirs active)"
-        )
-    }
+    return {"mode": current_mode}
 
 
 @router.post("/mode")
-async def toggle_system_mode(payload: ModeSwitchRequest, db: Session = Depends(get_db)):
+async def toggle_system_mode(
+    payload: ModeSwitchRequest,
+    staff: StaffPrincipal = Depends(require_permission("modify_workflow")),
+    db: Session = Depends(get_db),
+):
     """
     Toggles between DEVELOPMENT (Real Data Testing) and PRODUCTION (Strict Fail-Closed Isolation).
     """
@@ -333,4 +319,3 @@ async def toggle_system_mode(payload: ModeSwitchRequest, db: Session = Depends(g
                 "reservoirs": 0
             }
         }
-

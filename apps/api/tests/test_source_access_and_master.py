@@ -2,6 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from apps.api.app.main import app
 from apps.api.app.core.security import rate_limiter
+from apps.api.app.core.database import SessionLocal
+from apps.api.app.models.entities import CitizenReport
 from apps.api.app.core.source_access import (
     evaluate_source_access, 
     get_all_source_access_evaluations,
@@ -72,77 +74,17 @@ def test_source_access_endpoint_evaluation():
     assert diw["private_or_public"] == "PUBLIC"
     assert "101" in diw["notes"] or "105" in diw["notes"]
 
-def test_public_area_card_pb021():
-    """Test Master Prompt Section 24 Public Area Card specification."""
-    response = client.get("/api/v1/risk/area-card/PB-021")
-    assert response.status_code == 200
-    card = response.json()
-    
-    assert card["area_id"] == "PB-021"
-    assert card["status"] in ["VERIFICATION RECOMMENDED", "WATCH", "MONITOR", "NO ACTIVE WATCH", "INSUFFICIENT DATA"]
-    assert "OFFICIAL OBSERVED DATA" in card["flood"]
-    assert "MEASURED_FACT" in card["water"]
-    assert "MODELED" in card["hydrological_connectivity"]
-    assert "OFFICIAL_RECORD" in card["nearby_facilities"]
-    assert "UNVERIFIED" in card["citizen_observations"]
-    assert card["current_laboratory_evidence"] == "NONE AVAILABLE"
-    assert "WATCH ZONE" in card["forecast"] or "MONITORING" in card["forecast"]
-    assert "does not establish contamination, causation, wrongdoing, or criminal responsibility" in card["disclaimer"]
+def test_public_area_card_route_is_not_mounted():
+    assert client.get("/api/v1/risk/area-card/PB-021").status_code == 404
 
-def test_connected_waterway_wording():
-    """Test Master Prompt Section 25: UPSTREAM HYDROLOGICAL CONNECTIVITY."""
-    # Location near Kabin Buri (13.9876, 101.7214)
-    response = client.get("/api/v1/risk/connected-waterway?latitude=13.9876&longitude=101.7214")
-    assert response.status_code == 200
-    data = response.json()
-    
-    assert data["analysis_type"] == "UPSTREAM HYDROLOGICAL CONNECTIVITY"
-    assert "connected_waterway" in data
-    assert data["connected_waterway"]["data_category"] == "OFFICIAL_RECORD"
-    assert "upstream_network" in data
-    assert "registered_facilities" in data
-    
-    # Verify forbidden words are absent
-    payload_str = str(data).lower()
-    assert "source of poison" not in payload_str
-    assert "origin of contamination" not in payload_str
-    assert "toxic factory" not in payload_str
-    assert "polluter" not in payload_str
+def test_connected_waterway_route_is_not_mounted():
+    assert client.get("/api/v1/risk/connected-waterway?latitude=13.9876&longitude=101.7214").status_code == 404
 
-def test_evidence_packet_section_28():
-    """Test Master Prompt Section 28 Evidence Packet separation."""
-    response = client.get("/api/v1/risk/evidence-packet/ENV-CASE-001?district=กบินทร์บุรี")
-    assert response.status_code == 200
-    packet = response.json()
-    
-    assert packet["case_id"] == "ENV-CASE-001"
-    assert packet["case_type"] == "ENVIRONMENTAL_VERIFICATION_CASE"
-    
-    # Must separate all 5 sections
-    assert "what_we_know" in packet
-    assert "what_was_observed" in packet
-    assert "what_the_model_suggests" in packet
-    assert "what_is_unknown" in packet
-    assert "what_should_be_verified" in packet
-    
-    # Verify fail-closed data gaps
-    unknowns = packet["what_is_unknown"]["items"]
-    gap_statuses = [u["status"] for u in unknowns]
-    assert all(s == "INSUFFICIENT_DATA" for s in gap_statuses)
+def test_evidence_packet_route_is_not_mounted():
+    assert client.get("/api/v1/risk/evidence-packet/ENV-CASE-001?district=กบินทร์บุรี").status_code == 404
 
-def test_my_area_section_31():
-    """Test Master Prompt Section 31 My Area endpoint."""
-    response = client.get("/api/v1/risk/my-area?district=กบินทร์บุรี")
-    assert response.status_code == 200
-    res = response.json()
-    
-    assert "area_query" in res
-    assert "never stored or exposed" in res["area_query"]["privacy_protection"]
-    assert "flood_status" in res
-    assert "environmental_watch" in res
-    assert "water_telemetry" in res
-    assert "weather_forecast" in res
-    assert "community_observations" in res
+def test_my_area_risk_route_is_not_mounted():
+    assert client.get("/api/v1/risk/my-area?district=กบินทร์บุรี").status_code == 404
 
 def test_community_evidence_clustering_section_27():
     """Test Master Prompt Section 27 Community Observation Clustering."""
@@ -196,6 +138,12 @@ def test_public_private_boundary_no_pii_or_exact_gps_leakage():
     post_res = client.post("/api/v1/reports/", json=secret_payload)
     assert post_res.status_code == 200
     post_data = post_res.json()
+
+    # This test covers public DTO sanitization; publication is explicit under P0-2.
+    with SessionLocal() as db:
+        report = db.query(CitizenReport).filter(CitizenReport.id == post_data["id"]).first()
+        report.publication_state = "PUBLIC_SAFE_SUMMARY"
+        db.commit()
     
     # Response must not contain exact GPS or raw PII
     assert "13.987654321" not in str(post_data)
@@ -230,6 +178,10 @@ def test_public_private_boundary_no_pii_or_exact_gps_leakage():
     assert "+66-89-999-0000" not in raw_clusters
     assert "Classified Whistleblower" not in raw_clusters
 
+    with SessionLocal() as db:
+        db.query(CitizenReport).filter(CitizenReport.id == post_data["id"]).delete()
+        db.commit()
+
 def test_public_coordinate_privacy_irreversibility():
     """Master Prompt Section 8: Test that generalized coordinates cannot be trivially reversed."""
     from apps.api.app.core.security import generalize_coordinates
@@ -258,8 +210,8 @@ def test_public_coordinate_privacy_irreversibility():
 def test_image_metadata_stripped_no_exif_leakage():
     """Section 18 & 7: Verify image uploads are re-encoded, stripped of EXIF, and given random filenames."""
     import io
-    import os
     from PIL import Image
+    from apps.api.app.core.config import settings
     
     # Create a synthetic test image
     img = Image.new("RGB", (100, 100), color=(73, 109, 137))
@@ -275,13 +227,17 @@ def test_image_metadata_stripped_no_exif_leakage():
     # Original sensitive filename must NOT be preserved
     assert "reporter_personal_phone" not in data["filename"]
     assert data["filename"].startswith("evd_")
-    
+    assert data["photo_url"] == data["filename"]
+    assert not data["photo_url"].startswith("/")
+
     # Verify file on disk has zero EXIF
-    saved_path = os.path.join(os.path.abspath("data/uploads"), data["filename"])
-    if os.path.exists(saved_path):
-        saved_img = Image.open(saved_path)
-        exif_data = saved_img.getexif()
-        assert len(exif_data) == 0, "EXIF metadata was not completely stripped!"
+    saved_path = settings.PRIVATE_MEDIA_ROOT / data["filename"]
+    assert saved_path.exists()
+    assert saved_path.stat().st_mode & 0o777 == 0o600
+    saved_img = Image.open(saved_path)
+    exif_data = saved_img.getexif()
+    assert len(exif_data) == 0, "EXIF metadata was not completely stripped!"
+    saved_path.unlink()
 
 def test_debug_endpoints_no_secret_keys_leakage():
     """Section 7: Verify public governance and metadata endpoints never leak internal secret keys."""
@@ -335,8 +291,7 @@ def test_acceptance_test_3_diw_cannot_enter_private_production_without_private_a
     assert eval_diw.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION
 
     resp = client.get("/api/v1/factories/")
-    assert resp.status_code == 200
-    assert resp.json() == []
+    assert resp.status_code == 404
 
 
 def test_acceptance_test_4_openmeteo_cannot_enter_private_production_without_private_authorization():
@@ -348,8 +303,7 @@ def test_acceptance_test_4_openmeteo_cannot_enter_private_production_without_pri
     assert resp.status_code == 200
     fc = resp.json()
     assert fc["status"] == "FORECAST_UNAVAILABLE"
-    assert fc["reason"] == "ACCESS_REQUIRED"
-    assert fc["production_allowed"] is False
+    assert fc["reason"] == "ACCESS_BLOCKED"
     assert fc["forecast_days"] == []
 
 
@@ -382,20 +336,8 @@ def test_acceptance_test_6_public_outputs_cannot_disclose_exact_coordinates():
         assert "reporter_email" not in r
 
 
-def test_acceptance_test_7_public_evidence_packets_exclude_confidential_fields():
-    """TEST 7: Public evidence packets cannot include confidential fields."""
-    resp = client.get("/api/v1/risk/evidence-packet/ENV-CASE-001?district=กบินทร์บุรี")
-    assert resp.status_code == 200
-    packet = resp.json()
-    raw_text = str(packet).lower()
-    assert "admin_api_key" not in raw_text
-    assert "confidential" not in raw_text
-    assert "phone" not in raw_text
-    assert "email" not in raw_text
-
-    # Data gaps must be fail-closed
-    for item in packet["what_is_unknown"]["items"]:
-        assert item["status"] == "INSUFFICIENT_DATA"
+def test_acceptance_test_7_public_evidence_packet_route_is_not_mounted():
+    assert client.get("/api/v1/risk/evidence-packet/ENV-CASE-001?district=กบินทร์บุรี").status_code == 404
 
 
 def test_acceptance_test_8_every_public_claim_has_audit_trail():
@@ -441,15 +383,8 @@ def test_acceptance_test_8_every_public_claim_has_audit_trail():
         assert "provenance" in c
 
 
-def test_acceptance_test_9_model_outputs_never_labeled_as_measured_fact():
-    """TEST 9: Model outputs are never labeled as measured fact."""
-    from apps.api.app.core.provenance import DataCategory
-    # Area card check
-    resp = client.get("/api/v1/risk/area-card/PB-021")
-    assert resp.status_code == 200
-    card = resp.json()
-    assert "MEASURED_FACT" not in card["hydrological_connectivity"]
-    assert "MODELED" in card["hydrological_connectivity"]
+def test_acceptance_test_9_public_model_route_is_not_mounted():
+    assert client.get("/api/v1/risk/area-card/PB-021").status_code == 404
 
 
 def test_acceptance_test_10_fail_closed_produces_empty_or_null_instead_of_defaults():
@@ -466,8 +401,7 @@ def test_acceptance_test_10_fail_closed_produces_empty_or_null_instead_of_defaul
 
     # Factories empty in production
     resp_fac = client.get("/api/v1/factories/")
-    assert resp_fac.status_code == 200
-    assert resp_fac.json() == []
+    assert resp_fac.status_code == 404
 
 
 def test_acceptance_test_11_rate_limits_block_abuse():
@@ -497,4 +431,3 @@ def test_acceptance_test_12_production_db_zero_uncredentialed_records():
         assert st_count == 0, f"Expected 0 external uncredentialed water stations, found {st_count}"
         assert res_count == 0, f"Expected 0 external uncredentialed reservoirs, found {res_count}"
         assert rep_count > 0, "Internal citizen reports should be preserved"
-
