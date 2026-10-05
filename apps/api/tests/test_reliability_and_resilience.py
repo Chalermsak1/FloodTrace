@@ -2,6 +2,7 @@ import pytest
 import time
 from fastapi.testclient import TestClient
 from apps.api.app.main import app
+from apps.api.app.api.v1 import forecast as forecast_api
 from apps.api.app.core.circuit_breaker import CircuitBreaker, CircuitBreakerState, ErrorClassification
 
 client = TestClient(app)
@@ -182,17 +183,21 @@ def test_standard_error_format_on_404():
     assert "timestamp" in data["error"]
 
 
-def test_openmeteo_cache_cannot_bypass_production_gate():
+def test_openmeteo_forecast_is_model_without_test_mode_bypass(monkeypatch):
     """
     Verifies that Open-Meteo cache CANNOT be used by any production path.
     Even if cache contains populated forecast data, in production the gate must fail-closed.
     """
+    async def forecast(_station):
+        return {"status": "AVAILABLE", "forecast_days": [{"date": "2026-10-05"}], "source_provenance": {"family": "MODEL", "role": "FORECAST"}}
+
+    monkeypatch.setattr(forecast_api, "fetch_openmeteo_forecast", forecast)
     res = client.get("/api/v1/forecast/?station=prachin_mueang")
     assert res.status_code == 200
     fc = res.json()
-    assert fc["status"] == "FORECAST_UNAVAILABLE"
-    assert fc["reason"] == "ACCESS_BLOCKED"
-    assert fc["forecast_days"] == []
+    assert fc["status"] == "AVAILABLE"
+    assert fc["source_provenance"]["family"] == "MODEL"
+    assert "test_mode" not in {p["name"] for p in app.openapi()["paths"]["/api/v1/forecast/"]["get"].get("parameters", [])}
 
 
 def test_test_demo_reports_strictly_isolated_from_public_dashboard():

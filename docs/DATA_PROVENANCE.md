@@ -1,6 +1,9 @@
 # แหล่งกำเนิดข้อมูลและสายการแปรรูป (DATA PROVENANCE & LINEAGE)
 
 > **P0-1 current provenance contract:** This note supersedes contradictory current verification claims below; historical audits remain unchanged. ThaiWater water-level and rainfall are implemented API paths. DIW and local boundary/mask artifacts lack the required origin, license, acquisition, checksum, and transformation evidence; they remain `LOCAL / UNVERIFIED`. Absent DWR, DOPA, and MOPH artifacts remain unavailable. Missing source timestamps stay null. P0-3 owns media provenance and delivery; P0-5 owns authentication and SSE.
+
+> **Legacy API restoration update (2026-10-05):** Public ThaiWater station/history data requires the configured source URL, upstream Prachin Buri province metadata, in-scope official coordinates, verified official source provenance, and a parseable source timestamp. Database retrieval time does not replace source time. Runtime API success is based on a recent adapter-recorded HTTP response; stale rows alone do not prove a current request. Open-Meteo forecast values remain `MODEL`; retrieval time is distinct from forecast dates. RID is not mapped to ThaiWater and cannot publish reservoir data without separate verified access and live evidence.
+
 **ขอบเขตระบบ:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
 **สถานะการตรวจสอบ:** ร่างฉบับตรวจสอบความจริงเพื่อการใช้งานจริง (PRODUCTION TRUTH AUDIT)  
 **วันที่ตรวจสอบล่าสุด:** 2026-10-02  

@@ -38,9 +38,7 @@ export const HomeMapPreview: React.FC = () => {
   });
 
   useEffect(() => {
-    setLoading(true);
-
-    Promise.all([
+    const load = () => Promise.all([
       fetch('/api/public/map/monitoring-priority').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/map/boundary').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null),
@@ -62,6 +60,10 @@ export const HomeMapPreview: React.FC = () => {
         setMapStatus('unavailable');
         setLoading(false);
       });
+
+    load();
+    const refresh = window.setInterval(load, 60_000);
+    return () => window.clearInterval(refresh);
   }, []);
 
   const handleSelectCell = (props: any) => {
@@ -159,30 +161,27 @@ export const HomeMapPreview: React.FC = () => {
           {/* LEGEND A */}
           <div className="space-y-1">
             <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
+              จุดแบบจำลองจากสถานี (ไม่ประมาณพื้นที่)
             </span>
-            <div className="grid grid-cols-5 gap-1 text-center">
+            <div className="grid grid-cols-4 gap-1 text-center">
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#DC2626] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">สูงมาก</span>
+                <span className="text-2xs text-slate-700 font-medium">เกินวิกฤต</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#EA580C] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">สูง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#EAB308] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ปานกลาง</span>
+                <span className="text-2xs text-slate-700 font-medium">ถึงเกณฑ์เตือน</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ต่ำ</span>
+                <span className="text-2xs text-slate-700 font-medium">ต่ำกว่าเตือน</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#64748B] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ไม่มีข้อมูล</span>
+                <span className="w-3 h-3 rounded-full bg-sky-600 shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium">ข้อมูลฝน</span>
               </div>
             </div>
+            <p className="text-2xs leading-relaxed text-slate-500">สีระดับน้ำเทียบเกณฑ์จากต้นทาง จุดฝนไม่มีเกณฑ์จัดระดับ</p>
           </div>
 
           {/* LEGEND B */}
@@ -204,7 +203,7 @@ export const HomeMapPreview: React.FC = () => {
           </div>
 
           <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
-            พื้นที่สีแสดงระดับ Monitoring Priority เชิงพื้นที่ ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
+            จุดสถานีแสดงข้อมูลสำหรับจัดลำดับการติดตาม ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
           </p>
         </div>
 

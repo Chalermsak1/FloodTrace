@@ -1,6 +1,9 @@
 # การแสดงผลแผนที่เชิงพื้นที่ (MAP VISUALIZATION ARCHITECTURE)
 
 > **P0-1 current map contract:** This note supersedes contradictory claims that code-authored geometry is verified or current; historical audits remain unchanged. Public map boundary, priority surface, zones, forecast extent, and waterways return empty geometry while provenance is unverified or source access is blocked. Hand-authored district/subdistrict centroids are not rendered. Actual eligible telemetry and community observations remain separate evidence classes. P0-3 owns media delivery; P0-5 owns authentication and SSE.
+
+> **Legacy API restoration update (2026-10-05):** `/api/public/map/monitoring-priority` may return a non-empty point-only `MODEL` built directly from current source-verified ThaiWater station coordinates. Water points use only thresholds supplied by that station; rainfall points carry no severity class. This is not a continuous heatmap and uses no interpolation, authored cells, waterways, private report coordinates, or facility data. Map boundary, waterways, flood extent, and forecast extent remain unavailable. Water, rain, community, and model requests are separate; the map refreshes every 60 seconds. Live upstream reachability remains unverified in the local QA network.
+
 **ระบบ:** แพลตฟอร์ม FloodTrace จังหวัดปราจีนบุรี  
 **เครื่องมือแสดงผลหลัก:** MapLibre GL JS v6.11.2  
 **รูปแบบข้อมูลเชิงพื้นที่:** GeoJSON Vector Features & Continuous Voronoi Polygons

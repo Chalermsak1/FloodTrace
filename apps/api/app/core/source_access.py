@@ -88,12 +88,12 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
     # 6.2 Water Level / Runoff (Master Prompt Sec. 6.2: ThaiWater / HII / RID)
     "thaiwater_rid_runoff": {
         "source_id": "thaiwater_rid_runoff",
-        "source_name": "ThaiWater & RID Water Level / Runoff Telemetry",
-        "organization": "Hydro-Informatics Institute (HII) & Royal Irrigation Department (RID)",
-        "dataset": "National Telemetry Water Level & Dam Monitoring Systems",
-        "purpose": "River stage monitoring, water-level trend detection, upstream/downstream state",
-        "access_method": "REST API v3 / Runoff API / Public Reservoir Portal",
-        "authentication": "Institutional Project Token / Private Credential Required",
+        "source_name": "ThaiWater water-level telemetry",
+        "organization": "Hydro-Informatics Institute (HII) / ThaiWater",
+        "dataset": "ThaiWater public waterlevel_load telemetry",
+        "purpose": "Water-level observations for source-verified stations",
+        "access_method": "ThaiWater REST API v3",
+        "authentication": "Optional configured Bearer credential; runtime reachability is reported separately",
         "private_or_public": "PUBLIC",
         "default_authorization_status": AccessAuthorizationStatus.PUBLIC_ONLY,
         "license": "Open Government License Thailand (OGL-TH) / RID Specifications",
@@ -101,14 +101,14 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "redistribution_allowed": True,
         "raw_storage_allowed": True,
         "derived_output_allowed": True,
-        "update_frequency": "Hourly automated acoustic/pressure sensor transmission",
+        "update_frequency": "Not verified; application polling interval is 15 minutes",
         "source_classification": SourceClassification.HIGH_FREQUENCY,
         "freshness_threshold_hours": 3.0,
-        "coverage": "14 automated river stations and 6 reservoirs in Prachin Buri Basin",
+        "coverage": "Prachin Buri records selected from upstream province metadata and coordinates",
         "required_credential_env": "THAIWATER_API_KEY",
         "verified_license_for_production": True,
         "real_endpoint": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load",
-        "notes": "Public open data endpoints available under OGL-TH. Active water level telemetry for Prachin Buri stations available. Ingestion allowed under verified official public license policy."
+        "notes": "Application adapter consumes the public ThaiWater endpoint. Runtime health and current usable records are reported separately; RID reservoir data is not part of this source."
     },
     # 6.3 Current Rainfall
     "thaiwater_rainfall": {
@@ -129,11 +129,11 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
         "update_frequency": "Every 15 minutes",
         "source_classification": SourceClassification.HIGH_FREQUENCY,
         "freshness_threshold_hours": 3.0,
-        "coverage": "Prachin Buri automated rain gauges",
+        "coverage": "Prachin Buri records selected from upstream province metadata and coordinates",
         "required_credential_env": "THAIWATER_API_KEY",
         "verified_license_for_production": True,
         "real_endpoint": "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
-        "notes": "Public open data endpoint under OGL-TH. 78 rain stations inside Prachin Buri bounding box active."
+        "notes": "Application adapter consumes the public ThaiWater endpoint. Runtime health and current usable records are reported separately; station count is derived from source-backed records."
     },
     # 6.4 Weather Forecast
     "tmd_forecast": {
@@ -438,7 +438,6 @@ CANDIDATE_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
 # Backward compatibility aliases for candidate source IDs (e.g., Sec 6.2 consolidation)
 SOURCE_ALIASES = {
     "thaiwater_telemetry": "thaiwater_rid_runoff",
-    "rid_reservoirs": "thaiwater_rid_runoff",
 }
 
 def evaluate_source_access(

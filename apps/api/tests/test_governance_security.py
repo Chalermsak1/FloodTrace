@@ -282,12 +282,7 @@ def test_source_failure_produces_no_data():
         with patch("httpx.AsyncClient.get", side_effect=Exception("Simulated empty telemetry response")):
             settings.RID_PRIVATE_TOKEN = "test-auth-token"
             test_res = asyncio.run(fetch_rid_reservoirs())
-            assert len(test_res) >= 3
-            for r in test_res:
-                assert r["storage_percent"] is None
-                assert r["storage_mcm"] is None
-                assert "RID public API supports storage/volume" in r["provenance"]["audit_notes"]
-                assert r["provenance"]["measurement_status"] == "UNAVAILABLE_AT_AUDIT_TIME"
+            assert test_res == []
     finally:
         settings.RID_PRIVATE_TOKEN = old_token
 

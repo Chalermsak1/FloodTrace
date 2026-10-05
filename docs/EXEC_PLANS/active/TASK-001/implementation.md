@@ -544,6 +544,49 @@ npm run build
 - Responsive checks at **390×844, 768×1024, 1366×768, and 1440×900** covered populated summaries and request-error cards. Document widths were **384, 762, 1360, and 1434** respectively (all within their viewports); no clipped headings or summary text were measured. Saved-district remove controls remained **44×44 px**, and detail links remained visible at each size. Test districts were removed afterward, restoring the initially empty local saved-area list. Browser viewport and temporary server/config state were cleaned up.
 - `git diff --check` after this correction record — **PASS** (exit code 0; no whitespace errors).
 
+### Legacy data/API restoration + safe heatmap recovery (2026-10-05)
+
+- **Source audit and restoration:** restored/validated ThaiWater water-level and rainfall adapters, evidence-backed scheduler ingestion and health, public station/history/overview contracts, and Open-Meteo as a separate MODEL/FORECAST provider. The former RID-to-ThaiWater alias and static reservoir fallbacks remain removed. RID remains `ACCESS REQUIRED`; no RID credential or usable current response was available. DIW remains a local unverified snapshot. GISTDA, DWR geometry, DOPA/MOPH, PCD/REO7, DGR, LDD, and TMD integrations remain blocked or unavailable where application evidence is absent.
+- **Geometry and map:** boundary, zones, flood extent, forecast polygons, and waterways remain empty/unavailable because verified geometry provenance was not established. Monitoring Priority uses only current source-verified station points, with no interpolation or authored polygon fallback. Citizen publication filtering and facility/source identity containment remain in force.
+- **Code and tests changed for this restoration:** adapters `thaiwater.py`, `rid.py`, and `openmeteo.py`; `scheduler.py`, `source_access.py`, new `source_health.py`, `main.py`, public router, forecast router, and `spatial_monitoring_service.py`; source/restoration/public-truth/scheduler/security tests; map/forecast/overview/methodology UI and Vite proxy configuration; source/provenance/methodology/map/system-health/current-status documentation; `scripts/verify_all_sources.py`. Legacy tests expecting synthetic RID reservoir rows or unproven station fixtures were changed to assert fail-closed behavior or supply explicit test provenance.
+
+#### Validation
+
+- Targeted backend regressions ran with the repository `.venv` against the existing isolated `floodtrace_test_db` on local PostgreSQL port 5433; credentials were supplied in-process and never recorded:
+
+  ```sh
+  ./.venv/bin/python -m pytest apps/api/tests/test_restoration_contract.py apps/api/tests/test_source_failure_graceful_degradation.py apps/api/tests/test_public_truth_containment.py apps/api/tests/test_automated_refresh_and_truth.py apps/api/tests/test_public_api_sanitization.py apps/api/tests/test_publication_boundary.py apps/api/tests/test_p0_security_closure.py apps/api/tests/test_public_route_containment.py -q --tb=short
+  ```
+
+  **PASS — 98 passed.** The six corrected legacy/runtime expectations then passed **6/6**; map surface regression module passed **4/4**. Verifier-state regression passed **1/1** with `DATABASE_URL=sqlite://` and `--noconftest`.
+- Full backend suite, same isolated database/environment:
+
+  ```sh
+  ./.venv/bin/python -m pytest apps/api/tests -q --tb=short
+  ```
+
+  **PASS — 363 passed, 50 existing Starlette deprecation warnings.** This full-suite run preceded the final isolated public-provenance verifier helper/test adjustment; that adjustment’s focused regression passed afterward.
+- Frontend production validation, from `apps/web`:
+
+  ```sh
+  npm run build
+  ```
+
+  **PASS — TypeScript and Vite build.** Existing non-fatal MapLibre chunk-size warning remains (1,044.37 kB).
+- Both verifier tools ran against this checkout’s local API contract at `http://127.0.0.1:8002`, with the existing development admin value passed in-process and not printed:
+
+  ```sh
+  RUWAIGON_API_URL=http://127.0.0.1:8002 ./.venv/bin/python scripts/verify_all_sources.py
+  RUWAIGON_API_URL=http://127.0.0.1:8002 deploy/production/verify.sh
+  ```
+
+  Both reported `SOURCE_HEALTH`, `PUBLIC_PROVENANCE`, `METRICS`, and `SCHEDULER` as `VERIFIED`; ThaiWater water/rainfall were `VERIFIED`. GISTDA/TMD/official DEM/DIW-all/PCD/REO7/DGR/LDD remain `BLOCKED`; DWR/DOPA/MOPH `UNAVAILABLE`; local DIW and citizen rows `UNVERIFIED`. Both exited 2 because unsupported/blocked rows are intentionally not certified. The verifier now accepts the canonical `AVAILABLE MODEL` and `ACCESS REQUIRED` provenance states without turning them into source verification.
+- **Live bounded runtime:** started a loopback-only one-worker API at `127.0.0.1:8002` with one in-process scheduler owner against a disposable empty database `ruwaigon_qa_2853aedef8`; Vite ran at `127.0.0.1:5173` with logged proxy target `http://127.0.0.1:8002`. Scheduler requests returned HTTP **200** for ThaiWater water (**15** current public station records; newest source timestamp `2026-10-05T18:10:00+07:00`) and rainfall (**33** current public station records; newest `2026-10-05T18:00:00+07:00`). `REAL_EXTERNAL_REQUEST=true` followed recorded request timestamps/status, not endpoint configuration. Public water/rain history each returned HTTP 200 with one observation; overview returned 13 current water + 33 rainfall stations and zero public reports. No station identifiers or coordinates were recorded here.
+- Open-Meteo returned HTTP **200**, seven forecast days (2026-10-05 through 2026-10-11), and retained `MODEL`/`FORECAST` semantics; source health became `AVAILABLE MODEL` with the fresh 200 request. RID remained `ACCESS REQUIRED` with no records. Official updates returned an empty list. Monitoring Priority returned **33 Point features**, inputs `{water_level: 0, rainfall: 33}`, `AVAILABLE MODEL`; water stations had no usable source-supplied warning thresholds for this model run. No area geometry was inferred.
+- **Browser:** verified `/` redirect, `/overview`, `/map`, `/my-area`, `/data-methodology`, and `/forecast` at `http://127.0.0.1:5173`; the visible Vite startup log confirmed its API proxy target. Overview rendered current source-backed counts. MapLibre displayed the satellite base, station points, rainfall detail, matching legend, layer toggle and opacity control. Browser error log was empty. Mobile checks at **390×844** showed responsive navigation, wrapped Thai text, and usable map/My Area controls; desktop checks at **1440×900** showed no visible horizontal overflow or clipped controls. Viewport override was reset after checks.
+- Runtime API/Vite sessions were stopped; the disposable QA database, temporary private-media directory, and runtime logs were removed. No shared database or legacy media was modified.
+- Final `git diff --check` after this restoration evidence append — **PASS** (exit code 0). No commit, push, or merge was made.
+
 ### FINAL QA — Ruwaigon V1 release readiness (2026-10-05)
 
 - **Isolated test database:** inspected `apps/api/tests/conftest.py`; it requires `FLOODTRACE_TEST_DATABASE_URL`, a database name containing `test`, and asserts the connected engine is a test DB before setup. Read-only PostgreSQL identity check confirmed host `127.0.0.1:5433`, database `floodtrace_test_db` (server port `5432`). The local PostGIS service was already running; no shared/production database was used.
@@ -562,3 +605,29 @@ npm run build
 - **Config/artifact checks:** targeted scan of `deploy/production`, `deploy/systemd`, `apps/web/vite.config.ts`, and runtime config found no temporary QA ports/paths, public `/uploads`, or test-bypass tokens. `test_secrets_not_committed` passed in the backend suite. Temporary Vite config was removed; API and Vite sessions were stopped; browser test viewport was reset. The route-burst 429s were transient QA pacing effects and did not reproduce after the API limiter reset.
 - **Documentation:** corrected stale README wording about active analytics/satellite API integration and updated its backend test badge to 350/350; aligned `docs/HOME_PAGE.md` title, product name, and scope with Ruwaigon public identity and FloodTrace internal identity.
 - **Git hygiene:** branch remained `feature/ruwaigon-redesign`; no commit or push was made. Existing approved uncommitted implementation files were preserved. Final `git diff --check` — **PASS** (exit code 0).
+
+### CORRECTION — source verifier truth and exit semantics (2026-10-05)
+
+- **Defect reproduced:** the previous `classify_source(record)` accepted an ACTIVE API with persisted rows and metadata but no request/runtime evidence. It now requires an active scheduler, a current successful HTTP 200 request with ordered start/finish timestamps inside the source interval, no last error or circuit-breaker failure, positive records and measurements from that run, current source timestamp/freshness, and all existing access/license/production eligibility flags. Missing or invalid evidence for an ACTIVE API yields `PARTIAL`.
+- **Regression coverage:** added `apps/api/tests/test_source_verifier_contract.py` for valid current evidence and negative INACTIVE, expired, failed, no-real-data, and no-usable-measurement cases; exit-code precedence; and both executable paths against isolated source-health fixtures. Updated the prior containment assertion so persisted metadata without scheduler evidence expects `PARTIAL`.
+- **Exit contract:** documented in `scripts/verify_all_sources.py`: `0` means valid contracts with no limitations; `1` means valid contracts with expected source limitations (`BLOCKED`, `UNAVAILABLE`, `UNVERIFIED`, including public `ACCESS REQUIRED`); `2` means a malformed/unavailable application contract, `PARTIAL`, reconciliation mismatch, or other verification failure. Failure takes precedence over limitations.
+- **Both entry points:** `scripts/verify_all_sources.py` and `deploy/production/verify.sh` passed the same isolated fixture matrix: all valid → exit `0`; blocked/unavailable/access-required only → exit `1`; partial → exit `2`; partial plus limitation → exit `2`. Both report the same source/contract classifications. Fixture responses were injected into the verifier process; no live source request was fabricated or made.
+- **Focused validation:** `DATABASE_URL=sqlite:///:memory: .venv/bin/python -m pytest --noconftest apps/api/tests/test_source_verifier_contract.py apps/api/tests/test_public_truth_containment.py::test_source_verifier_supports_only_evidence_based_result_states -q` — **PASS, 21 passed, 1 existing Starlette deprecation warning**. The focused suite exercised the Python verifier and deployment wrapper for all four exit scenarios and the retained no-status `UNVERIFIED` contract.
+- **Full backend validation:** resolved the isolated test database configuration from the existing `floodtrace_db` container in process memory (credentials not printed), then ran `.venv/bin/python -m pytest apps/api/tests -q` — **PASS, 383 passed, 50 existing Starlette deprecation warnings**. An intermediate run after malformed-evidence hardening exposed the existing no-source-status `UNVERIFIED` fallback assertion (382 passed, 1 failed); that classification was preserved and the final full-suite run passed.
+- **Diff hygiene:** `git diff --check` — **PASS, exit code 0**. Branch remains `feature/ruwaigon-redesign`; no commit, push, or merge.
+
+### CORRECTION — malformed scheduler contract handling (2026-10-05)
+
+- **Reviewer reproduction:** scheduler `sources` as a list, or a list-valued per-source entry, could reach source-record access and raise `AttributeError`.
+- **Structure validation:** the verifier now accepts scheduler sources for lookup only when the container is a dict; `classify_scheduler` marks non-dict containers and non-dict entries `PARTIAL`. A malformed per-source value is never passed to `.get()` and is classified conservatively as `PARTIAL`. Aggregation keeps failure precedence, so a simultaneous `BLOCKED` source cannot turn a malformed contract into an expected limitation.
+- **Both entry points:** `scripts/verify_all_sources.py` and `deploy/production/verify.sh` both returned exit `2` with `SCHEDULER: PARTIAL` and no traceback for `sources: ["malformed"]` and for `sources: {"thaiwater_rid_runoff": ["malformed"]}`. The top-level malformed case also included a `BLOCKED` source and still returned `2`.
+- **Focused validation:** `DATABASE_URL=sqlite:///:memory: .venv/bin/python -m pytest --noconftest apps/api/tests/test_source_verifier_contract.py apps/api/tests/test_public_truth_containment.py::test_source_verifier_supports_only_evidence_based_result_states -q` — **PASS, 25 passed, 1 existing Starlette warning**. Both executable paths covered clean `0`, expected limitations `1`, malformed scheduler `2`, and `PARTIAL` plus `BLOCKED` `2`; direct classifier regressions cover inactive, expired, failed, no-data, and no-usable-measurement ACTIVE API evidence as `PARTIAL`.
+- **Full backend suite:** isolated test DB configuration was resolved from the existing `floodtrace_db` container in process memory (credentials not printed); `.venv/bin/python -m pytest -q apps/api/tests` — **PASS, 387 passed, 50 existing Starlette deprecation warnings**.
+- **Diff hygiene:** `git diff --check` — **PASS, exit code 0**. No API/runtime, frontend, or source-policy changes; no commit, push, or merge.
+
+### Final independent review — API restoration (2026-10-05)
+
+- **API RESTORATION APPROVED** — independent review verdict: **PASS**.
+- Focused verifier tests: **25 passed**. Final backend suite: **387 passed**.
+- Malformed scheduler handling: **PASS**. Exit semantics: **PASS**. Both verifier entry points: **PASS**.
+- Remaining blocker: **NONE**.

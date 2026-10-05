@@ -258,6 +258,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             'line-width': 1.4
           }
         },
+        {
+          id: 'monitoring-surface-points',
+          type: 'circle',
+          source: 'monitoring-surface-source',
+          layout: { visibility: visibleLayers.monitoringSurface ? 'visible' : 'none' },
+          paint: {
+            'circle-radius': ['match', ['get', 'priority_level'], 'VERY_HIGH', 12, 'HIGH', 10, 'LOW', 8, 'RAINFALL_INPUT', 7, 8],
+            'circle-color': ['coalesce', ['get', 'color'], '#64748B'],
+            'circle-opacity': surfaceOpacity,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2,
+          }
+        },
         // 7. Selected Cell Highlight Outline
         {
           id: 'monitoring-surface-highlight',
@@ -481,6 +494,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       map.getCanvas().style.cursor = '';
     });
 
+    map.on('click', 'monitoring-surface-points', (e) => {
+      if (!e.features?.[0]) return;
+      const props = e.features[0].properties as any;
+      if (onSelectCell) onSelectCell(props);
+      if (props.district) onSelectDistrict(props.district);
+    });
+    map.on('mouseenter', 'monitoring-surface-points', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'monitoring-surface-points', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
     // Interaction: Click Outside Analysis Scope Mask (Section 13 & 85)
     map.on('click', 'outside-mask-fill', (e) => {
       if (popupRef.current) popupRef.current.remove();
@@ -555,6 +581,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     }
     if (map.getLayer('monitoring-surface-lines')) {
       map.setLayoutProperty('monitoring-surface-lines', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
+    }
+    if (map.getLayer('monitoring-surface-points')) {
+      map.setLayoutProperty('monitoring-surface-points', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
+      map.setPaintProperty('monitoring-surface-points', 'circle-opacity', surfaceOpacity);
     }
     if (map.getLayer('outside-mask-fill')) {
       map.setLayoutProperty('outside-mask-fill', 'visibility', visibleLayers.outsideMask ? 'visible' : 'none');

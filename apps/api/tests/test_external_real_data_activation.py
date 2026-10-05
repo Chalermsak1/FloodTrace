@@ -13,6 +13,7 @@ Tests:
 """
 
 import pytest
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from apps.api.app.main import app
 from apps.api.app.core.config import settings
@@ -101,35 +102,35 @@ def test_only_implemented_active_sources_are_production_eligible():
     assert {e.source_id for e in evals if e.production_eligible} == {"thaiwater_rid_runoff", "thaiwater_rainfall"}
 
 def test_public_water_stations_endpoint():
-    """Test /api/public/stations serves verified river telemetry with provenance."""
+    """Only source-verified water telemetry fixtures are served publicly."""
+    station_id = "restoration-water-route-fixture"
+    source_timestamp = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
     db = SessionLocal()
     try:
-        if db.query(WaterStation).count() == 0:
-            st = WaterStation(
-                id="PRC002",
-                name_th="เมืองปราจีนบุรี",
-                name_en="Mueang Prachin Buri",
-                basin="ลุ่มน้ำปราจีนบุรี",
-                district="เมืองปราจีนบุรี",
-                latitude=14.053554,
-                longitude=101.38684,
-                water_level_msl=5.65,
-                ground_level_msl=1.8,
-                warning_level_msl=4.5,
-                critical_level_msl=5.2,
-                status="STAGE_RECORDED",
-                provenance={
-                    "source_agency": "สสน. / กรมชลประทาน (ThaiWater / RID)",
-                    "dataset_name": "ข้อมูลตรวจวัดระดับน้ำโทรมาตร",
-                    "data_category": "MEASURED_FACT",
-                    "category": "OFFICIAL",
-                    "original_timestamp": "2026-10-02 19:00",
-                    "license": "Open Government License Thailand (OGL-TH)",
-                    "crs": "EPSG:4326"
-                }
-            )
-            db.merge(st)
-            db.commit()
+        db.query(WaterStation).filter(WaterStation.id == station_id).delete(synchronize_session=False)
+        db.add(WaterStation(
+            id=station_id,
+            name_th="สถานีทดสอบ",
+            basin="",
+            district="เมืองปราจีนบุรี",
+            latitude=14.053554,
+            longitude=101.38684,
+            water_level_msl=0.0,
+            warning_level_msl=4.5,
+            critical_level_msl=5.2,
+            status="STAGE_RECORDED",
+            provenance={
+                "source_url": settings.THAIWATER_API_URL,
+                "scope_filter": "province_name:ปราจีนบุรี",
+                "source_verification": "VERIFIED_OFFICIAL",
+                "geocoding_precision": "OFFICIAL_COORDINATES",
+                "source_agency": "ThaiWater",
+                "dataset_name": "ข้อมูลตรวจวัดระดับน้ำโทรมาตร",
+                "category": "MEASURED_FACT",
+                "original_timestamp": source_timestamp,
+            },
+        ))
+        db.commit()
     finally:
         db.close()
 
@@ -137,9 +138,7 @@ def test_public_water_stations_endpoint():
         response = client.get("/api/public/stations")
         assert response.status_code == 200
         stations = response.json()
-        assert len(stations) > 0
-
-        st = stations[0]
+        st = next(station for station in stations if station["station_id"] == station_id)
         assert "station_id" in st
         assert "name_th" in st
         assert "latitude" in st
@@ -147,18 +146,22 @@ def test_public_water_stations_endpoint():
         assert "water_level_msl" in st
         assert "provenance" in st
         assert st["provenance"]["category"] == "MEASURED_FACT"
-        assert "ThaiWater" in st["provenance"]["source_agency"] or "สสน." in st["provenance"]["source_agency"]
+        assert "ThaiWater" in st["provenance"]["source_agency"]
+        assert st["water_level_msl"] == 0.0
     finally:
         with SessionLocal() as db:
-            db.query(WaterStation).delete()
+            db.query(WaterStation).filter(WaterStation.id == station_id).delete(synchronize_session=False)
             db.commit()
 
 def test_public_rainfall_stations_endpoint():
     """Stale telemetry metadata remains visible while stale measurements stay unavailable."""
+    station_id = "truth-stale-rainfall-fixture"
+    source_timestamp = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
     db = SessionLocal()
     try:
+        db.query(RainfallStation).filter(RainfallStation.id == station_id).delete(synchronize_session=False)
         rf = RainfallStation(
-                id="truth-stale-rainfall-fixture",
+                id=station_id,
                 name_th="วัดห้วยเกษียร",
                 name_en="Huai Kasian Temple",
                 basin="ลุ่มน้ำบางปะกง",
@@ -168,15 +171,18 @@ def test_public_rainfall_stations_endpoint():
                 longitude=101.413635,
                 rain_24h_mm=45.4,
                 rain_1h_mm=0.0,
-                observation_time="2020-01-01 00:00",
+                observation_time=source_timestamp,
                 agency="Fixture",
                 status="RAINFALL_RECORDED",
                 provenance={
-                    "source_agency": "Test fixture",
+                    "source_agency": "ThaiWater",
+                    "source_url": settings.THAIWATER_RAIN_API_URL,
+                    "scope_filter": "province_name:ปราจีนบุรี",
+                    "source_verification": "VERIFIED_OFFICIAL",
+                    "geocoding_precision": "OFFICIAL_COORDINATES",
                     "dataset_name": "ข้อมูลตรวจวัดปริมาณน้ำฝนอัตโนมัติ 24 ชั่วโมง",
-                    "data_category": "MEASURED_FACT",
                     "category": "MEASURED_FACT",
-                    "original_timestamp": "2020-01-01 00:00",
+                    "original_timestamp": source_timestamp,
                     "license": "Open Government License Thailand (OGL-TH)",
                     "crs": "EPSG:4326"
                 }
@@ -190,9 +196,7 @@ def test_public_rainfall_stations_endpoint():
         response = client.get("/api/public/rainfall-stations")
         assert response.status_code == 200
         rain_stations = response.json()
-        assert len(rain_stations) > 0
-
-        rf = next(station for station in rain_stations if station["station_id"] == "truth-stale-rainfall-fixture")
+        rf = next(station for station in rain_stations if station["station_id"] == station_id)
         assert "station_id" in rf
         assert "name_th" in rf
         assert "latitude" in rf
@@ -205,7 +209,7 @@ def test_public_rainfall_stations_endpoint():
         assert rf["provenance"]["category"] == "MEASURED_FACT"
     finally:
         with SessionLocal() as db:
-            db.query(RainfallStation).delete()
+            db.query(RainfallStation).filter(RainfallStation.id == station_id).delete(synchronize_session=False)
             db.commit()
 
 def test_health_sources_endpoint_enriched():

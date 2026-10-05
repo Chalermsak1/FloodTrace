@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 import pytest
 
 from apps.api.app.core.database import SessionLocal
+from apps.api.app.core.config import settings
 from apps.api.app.core.scheduler import source_scheduler
 from apps.api.app.main import app
 from apps.api.app.models.entities import RainfallStation, Reservoir, WaterStation
@@ -115,14 +116,22 @@ def test_public_overview_has_no_substitute_time_or_priority():
 
 def test_public_station_preserves_real_zero_and_fails_closed_for_stale_or_malformed(empty_telemetry_db):
     db = SessionLocal()
+    current_timestamp = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+    verified_provenance = {
+        "source_url": settings.THAIWATER_API_URL,
+        "scope_filter": "province_name:ปราจีนบุรี",
+        "source_verification": "VERIFIED_OFFICIAL",
+        "geocoding_precision": "OFFICIAL_COORDINATES",
+        "source_agency": "ThaiWater", "category": "OFFICIAL",
+    }
     common = {
-        "name_th": "Fixture station", "latitude": 14.0, "longitude": 101.0,
+        "name_th": "Fixture station", "latitude": 14.0, "longitude": 101.38,
         "water_level_msl": 0.0,
     }
     db.add_all([
-        WaterStation(id="truth-current-zero", basin="Fixture basin", **common, provenance={"source_agency": "Fixture", "category": "OFFICIAL", "original_timestamp": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()}),
-        WaterStation(id="truth-stale", basin="Fixture basin", **common, provenance={"source_agency": "Fixture", "category": "OFFICIAL", "original_timestamp": "2020-01-01T00:00:00Z"}),
-        WaterStation(id="truth-malformed", basin="Fixture basin", **common, provenance={"source_agency": "Fixture", "category": "OFFICIAL", "original_timestamp": "not-a-time"}),
+        WaterStation(id="truth-current-zero", basin="Fixture basin", **common, provenance={**verified_provenance, "original_timestamp": current_timestamp}),
+        WaterStation(id="truth-stale", basin="Fixture basin", **common, provenance={**verified_provenance, "original_timestamp": "2020-01-01T00:00:00Z"}),
+        WaterStation(id="truth-malformed", basin="Fixture basin", **common, provenance={**verified_provenance, "original_timestamp": "not-a-time"}),
     ])
     db.commit()
     db.close()
@@ -147,7 +156,7 @@ def test_public_station_preserves_real_zero_and_fails_closed_for_stale_or_malfor
 
 
 def test_source_verifier_supports_only_evidence_based_result_states():
-    from scripts.verify_all_sources import classify_source, source_health_reconciles
+    from scripts.verify_all_sources import classify_source, public_provenance_reconciles, source_health_reconciles
 
     assert classify_source({"source_status": "BLOCKED"}) == "BLOCKED"
     assert classify_source({"source_status": "UNAVAILABLE / UNVERIFIED"}) == "UNAVAILABLE"
@@ -157,11 +166,16 @@ def test_source_verifier_supports_only_evidence_based_result_states():
         "LICENSE_VERIFIED": True, "PUBLIC_API_AVAILABLE": True,
         "DATABASE_INGESTED": True, "FRESHNESS_VERIFIED": True,
         "database_records": 2, "latest_source_timestamp": "2026-10-04T00:00:00Z",
-    }) == "VERIFIED"
+    }) == "PARTIAL"  # Persisted/source metadata without current scheduler evidence cannot certify ACTIVE API.
     assert classify_source({"source_status": "ACTIVE API", "database_records": 0}) == "PARTIAL"
     assert classify_source({"api_key_present": True, "upstream_http_status": 200}) == "UNVERIFIED"
     assert classify_source(None) == "PARTIAL"
     assert classify_source({"source_status": "ACTIVE API", "database_records": 1, "latest_source_timestamp": "now"}) == "PARTIAL"
+    assert public_provenance_reconciles({"sources": [
+        {"source_id": "openmeteo_forecast", "source_status": "AVAILABLE MODEL"},
+        {"source_id": "rid_reservoirs", "source_status": "ACCESS REQUIRED"},
+    ]})
+    assert not public_provenance_reconciles({"sources": [{"source_status": "unexpected"}]})
     good = {"sources": {"a": {"source_status": "ACTIVE API", "AUTOMATED_REFRESH": True}}, "production_counts": {
         "TOTAL_EXTERNAL_SOURCES": 1, "REAL_EXTERNAL_API_SOURCES": 1, "AUTOMATED_PRODUCTION_SOURCES": 1,
         "PRODUCTION_REFERENCE_SOURCES": 0, "LOCAL_ONLY_SOURCES": 0, "BLOCKED_SOURCES": 0, "TEST_ONLY_SOURCES": 0,

@@ -1,6 +1,33 @@
 # เอกสารแจกแจงแหล่งข้อมูลภายนอกและการเชื่อมต่อระดับใช้งานจริง (DATA SOURCES)
 
 > **P0-1 current source matrix:** This note supersedes contradictory availability, verification, count, license, and refresh claims below; historical audits remain unchanged. ThaiWater water-level and rainfall are `ACTIVE API`. DIW is `LOCAL / UNVERIFIED` while its local snapshot lacks required provenance proof. DWR waterways and DOPA/MOPH artifacts are `UNAVAILABLE / UNVERIFIED`; access-gated integrations remain `BLOCKED`; citizen reports are `INTERNAL`. Missing counts and timestamps are null with reason codes. Registry rows and configured URLs do not prove integration.
+
+> **Legacy API restoration update (2026-10-05):** ThaiWater water and rainfall are real application API integrations (`REAL_API_BUT_CONDITIONAL` for this audit because outbound live requests were blocked by the local QA network). Recent HTTP evidence and usable measurements are reported separately from integration presence; counts and timestamps come only from provenance-validated database rows. Open-Meteo is a conditional `MODEL / FORECAST` source. RID is `ACCESS REQUIRED`: access/redistribution evidence and current usable telemetry were not verified, and static reservoir metadata is not used. DWR waterways, GISTDA extent, and unsupported agency integrations remain unavailable, blocked, or unverified.
+
+### Restoration audit matrix (2026-10-05)
+
+| Source ID | Classification | Evidence and current handling |
+|---|---|---|
+| `thaiwater_rid_runoff` (water-level contract) | REAL_API_BUT_CONDITIONAL | ThaiWater water-level adapter + scheduler; schema, province, coordinate, timestamp, and measurement validation; sanitized station/history/overview/point-model consumers. Live upstream request could not be verified in the local QA network. |
+| `thaiwater_rainfall` | REAL_API_BUT_CONDITIONAL | ThaiWater rainfall adapter + scheduler; source timestamps and numeric values validated; zero retained; sanitized station/history/overview/point-model consumers. Live upstream request could not be verified in the local QA network. |
+| `rid_reservoirs` | REAL_API_BUT_CONDITIONAL | Separate configured RID endpoint and adapter exist, but access/redistribution/current usable response were not verified. No ThaiWater alias, scheduler ingestion, static metadata substitution, or public reservoir output. Status: `ACCESS REQUIRED`. |
+| `openmeteo_forecast` | MODEL_DERIVED | Open-Meteo forecast adapter and `/api/v1/forecast`; shown only for a recent usable response and always labeled `MODEL / FORECAST`. Live request could not be verified in the local QA network. |
+| `diw_industrial_waste` | LOCAL_UNVERIFIED_REFERENCE | Local historical DIW artifact exists but provenance is insufficient; public factory/risk routes remain contained. |
+| `gistda_disaster` | RESTRICTED_ACCESS_REQUIRED | Registry portal is not proof of an API integration; private key/terms not verified; no flood extent output. |
+| `tmd_forecast` | CANDIDATE_NOT_CONNECTED | No TMD forecast adapter is used. Open-Meteo is not labeled as TMD. |
+| `dwr_waterways` | CANDIDATE_NOT_CONNECTED | No verified connected waterway artifact/adapter; public waterways remain unavailable. |
+| `official_dem` | RESTRICTED_ACCESS_REQUIRED | Access/provenance not verified; no public terrain-derived output. |
+| `diw_all_factories` | RESTRICTED_ACCESS_REQUIRED | Restricted facility source; public factory/risk routes remain unreachable. |
+| `pcd_reo7_inspection` | RESTRICTED_ACCESS_REQUIRED | No verified application integration or permission; no public output. |
+| `pcd_water_quality` | RESTRICTED_ACCESS_REQUIRED | No verified application integration or permission; no public output. |
+| `dgr_groundwater` | RESTRICTED_ACCESS_REQUIRED | No verified application integration or permission; no public output. |
+| `dopa_villages` | CANDIDATE_NOT_CONNECTED | No verified API integration or local reference artifact; unavailable. |
+| `moph_hospitals` | CANDIDATE_NOT_CONNECTED | No verified API integration or local reference artifact; unavailable. |
+| `ldd_landuse` | RESTRICTED_ACCESS_REQUIRED | No verified access/license and no public output. |
+| `floodtrace_citizen` | Internal community evidence (not an external-source candidate) | Citizen reports remain private until P0-2 publication eligibility allows a sanitized public projection; never official confirmation. |
+
+The registry's `ACTIVE API` value identifies implemented integration only. Current request, usable data, database records, source timestamp, and freshness are reported separately. The external request attempt in this QA environment was blocked by local network restrictions; no upstream status or record count is inferred from that failure.
+
 **โครงการ:** FloodTrace — ระบบภูมิสารสนเทศติดตามน้ำท่วมและการเชื่อมต่อทางอุทกวิทยา  
 **พื้นที่เป้าหมาย:** ลุ่มน้ำปราจีนบุรีและบางปะกง จังหวัดปราจีนบุรี ประเทศไทย  
 **สถานะการตรวจสอบ:** ผ่านการตรวจสอบความสัจจริงระดับ Production (Final Production Truth Audit Passed)  

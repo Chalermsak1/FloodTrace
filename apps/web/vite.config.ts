@@ -1,8 +1,17 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'API_');
+  const apiProxyTarget = env.API_PROXY_TARGET || process.env.API_PROXY_TARGET || 'http://localhost:8001';
+
+  return {
+  plugins: [react(), {
+    name: 'ruwaigon-api-proxy-target',
+    configureServer() {
+      console.info(`[Ruwaigon] API proxy target: ${apiProxyTarget}`);
+    }
+  }],
   optimizeDeps: {
     exclude: ['maplibre-gl']
   },
@@ -24,9 +33,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8001',
+        target: apiProxyTarget,
         changeOrigin: true
       }
     }
   }
+  };
 });

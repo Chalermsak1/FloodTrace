@@ -8,7 +8,8 @@ from apps.api.app.main import app
 from apps.api.app.core.config import settings
 from apps.api.app.core.database import SessionLocal
 from apps.api.app.core.scheduler import source_scheduler
-from apps.api.app.core.circuit_breaker import get_circuit_breaker
+from apps.api.app.core.circuit_breaker import get_circuit_breaker, CircuitBreakerState
+from apps.api.app.adapters.thaiwater import SourceRecords
 from apps.api.app.models.entities import (
     WaterStation,
     RainfallStation,
@@ -26,6 +27,58 @@ def db_session():
         yield db
     finally:
         db.close()
+
+
+def _station_record(kind, station_id):
+    timestamp = datetime.now(timezone.utc).isoformat()
+    source_url = settings.THAIWATER_API_URL if kind == "water" else settings.THAIWATER_RAIN_API_URL
+    provenance = {
+        "source_url": source_url,
+        "scope_filter": "province_name:ปราจีนบุรี",
+        "source_verification": "VERIFIED_OFFICIAL",
+        "category": "MEASURED_FACT",
+        "geocoding_precision": "OFFICIAL_COORDINATES",
+        "original_timestamp": timestamp,
+    }
+    common = {
+        "id": station_id,
+        "name_th": "สถานีทดสอบ",
+        "district": "เมืองปราจีนบุรี",
+        "latitude": 14.05,
+        "longitude": 101.38,
+        "observation_time": timestamp,
+        "raw_observation_time": timestamp,
+        "provenance": provenance,
+    }
+    if kind == "water":
+        return {
+            **common, "basin": "", "name_en": None, "water_level_msl": 0.0,
+            "ground_level_msl": None, "warning_level_msl": 1.0,
+            "critical_level_msl": 2.0, "status": "STAGE_RECORDED",
+        }
+    return {
+        **common, "basin": None, "name_en": None, "subdistrict": None,
+        "rain_24h_mm": 0.0, "rain_1h_mm": 0.0, "agency": "HII",
+        "status": "RAINFALL_RECORDED",
+    }
+
+
+def _install_source_response(monkeypatch, source_id, record):
+    async def fetcher():
+        return SourceRecords([record], 200)
+
+    monkeypatch.setattr(source_scheduler._configs[source_id], "fetcher", fetcher)
+    breaker = get_circuit_breaker(source_id)
+    breaker.state = CircuitBreakerState.CLOSED
+    breaker.failure_count = 0
+    breaker.success_count = 0
+    breaker.last_failure_time = None
+
+
+def _clear_station_fixture(db, station_id, station_model, observation_model):
+    db.query(observation_model).filter(observation_model.station_id == station_id).delete(synchronize_session=False)
+    db.query(station_model).filter(station_model.id == station_id).delete(synchronize_session=False)
+    db.commit()
 
 def test_section_34_final_source_counts():
     """
@@ -63,11 +116,14 @@ def test_section_2_and_3_final_source_status_model(db_session):
         assert sources[key]["source_status"] == "BLOCKED"
         assert sources[key]["PRODUCTION_ENABLED"] is False
 
-def test_section_15_and_16_scheduler_refresh_and_deduplication(db_session):
+def test_section_15_and_16_scheduler_refresh_and_deduplication(db_session, monkeypatch):
     """
     Master Prompt Section 15, 16, 18, 30:
     Tests automated scheduler run, database update, deduplication, and time-series observation storage.
     """
+    _clear_station_fixture(db_session, "restore-water-fixture", WaterStation, WaterLevelObservation)
+    _install_source_response(monkeypatch, "thaiwater_rid_runoff", _station_record("water", "restore-water-fixture"))
+
     async def _run():
         res1 = await source_scheduler.run_source_now("thaiwater_rid_runoff", db=db_session)
         assert res1["status"] == "SUCCESS"
@@ -78,34 +134,39 @@ def test_section_15_and_16_scheduler_refresh_and_deduplication(db_session):
         assert res2["status"] == "SUCCESS"
         assert res2["duplicates_skipped"] == res1["received"] # All skipped as duplicates
         assert res2["inserted"] == 0
+        station = db_session.query(WaterStation).filter(WaterStation.id == "restore-water-fixture").first()
+        assert station is not None and station.water_level_msl == 0.0
+        assert db_session.query(WaterLevelObservation).filter(WaterLevelObservation.station_id == "restore-water-fixture").count() == 1
 
     asyncio.run(_run())
 
-def test_section_18_historical_timeseries_endpoints(db_session):
+
+def test_section_15_rainfall_refresh_and_duplicate_history(db_session, monkeypatch):
+    _clear_station_fixture(db_session, "restore-rain-fixture", RainfallStation, RainfallObservation)
+    _install_source_response(monkeypatch, "thaiwater_rainfall", _station_record("rain", "restore-rain-fixture"))
+
+    async def _run():
+        first = await source_scheduler.run_source_now("thaiwater_rainfall", db=db_session)
+        second = await source_scheduler.run_source_now("thaiwater_rainfall", db=db_session)
+        assert first["status"] == second["status"] == "SUCCESS"
+        assert first["received"] == 1
+        assert second["duplicates_skipped"] == 1
+        assert second["inserted"] == 0
+        station = db_session.query(RainfallStation).filter(RainfallStation.id == "restore-rain-fixture").first()
+        assert station is not None and station.rain_24h_mm == 0.0
+        assert db_session.query(RainfallObservation).filter(RainfallObservation.station_id == "restore-rain-fixture").count() == 1
+
+    asyncio.run(_run())
+
+def test_section_18_historical_timeseries_endpoints(db_session, monkeypatch):
     """
     Master Prompt Section 18:
     Tests time-series observation query endpoints supporting 24H, 7D, 30D.
     """
-    sample_obs = db_session.query(WaterLevelObservation).first()
-    if not sample_obs:
-        asyncio.run(source_scheduler.run_source_now("thaiwater_rid_runoff", db=db_session))
-        sample_obs = db_session.query(WaterLevelObservation).first()
-
-    st_id = sample_obs.station_id
-    st = db_session.query(WaterStation).filter(WaterStation.id == st_id).first()
-    if not st:
-        st = WaterStation(
-            id=st_id,
-            name_th="สถานีทดสอบ",
-            basin="ลุ่มน้ำปราจีนบุรี",
-            district="กบินทร์บุรี",
-            latitude=13.99,
-            longitude=101.72,
-            water_level_msl=23.64,
-            provenance={"source_agency": "ThaiWater"}
-        )
-        db_session.add(st)
-        db_session.commit()
+    st_id = "restore-water-history"
+    _clear_station_fixture(db_session, st_id, WaterStation, WaterLevelObservation)
+    _install_source_response(monkeypatch, "thaiwater_rid_runoff", _station_record("water", st_id))
+    asyncio.run(source_scheduler.run_source_now("thaiwater_rid_runoff", db=db_session))
 
     # Query 24h history
     resp_24h = client.get(f"/api/public/stations/{st_id}/history?range=24h")
@@ -134,31 +195,15 @@ def test_section_18_historical_timeseries_endpoints(db_session):
     assert resp_30d.status_code == 200
     assert resp_30d.json()["time_range"] == "30d"
 
-def test_section_18_rainfall_history_endpoint(db_session):
+def test_section_18_rainfall_history_endpoint(db_session, monkeypatch):
     """
     Master Prompt Section 18:
     Tests rainfall time-series observation history endpoint.
     """
-    sample_rf = db_session.query(RainfallObservation).first()
-    if not sample_rf:
-        asyncio.run(source_scheduler.run_source_now("thaiwater_rainfall", db=db_session))
-        sample_rf = db_session.query(RainfallObservation).first()
-
-    st_id = sample_rf.station_id
-    st = db_session.query(RainfallStation).filter(RainfallStation.id == st_id).first()
-    if not st:
-        st = RainfallStation(
-            id=st_id,
-            name_th="สถานีวัดน้ำฝน",
-            basin="ลุ่มน้ำบางปะกง",
-            district="กบินทร์บุรี",
-            latitude=13.99,
-            longitude=101.72,
-            rain_24h_mm=45.4,
-            provenance={"source_agency": "ThaiWater"}
-        )
-        db_session.add(st)
-        db_session.commit()
+    st_id = "restore-rain-history"
+    _clear_station_fixture(db_session, st_id, RainfallStation, RainfallObservation)
+    _install_source_response(monkeypatch, "thaiwater_rainfall", _station_record("rain", st_id))
+    asyncio.run(source_scheduler.run_source_now("thaiwater_rainfall", db=db_session))
 
     resp = client.get(f"/api/public/rainfall/{st_id}/history?range=24h")
     assert resp.status_code == 200
@@ -180,7 +225,9 @@ def test_section_26_no_static_factual_fallbacks():
 
     # Must be integer and match actual DB count
     assert isinstance(data["community_observation_count"], int)
-    assert data["monitoring_stations_active"] is None
+    assert data["monitoring_stations_active"] == (
+        data["available_water_station_count"] + data["available_rainfall_station_count"]
+    )
 
 def test_section_28_failure_test_fail_closed():
     """
@@ -235,12 +282,13 @@ def test_timezone_and_timestamp_integrity():
     with pytest.raises(FutureTimestampError):
         parse_thaiwater_timestamp(future_str)
 
-def test_scheduler_runtime_timestamp_fields(db_session):
+def test_scheduler_runtime_timestamp_fields(db_session, monkeypatch):
     """
     Verifies that the scheduler status exposes all required timestamp audit fields:
     source_timestamp_raw, source_timezone, normalized_timestamp_utc,
     normalized_timestamp_asia_bangkok, retrieved_at, and data_age_seconds.
     """
+    _install_source_response(monkeypatch, "thaiwater_rid_runoff", _station_record("water", "restore-water-runtime"))
     asyncio.run(source_scheduler.run_source_now("thaiwater_rid_runoff", db=db_session))
     headers = {"X-Admin-Key": settings.ADMIN_API_KEY}
     resp = client.get("/api/v1/admin/scheduler/status", headers=headers)

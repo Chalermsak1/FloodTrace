@@ -1,6 +1,9 @@
 # ระเบียบวิธีวิจัยและแบบจำลองทางวิทยาศาสตร์ (METHODOLOGY)
 
 > **P0-1 current methodology status:** This note supersedes contradictory claims that unavailable satellite, waterway, receptor, or forecast inputs participate in current public output; historical audits remain unchanged. Public modeled geometry is unavailable until reproducible inputs and provenance are verified. No priority, freshness, or confidence is inferred from missing data. P0-3 owns media delivery; P0-5 owns authentication and SSE.
+
+> **Legacy API restoration update (2026-10-05):** The current Monitoring Priority model is a point classification at source-verified station coordinates, not a geographic surface. It compares current water-level measurements only with source-provided warning/critical thresholds; current rain measurements are shown as inputs without a severity score. Missing thresholds or stale/unverified inputs produce no point. Open-Meteo precipitation is a separate numerical forecast model, never current observation or flood extent. No code-authored polygon/cell, unsupported waterway, or industrial attribution contributes to these public outputs.
+
 **ขอบเขตลุ่มน้ำ:** ลุ่มน้ำปราจีนบุรี (แม่น้ำหนุมาน แม่น้ำพระปรง แม่น้ำปราจีนบุรี และคลองสาขา)  
 **สถานะการตรวจสอบ:** ร่างฉบับตรวจสอบความจริงเพื่อการใช้งานจริง (PRODUCTION TRUTH AUDIT)  
 **วันที่ตรวจสอบล่าสุด:** 2026-10-02  

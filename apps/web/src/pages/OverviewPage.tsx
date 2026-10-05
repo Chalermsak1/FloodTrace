@@ -61,10 +61,9 @@ export const OverviewPage: React.FC = () => {
 
   // Fetch Real Data from Public APIs
   useEffect(() => {
-    setLoading(true);
-    setFetchError(false);
-
-    Promise.all([
+    const load = (initial = false) => {
+      if (initial) setLoading(true);
+      Promise.all([
       fetch('/api/public/overview').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/official-updates').then(r => r.ok ? r.json() : null).catch(() => null)
     ])
@@ -73,6 +72,7 @@ export const OverviewPage: React.FC = () => {
         if (!overviewRes) {
           setFetchError(true);
         } else {
+          setFetchError(false);
           setOverviewData(overviewRes);
           setOfficialUpdates(Array.isArray(updatesRes) ? updatesRes : []);
         }
@@ -82,6 +82,10 @@ export const OverviewPage: React.FC = () => {
         setFetchError(true);
         setLoading(false);
       });
+    };
+    load(true);
+    const refresh = window.setInterval(() => load(), 60_000);
+    return () => window.clearInterval(refresh);
   }, []);
 
   // Filtered search targets (Districts, Authentic Subdistricts, Waterways)
@@ -369,15 +373,15 @@ export const OverviewPage: React.FC = () => {
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
             <div className="pt-2 md:pt-0 md:px-3 first:pl-0">
-              <span className="text-xs text-slate-500 block mb-1">สถานีตรวจวัดอัตโนมัติ:</span>
+              <span className="text-xs text-slate-500 block mb-1">สถานีที่มีระเบียนต้นทางในระบบ:</span>
               <span className="text-sm sm:text-base font-bold text-slate-900">
                 {loading ? '...' : `${overviewData?.total_water_stations ?? 'ไม่มีข้อมูล'} สถานีน้ำ + ${overviewData?.total_rainfall_stations ?? 'ไม่มีข้อมูล'} สถานีฝน`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">
-              <span className="text-xs text-slate-500 block mb-1">พื้นที่ที่ควรติดตาม:</span>
+              <span className="text-xs text-slate-500 block mb-1">สถานีน้ำถึงเกณฑ์จากต้นทาง:</span>
               <span className="text-sm sm:text-base font-bold text-orange-600">
-                {loading ? '...' : `${overviewData?.priority_counts?.high == null ? 'ไม่มีข้อมูล' : `${overviewData.priority_counts.high} โซน`}`}
+                {loading ? '...' : `${overviewData?.priority_counts?.high == null ? 'ไม่มีข้อมูล' : `${overviewData.priority_counts.high} สถานี`}`}
               </span>
             </div>
             <div className="pt-2 md:pt-0 md:px-3">

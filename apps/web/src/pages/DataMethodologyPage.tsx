@@ -7,9 +7,14 @@ type SourceRecord = {
   source_id: string;
   agency: string;
   dataset: string;
+  status?: string;
   source_status: string;
+  runtime_status?: string;
+  family?: string;
+  role?: string;
   database_records: number | null;
   latest_source_timestamp: string | null;
+  retrieved_at?: string | null;
   reason_code: string | null;
   refresh_interval: string | null;
 };
@@ -47,10 +52,11 @@ export const DataMethodologyPage: React.FC = () => {
               {sources.map((source) => (
                 <article key={source.source_id} className="grid min-w-0 grid-cols-1 gap-3 py-3 md:grid-cols-2 xl:grid-cols-4">
                   <div className="min-w-0"><h3 className="break-words font-semibold text-slate-900">{source.dataset}</h3><p className="break-words text-xs text-slate-500">{source.agency}</p></div>
-                  <dl className="min-w-0 text-sm"><dt className="text-xs font-semibold text-slate-500">สถานะการเข้าถึง</dt><dd className="break-words font-medium">{source.source_status || 'ไม่สามารถยืนยันได้'}</dd></dl>
+                  <dl className="min-w-0 text-sm"><dt className="text-xs font-semibold text-slate-500">สถานะล่าสุด</dt><dd className="break-words font-medium">{source.runtime_status || source.status || source.source_status || 'ไม่สามารถยืนยันได้'}</dd>{source.family && <dd className="text-xs text-slate-500">{source.family}{source.role ? ` · ${source.role}` : ''}</dd>}</dl>
                   <dl className="min-w-0 text-sm"><dt className="text-xs font-semibold text-slate-500">ระเบียนในระบบ</dt><dd>{source.database_records === null ? 'ไม่มีข้อมูล' : source.database_records}</dd></dl>
                   <div className="min-w-0 space-y-2 text-sm">
                     <dl><dt className="text-xs font-semibold text-slate-500">เวลาจากแหล่งข้อมูล</dt><dd className="break-words">{source.latest_source_timestamp || 'ไม่มีข้อมูล'}</dd></dl>
+                    {source.retrieved_at && <dl><dt className="text-xs font-semibold text-slate-500">เวลาดึงแบบพยากรณ์</dt><dd className="break-words">{source.retrieved_at}</dd></dl>}
                     <dl><dt className="text-xs font-semibold text-slate-500">รหัสเหตุผล</dt><dd className="break-words">{source.reason_code || 'ไม่มีข้อมูล'}</dd></dl>
                     <dl><dt className="text-xs font-semibold text-slate-500">ช่วงปรับปรุง</dt><dd className="break-words">{source.refresh_interval || 'ไม่มีข้อมูล'}</dd></dl>
                   </div>

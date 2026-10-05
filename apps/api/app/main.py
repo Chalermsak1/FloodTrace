@@ -12,8 +12,6 @@ from apps.api.app.core.private_media import private_media_ready
 from apps.api.app.core.database import SessionLocal, Base, engine, get_db, reconcile_database_schema
 
 from apps.api.app.models.entities import WaterStation, RainfallStation, Reservoir, IndustrialFacility
-from apps.api.app.adapters.thaiwater import fetch_thaiwater_stations, fetch_thaiwater_rainfall
-from apps.api.app.adapters.rid import fetch_rid_reservoirs
 from apps.api.app.adapters.diw import load_diw_facilities
 
 from apps.api.app.api.v1.telemetry import router as telemetry_router
@@ -29,6 +27,7 @@ from apps.api.app.api.public.router import public_router
 from apps.api.app.api.internal.router import internal_router
 from apps.api.app.core.pipeline import ingestion_pipeline
 from apps.api.app.core.scheduler import source_scheduler
+from apps.api.app.core.source_health import has_current_external_request_evidence, model_runtime_status, telemetry_runtime_status
 from apps.api.app.core.security import (
     RequestIdMiddleware,
     SecurityHeadersMiddleware,
@@ -40,6 +39,7 @@ from fastapi.staticfiles import StaticFiles
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("floodtrace")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -60,13 +60,18 @@ async def lifespan(app: FastAPI):
                 if purged:
                     logger.info(f"Reconciliation: Purged {purged} PUBLIC_ONLY DIW facilities from production DB.")
 
-            tw_eval = evaluate_source_access("thaiwater_rid_runoff", credential_override=settings.THAIWATER_API_KEY, enforce_private_production=True)
+            tw_eval = evaluate_source_access(
+                "thaiwater_rid_runoff",
+                credential_override=settings.THAIWATER_API_KEY,
+                enforce_private_production=settings.REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION,
+                allow_official_public=settings.ALLOW_OFFICIAL_PUBLIC_PRODUCTION,
+            )
             if tw_eval.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION:
                 purged = db.query(WaterStation).delete()
                 if purged:
                     logger.info(f"Reconciliation: Purged {purged} PUBLIC_ONLY ThaiWater stations from production DB.")
 
-            rid_eval = evaluate_source_access("thaiwater_rid_runoff", credential_override=settings.RID_PRIVATE_TOKEN, enforce_private_production=True)
+            rid_eval = evaluate_source_access("rid_reservoirs", credential_override=settings.RID_PRIVATE_TOKEN, enforce_private_production=True)
             if rid_eval.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION:
                 purged = db.query(Reservoir).delete()
                 if purged:
@@ -107,73 +112,6 @@ async def lifespan(app: FastAPI):
                 if diw_items:
                     logger.info(f"Audited {len(diw_items)} DIW facilities synced.")
                 
-            if db.query(WaterStation).count() == 0:
-                logger.info("Syncing initial ThaiWater water stations...")
-                stations = await fetch_thaiwater_stations()
-                for item in stations:
-                    st = WaterStation(
-                        id=item["id"],
-                        name_th=item["name_th"],
-                        name_en=item["name_en"],
-                        basin=item["basin"],
-                        district=item["district"],
-                        latitude=item["latitude"],
-                        longitude=item["longitude"],
-                        water_level_msl=item["water_level_msl"],
-                        ground_level_msl=item["ground_level_msl"],
-                        warning_level_msl=item["warning_level_msl"],
-                        critical_level_msl=item["critical_level_msl"],
-                        status=item["status"],
-                        provenance=item["provenance"]
-                    )
-                    db.merge(st)
-                db.commit()
-                logger.info(f"Seeded {len(stations)} ThaiWater stations.")
-
-            if db.query(RainfallStation).count() == 0:
-                logger.info("Syncing initial ThaiWater rainfall stations...")
-                rain_stations = await fetch_thaiwater_rainfall()
-                for item in rain_stations:
-                    rf = RainfallStation(
-                        id=item["id"],
-                        name_th=item["name_th"],
-                        name_en=item["name_en"],
-                        basin=item["basin"],
-                        district=item["district"],
-                        subdistrict=item["subdistrict"],
-                        latitude=item["latitude"],
-                        longitude=item["longitude"],
-                        rain_24h_mm=item["rain_24h_mm"],
-                        rain_1h_mm=item["rain_1h_mm"],
-                        observation_time=item["observation_time"],
-                        agency=item["agency"],
-                        status=item["status"],
-                        provenance=item["provenance"]
-                    )
-                    db.merge(rf)
-                db.commit()
-                logger.info(f"Seeded {len(rain_stations)} ThaiWater rain stations.")
-
-            if db.query(Reservoir).count() == 0:
-                logger.info("Syncing RID reservoir data...")
-                reservoirs = await fetch_rid_reservoirs()
-                for item in reservoirs:
-                    r = Reservoir(
-                        id=item["id"],
-                        name_th=item["name_th"],
-                        capacity_mcm=item["capacity_mcm"],
-                        storage_mcm=item["storage_mcm"],
-                        storage_percent=item["storage_percent"],
-                        inflow_mcm_day=item["inflow_mcm_day"],
-                        outflow_mcm_day=item["outflow_mcm_day"],
-                        latitude=item["latitude"],
-                        longitude=item["longitude"],
-                        district=item["district"],
-                        provenance=item["provenance"]
-                    )
-                    db.merge(r)
-                db.commit()
-                logger.info(f"Seeded {len(reservoirs)} RID reservoirs.")
         else:
             logger.info("Production Mode Active: External uncredentialed datasets are strictly blocked from database.")
     except Exception as e:
@@ -391,44 +329,41 @@ def sources_health_check(db: Session = Depends(get_db)):
     from apps.api.app.core.source_access import CANDIDATE_SOURCES_REGISTRY, canonical_source_status, evaluate_source_access, evaluate_production_eligibility
     from apps.api.app.core.scheduler import source_scheduler
     from apps.api.app.models.entities import WaterStation, RainfallStation
+    from apps.api.app.api.public.router import _is_public_telemetry_station
     from apps.api.app.core.provenance import compute_source_freshness, FreshnessStatus
+    from apps.api.app.adapters.openmeteo import get_openmeteo_source_health
 
     repo_root = Path(__file__).resolve().parents[3]
-    water_count = db.query(WaterStation).count()
-    rain_count = db.query(RainfallStation).count()
-    latest_water = db.query(WaterStation).order_by(WaterStation.last_updated.desc()).first()
-    latest_rain = db.query(RainfallStation).order_by(RainfallStation.last_updated.desc()).first()
-    water_ts_raw = latest_water.provenance.get("original_timestamp") if latest_water and isinstance(latest_water.provenance, dict) else None
-    rain_ts_raw = latest_rain.observation_time if latest_rain else None
+    water_rows = [row for row in db.query(WaterStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_API_URL)]
+    rain_rows = [row for row in db.query(RainfallStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_RAIN_API_URL)]
+    water_count = len(water_rows)
+    rain_count = len(rain_rows)
+    water_measurements = [row for row in water_rows if row.water_level_msl is not None]
+    rain_measurements = [row for row in rain_rows if row.rain_24h_mm is not None or row.rain_1h_mm is not None]
+
+    def newest_source_timestamp(rows):
+        parsed_rows = []
+        for row in rows:
+            provenance = row.provenance if isinstance(row.provenance, dict) else {}
+            raw = provenance.get("original_timestamp")
+            if not isinstance(raw, str):
+                continue
+            try:
+                parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                if parsed.tzinfo is not None:
+                    parsed_rows.append((parsed.astimezone(timezone.utc), raw))
+            except (TypeError, ValueError, OverflowError):
+                continue
+        return max(parsed_rows, default=(None, None), key=lambda item: item[0])[1]
+
+    water_ts_raw = newest_source_timestamp(water_measurements)
+    rain_ts_raw = newest_source_timestamp(rain_measurements)
     water_freshness, _ = compute_source_freshness(water_ts_raw)
     rain_freshness, _ = compute_source_freshness(rain_ts_raw)
     water_ts = water_ts_raw if water_freshness != FreshnessStatus.UNKNOWN else None
     rain_ts = rain_ts_raw if rain_freshness != FreshnessStatus.UNKNOWN else None
     scheduler_status = source_scheduler.get_status()
     now = datetime.now(timezone.utc)
-
-    def has_current_request_evidence(source_status, scheduler_source):
-        if source_status != "ACTIVE API" or not isinstance(scheduler_source, dict):
-            return False
-        started_raw = scheduler_source.get("request_started_at")
-        finished_raw = scheduler_source.get("request_finished_at")
-        http_status = scheduler_source.get("http_status")
-        interval = scheduler_source.get("interval_seconds")
-        if (not isinstance(started_raw, str) or not isinstance(finished_raw, str)
-                or isinstance(http_status, bool) or http_status != 200
-                or isinstance(interval, bool) or not isinstance(interval, (int, float)) or interval <= 0):
-            return False
-        try:
-            started = datetime.fromisoformat(started_raw.replace("Z", "+00:00"))
-            finished = datetime.fromisoformat(finished_raw.replace("Z", "+00:00"))
-        except ValueError:
-            return False
-        if started.tzinfo is None or finished.tzinfo is None:
-            return False
-        started = started.astimezone(timezone.utc)
-        finished = finished.astimezone(timezone.utc)
-        age_seconds = (now - finished).total_seconds()
-        return started <= finished <= now and 0 <= age_seconds <= interval
 
     blocked = {"gistda_disaster", "tmd_forecast", "official_dem", "diw_all_factories", "pcd_reo7_inspection", "pcd_water_quality", "dgr_groundwater", "ldd_landuse"}
     records = {}
@@ -443,7 +378,28 @@ def sources_health_check(db: Session = Depends(get_db)):
         freshness = water_freshness if source_key == "thaiwater_rid_runoff" else rain_freshness if source_key == "thaiwater_rainfall" else FreshnessStatus.UNKNOWN
         source_status, source_exists, reason = canonical_source_status(source_key, repo_root)
         has_records = isinstance(count, int) and count > 0
-        freshness_verified = bool(has_records and freshness == FreshnessStatus.CURRENT)
+        freshness_verified = bool(count and freshness == FreshnessStatus.CURRENT)
+        current_request = has_current_external_request_evidence(source_status, sched, now=now)
+        measurement_count = sched.get("measurements_received_last_run")
+        live_measurement_received = (
+            current_request
+            and isinstance(measurement_count, int)
+            and not isinstance(measurement_count, bool)
+            and measurement_count > 0
+        )
+        runtime_status = telemetry_runtime_status(
+            current_request,
+            sched,
+            scheduler_status.get("scheduler_active") is True,
+            live_measurement_received,
+            freshness_verified,
+        )
+        if source_status == "ACTIVE API" and not current_request:
+            runtime_reason = "UPSTREAM_ERROR" if runtime_status in {"UPSTREAM ERROR", "ACCESS REQUIRED"} else "REQUEST_NOT_VERIFIED"
+        elif current_request and not live_measurement_received:
+            runtime_reason = "NO_USABLE_MEASUREMENTS"
+        else:
+            runtime_reason = None
         prod_status = status_map[source_status]
         prod_allowed = source_status == "ACTIVE API" and access.ingestion_action.value == "ALLOW_PRODUCTION_INGESTION"
         production_enabled = bool(prod_allowed and has_records and freshness_verified and eligibility.verified_license_for_production)
@@ -452,19 +408,19 @@ def sources_health_check(db: Session = Depends(get_db)):
             "source_name": "ThaiWater water-level telemetry" if source_key == "thaiwater_rid_runoff" else "ThaiWater rainfall telemetry" if source_key == "thaiwater_rainfall" else entry["source_name"],
             "source_agency": "ThaiWater" if source_key in {"thaiwater_rid_runoff", "thaiwater_rainfall"} else entry["source_name"],
             "organization": "Hydro-Informatics Institute (HII)" if source_key in {"thaiwater_rid_runoff", "thaiwater_rainfall"} else entry["organization"],
-            "source_status": source_status, "production_status": prod_status, "user_facing_status_th": source_status,
+            "source_status": source_status, "runtime_status": runtime_status, "production_status": prod_status, "user_facing_status_th": runtime_status,
             "data_classification": "HIGH_FREQUENCY" if source_status == "ACTIVE API" else "UNAVAILABLE",
             "ingestion_mode": "EXTERNAL_API" if source_status == "ACTIVE API" else "INTERNAL" if source_status == "INTERNAL" else "BLOCKED" if source_status == "BLOCKED" else "LOCAL_UNVERIFIED",
             "latest_source_timestamp": timestamp, "database_records": count,
             "freshness_status": freshness.value,
-            "reason_code": reason or ("COUNT_NOT_APPLICABLE" if count is None else "TIMESTAMP_UNAVAILABLE" if not timestamp else None),
+            "reason_code": reason or ("COUNT_NOT_APPLICABLE" if count is None else "TIMESTAMP_UNAVAILABLE" if not timestamp else runtime_reason),
             "private_or_public": access.private_or_public, "authorization_status": access.authorization_status.value, "ingestion_action": access.ingestion_action.value,
             "production_allowed": prod_allowed, "production_eligible": bool(eligibility.production_eligible and source_status == "ACTIVE API"),
             "verified_license": bool(eligibility.verified_license_for_production and source_status == "ACTIVE API"),
             "SOURCE_EXISTS": source_exists, "ENDPOINT_VERIFIED": bool(source_status == "ACTIVE API" and eligibility.real_endpoint),
             "ACCESS_VERIFIED": bool(source_status == "ACTIVE API" and access.ingestion_action.value == "ALLOW_PRODUCTION_INGESTION"),
-            "LICENSE_VERIFIED": bool(source_status == "ACTIVE API" and eligibility.verified_license_for_production), "REAL_DATA_RECEIVED": has_records,
-            "REAL_EXTERNAL_REQUEST": has_current_request_evidence(source_status, sched), "LOCAL_DATA_LOADED": source_status == "LOCAL / UNVERIFIED" and source_exists,
+            "LICENSE_VERIFIED": bool(source_status == "ACTIVE API" and eligibility.verified_license_for_production), "REAL_DATA_RECEIVED": live_measurement_received,
+            "REAL_EXTERNAL_REQUEST": current_request, "LOCAL_DATA_LOADED": source_status == "LOCAL / UNVERIFIED" and source_exists,
             "DATABASE_INGESTED": has_records, "AUTOMATED_REFRESH": bool(source_status == "ACTIVE API" and sched.get("automated_refresh") is True),
             "FRESHNESS_VERIFIED": freshness_verified, "PUBLIC_API_AVAILABLE": bool(source_status == "ACTIVE API" and has_records and freshness_verified),
             "FRONTEND_DISPLAY_VERIFIED": False, "PRODUCTION_ENABLED": production_enabled,
@@ -478,7 +434,38 @@ def sources_health_check(db: Session = Depends(get_db)):
         "BLOCKED_SOURCES": lambda x: x["source_status"] == "BLOCKED", "TEST_ONLY_SOURCES": lambda x: x["source_status"] == "INTERNAL",
     }.items():
         counts[key] = sum(1 for item in records.values() if predicate(item))
-    return {"status": "monitored", "timestamp": datetime.now(timezone.utc).isoformat(), "total_sources_evaluated": len(records), "production_counts": counts, "sources": records}
+    forecast_health = get_openmeteo_source_health()
+    forecast_finished = forecast_health.get("request_finished_at")
+    forecast_status = model_runtime_status(forecast_health, now=now)
+    model_sources = {
+        "openmeteo_forecast": {
+            "provider": "Open-Meteo",
+            "family": "MODEL",
+            "role": "FORECAST",
+            "status": forecast_status,
+            "http_status": forecast_health.get("http_status"),
+            "request_finished_at": forecast_finished,
+            "usable_days": forecast_health.get("usable_days", 0),
+            "reason_code": forecast_health.get("last_error") if forecast_status != "AVAILABLE MODEL" else None,
+        }
+    }
+    rid_source = {
+        "source_name": "RID reservoir telemetry",
+        "provider": "Royal Irrigation Department",
+        "status": "ACCESS REQUIRED",
+        "reason_code": "RID_ACCESS_AND_CURRENT_DATA_NOT_VERIFIED",
+        "database_records": None,
+        "note": "RID is not treated as ThaiWater; no reservoir records are published until RID access, license, and current telemetry are verified.",
+    }
+    return {
+        "status": "monitored",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "total_sources_evaluated": len(records),
+        "production_counts": counts,
+        "sources": records,
+        "conditional_sources": {"rid_reservoirs": rid_source},
+        "model_sources": model_sources,
+    }
 
 
 @app.get("/health/metrics")

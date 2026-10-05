@@ -43,6 +43,38 @@ def source_freshness(timestamp) -> str:
     return compute_source_freshness(timestamp)[0].value
 
 
+def _is_public_telemetry_station(station: Any, source_url: str) -> bool:
+    provenance = station.provenance if isinstance(station.provenance, dict) else {}
+    if (
+        provenance.get("source_url") != source_url
+        or provenance.get("scope_filter") != "province_name:ปราจีนบุรี"
+        or provenance.get("source_verification") != "VERIFIED_OFFICIAL"
+        or provenance.get("geocoding_precision") != "OFFICIAL_COORDINATES"
+    ):
+        return False
+    try:
+        latitude = float(station.latitude)
+        longitude = float(station.longitude)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    min_lon, min_lat, max_lon, max_lat = settings.PRACHINBURI_BBOX
+    return (
+        latitude == latitude and longitude == longitude
+        and min_lat <= latitude <= max_lat
+        and min_lon <= longitude <= max_lon
+    )
+
+
+def _is_public_telemetry_observation(observation: Any, source_url: str) -> bool:
+    provenance = observation.provenance if isinstance(observation.provenance, dict) else {}
+    return (
+        observation.ingestion_mode == "EXTERNAL_API"
+        and provenance.get("source_url") == source_url
+        and provenance.get("scope_filter") == "province_name:ปราจีนบุรี"
+        and provenance.get("source_verification") == "VERIFIED_OFFICIAL"
+    )
+
+
 # ============================================================
 # Section 2 & 5: Public DTOs (Guaranteed prohibited field exclusion)
 # ============================================================
@@ -197,22 +229,68 @@ def get_public_overview(
         CitizenReport.reporter_role != "TEST/DEMO",
     )
     reports_count = reports_query.count()
+    water_rows = [row for row in db.query(WaterStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_API_URL)]
+    rain_rows = [row for row in db.query(RainfallStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_RAIN_API_URL)]
+    current_water = [row for row in water_rows if row.water_level_msl is not None and source_freshness((row.provenance or {}).get("original_timestamp")) == FreshnessStatus.CURRENT.value]
+    current_rain = [row for row in rain_rows if (row.rain_24h_mm is not None or row.rain_1h_mm is not None) and source_freshness((row.provenance or {}).get("original_timestamp")) == FreshnessStatus.CURRENT.value]
+
+    def telemetry_freshness(rows, has_measurement):
+        statuses = []
+        for row in rows:
+            if not has_measurement(row):
+                continue
+            provenance = row.provenance if isinstance(row.provenance, dict) else {}
+            statuses.append(source_freshness(provenance.get("original_timestamp")))
+        if FreshnessStatus.CURRENT.value in statuses:
+            return FreshnessStatus.CURRENT.value
+        if not statuses:
+            return FreshnessStatus.UNKNOWN.value if rows else "UNAVAILABLE"
+        for state in (FreshnessStatus.RECENT.value, FreshnessStatus.STALE.value, FreshnessStatus.HISTORICAL.value):
+            if state in statuses:
+                return state
+        return FreshnessStatus.UNKNOWN.value
+
+    water_source_freshness = telemetry_freshness(water_rows, lambda row: row.water_level_msl is not None)
+    rain_source_freshness = telemetry_freshness(rain_rows, lambda row: row.rain_24h_mm is not None or row.rain_1h_mm is not None)
+    source_times = []
+    for row in water_rows + rain_rows:
+        provenance = row.provenance if isinstance(row.provenance, dict) else {}
+        timestamp = provenance.get("original_timestamp")
+        if source_freshness(timestamp) != FreshnessStatus.UNKNOWN.value:
+            try:
+                source_times.append(datetime.fromisoformat(str(timestamp).replace("Z", "+00:00")).astimezone(timezone.utc))
+            except (TypeError, ValueError, OverflowError):
+                pass
+    latest_source_time = max(source_times) if source_times else None
+    latest_iso = latest_source_time.isoformat() if latest_source_time else None
+    latest_th = latest_source_time.astimezone(BANGKOK_TZ).strftime("%d/%m/%Y %H:%M") if latest_source_time else None
+    surface = build_station_priority_points(water_rows, rain_rows)
+    priority_counts = None
+    if surface["priority_counts"] is not None:
+        priority_counts = {"high": surface["priority_counts"]["VERY_HIGH"] + surface["priority_counts"]["HIGH"]}
     return {
         "selected_area": f"อำเภอ{district} จังหวัดปราจีนบุรี", "district": district,
         "current_status": "ไม่สามารถยืนยันได้", "verification_priority": "ไม่สามารถยืนยันได้",
         "verification_priority_label": "ไม่สามารถยืนยันได้", "flood_status": "ไม่สามารถยืนยันได้",
         "community_observation_count": reports_count, "community_observation_summary": "ไม่มีข้อมูล" if reports_count == 0 else f"รายงานจากประชาชน {reports_count} รายการ",
         "official_sampling_status": "ไม่มีข้อมูล", "forecast_watch_summary": "ไม่มีข้อมูล",
-        "data_confidence": "ไม่สามารถยืนยันได้", "data_freshness": "ไม่สามารถยืนยันได้",
-        "last_updated": None, "system_updated_at_th": None, "system_updated_at_iso": None,
-        "why_this_area": ["ไม่มีข้อมูล"], "monitoring_stations_active": None,
-        "total_water_stations": db.query(WaterStation).count(), "total_rainfall_stations": db.query(RainfallStation).count(),
-        "total_citizen_reports": reports_count, "total_monitoring_cells": None, "priority_counts": None,
+        "data_confidence": "ไม่สามารถยืนยันได้", "data_freshness": "ข้อมูลสถานีปัจจุบัน" if current_water or current_rain else "ข้อมูลสถานีไม่เป็นปัจจุบัน" if any(state in {FreshnessStatus.RECENT.value, FreshnessStatus.STALE.value, FreshnessStatus.HISTORICAL.value} for state in (water_source_freshness, rain_source_freshness)) else "ไม่สามารถยืนยันได้",
+        "last_updated": latest_iso, "system_updated_at_th": latest_th, "system_updated_at_iso": latest_iso,
+        "why_this_area": ["ไม่มีข้อมูล"], "monitoring_stations_active": len(current_water) + len(current_rain),
+        "total_water_stations": len(water_rows), "total_rainfall_stations": len(rain_rows),
+        "available_water_station_count": len(current_water), "available_rainfall_station_count": len(current_rain),
+        "total_citizen_reports": reports_count, "total_monitoring_cells": None, "priority_counts": priority_counts,
         "disclaimer": "ข้อมูลด้านสิ่งแวดล้อมและสถานการณ์น้ำยังไม่สามารถยืนยันได้.",
-        "provenance": {"source_agency": "Ruwaigon", "dataset_name": "Public overview", "category": "UNAVAILABLE", "category_th": "ไม่มีข้อมูล", "source_updated_at": None, "floodtrace_updated_at": None}
+        "source_freshness": {
+            "thaiwater_water_level": water_source_freshness,
+            "thaiwater_rainfall": rain_source_freshness,
+            "latest_source_timestamp": latest_iso,
+        },
+        "monitoring_surface_status": surface["status"],
+        "provenance": {"source_agency": "ThaiWater / HII" if source_times else "Ruwaigon", "dataset_name": "Public overview", "category": "MIXED" if source_times else "UNAVAILABLE", "category_th": "ข้อมูลจากหลายประเภท" if source_times else "ไม่มีข้อมูล", "source_updated_at": latest_iso, "floodtrace_updated_at": None}
     }
 
-from apps.api.app.services.spatial_monitoring_service import SpatialMonitoringService
+from apps.api.app.services.spatial_monitoring_service import SpatialMonitoringService, build_station_priority_points
 
 # ============================================================
 # Section 24: GET /api/public/map/boundary
@@ -230,7 +308,33 @@ def get_public_map_monitoring_priority(
     province: Optional[str] = Query("ปราจีนบุรี", description="Active province"),
     db: Session = Depends(get_db)
 ):
-    return {"type": "FeatureCollection", "features": [], "status": "UNAVAILABLE", "reason_code": "LOCAL_PROVENANCE_UNVERIFIED"}
+    from apps.api.app.services.spatial_monitoring_service import build_station_priority_points
+
+    if province not in (None, "ปราจีนบุรี"):
+        return {
+            "type": "FeatureCollection",
+            "features": [],
+            "status": "UNAVAILABLE",
+            "reason_code": "UNSUPPORTED_SCOPE",
+            "provenance": {"category": "MODEL"},
+        }
+    bbox_values = None
+    if bbox:
+        try:
+            bbox_values = tuple(float(value.strip()) for value in bbox.split(","))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "Invalid bounding box"})
+        if len(bbox_values) != 4 or bbox_values[0] >= bbox_values[2] or bbox_values[1] >= bbox_values[3]:
+            raise HTTPException(status_code=400, detail={"error": "INVALID_REQUEST", "message": "Invalid bounding box"})
+
+    water_stations = db.query(WaterStation).all()
+    rainfall_stations = db.query(RainfallStation).all()
+    return build_station_priority_points(
+        water_stations,
+        rainfall_stations,
+        bbox=bbox_values,
+        district=district,
+    )
 
 @public_router.get("/zones", response_model=Dict[str, Any])
 def get_public_watch_zones():
@@ -259,6 +363,8 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
     stations = db.query(WaterStation).all()
     results = []
     for s in stations:
+        if not _is_public_telemetry_station(s, settings.THAIWATER_API_URL):
+            continue
         prov = s.provenance if isinstance(s.provenance, dict) else {}
         source_timestamp = prov.get("original_timestamp")
         freshness = source_freshness(source_timestamp)
@@ -280,9 +386,9 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
                 source_agency=prov.get("source_agency") or "UNAVAILABLE",
                 dataset_name="ข้อมูลตรวจวัดระดับน้ำโทรมาตร (Telemetry Gauging)",
                 category=prov.get("category") or "UNAVAILABLE",
-                category_th="ข้อมูลจากหน่วยงาน" if prov.get("category") == "OFFICIAL" else "ไม่มีข้อมูล",
+                category_th="ข้อมูลตรวจวัดจากหน่วยงาน" if prov.get("category") in {"OFFICIAL", "MEASURED_FACT"} else "ไม่มีข้อมูล",
                 license=prov.get("license") or "UNAVAILABLE",
-                source_url="https://standard.thaiwater.net/",
+                source_url=settings.THAIWATER_API_URL,
                 source_updated_at=source_timestamp if freshness != FreshnessStatus.UNKNOWN.value else None
             )
         ))
@@ -297,6 +403,8 @@ def get_public_rainfall_stations(db: Session = Depends(get_db)):
     stations = db.query(RainfallStation).all()
     results = []
     for s in stations:
+        if not _is_public_telemetry_station(s, settings.THAIWATER_RAIN_API_URL):
+            continue
         prov = s.provenance if isinstance(s.provenance, dict) else {}
         source_timestamp = s.observation_time or prov.get("original_timestamp")
         freshness = source_freshness(source_timestamp)
@@ -319,9 +427,9 @@ def get_public_rainfall_stations(db: Session = Depends(get_db)):
                 source_agency=prov.get("source_agency") or "UNAVAILABLE",
                 dataset_name="ข้อมูลตรวจวัดปริมาณน้ำฝนอัตโนมัติ 24 ชั่วโมง (Rainfall Telemetry)",
                 category=prov.get("category") or "UNAVAILABLE",
-                category_th="ข้อมูลจากหน่วยงาน" if prov.get("category") == "OFFICIAL" else "ไม่มีข้อมูล",
+                category_th="ข้อมูลตรวจวัดจากหน่วยงาน" if prov.get("category") in {"OFFICIAL", "MEASURED_FACT"} else "ไม่มีข้อมูล",
                 license=prov.get("license") or "UNAVAILABLE",
-                source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
+                source_url=settings.THAIWATER_RAIN_API_URL,
                 source_updated_at=source_timestamp if freshness != FreshnessStatus.UNKNOWN.value else None
             )
         ))
@@ -339,7 +447,7 @@ def get_station_water_level_history(
     Never overwrites historical records. Supports 24H, 7D, 30D.
     """
     st = db.query(WaterStation).filter(WaterStation.id == station_id).first()
-    if not st:
+    if not st or not _is_public_telemetry_station(st, settings.THAIWATER_API_URL):
         raise HTTPException(status_code=404, detail="Station not found")
 
     now = datetime.now(timezone.utc)
@@ -348,8 +456,10 @@ def get_station_water_level_history(
 
     records = db.query(WaterLevelObservation).filter(
         WaterLevelObservation.station_id == station_id,
-        WaterLevelObservation.source_timestamp >= cutoff
+        WaterLevelObservation.source_timestamp >= cutoff,
+        WaterLevelObservation.source_timestamp <= now
     ).order_by(WaterLevelObservation.source_timestamp.desc()).all()
+    records = [record for record in records if _is_public_telemetry_observation(record, settings.THAIWATER_API_URL)]
 
     obs_dtos = []
     if records:
@@ -383,7 +493,7 @@ def get_station_water_level_history(
             dataset_name="อนุกรมเวลาระดับน้ำโทรมาตร (Water Level Time-Series)",
             category="OFFICIAL",
             category_th="ข้อมูลจากหน่วยงาน",
-            source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load",
+            source_url=settings.THAIWATER_API_URL,
             source_updated_at=latest_ts
         )
     )
@@ -400,7 +510,7 @@ def get_station_rainfall_history(
     Never overwrites historical records. Supports 24H, 7D, 30D.
     """
     st = db.query(RainfallStation).filter(RainfallStation.id == station_id).first()
-    if not st:
+    if not st or not _is_public_telemetry_station(st, settings.THAIWATER_RAIN_API_URL):
         raise HTTPException(status_code=404, detail="Station not found")
 
     now = datetime.now(timezone.utc)
@@ -409,8 +519,10 @@ def get_station_rainfall_history(
 
     records = db.query(RainfallObservation).filter(
         RainfallObservation.station_id == station_id,
-        RainfallObservation.source_timestamp >= cutoff
+        RainfallObservation.source_timestamp >= cutoff,
+        RainfallObservation.source_timestamp <= now
     ).order_by(RainfallObservation.source_timestamp.desc()).all()
+    records = [record for record in records if _is_public_telemetry_observation(record, settings.THAIWATER_RAIN_API_URL)]
 
     obs_dtos = []
     if records:
@@ -444,7 +556,7 @@ def get_station_rainfall_history(
             dataset_name="อนุกรมเวลาปริมาณน้ำฝน (Rainfall Time-Series)",
             category="OFFICIAL",
             category_th="ข้อมูลจากหน่วยงาน",
-            source_url="https://api-v3.thaiwater.net/api/v1/thaiwater30/public/rain_24h",
+            source_url=settings.THAIWATER_RAIN_API_URL,
             source_updated_at=latest_ts
         )
     )
@@ -547,43 +659,125 @@ def get_public_provenance_catalog(db: Session = Depends(get_db)):
     from pathlib import Path
     from apps.api.app.core.source_access import CANDIDATE_SOURCES_REGISTRY, canonical_source_status
     from apps.api.app.core.scheduler import source_scheduler
+    from apps.api.app.core.source_health import (
+        has_current_external_request_evidence,
+        model_runtime_status,
+        telemetry_runtime_status,
+    )
+    from apps.api.app.adapters.openmeteo import get_openmeteo_source_health
 
     root = Path(__file__).resolve().parents[5]
     scheduler = source_scheduler.get_status()
     sources = []
     for source_id, metadata in CANDIDATE_SOURCES_REGISTRY.items():
         source_status, exists, reason = canonical_source_status(source_id, root)
-        count = db.query(WaterStation).count() if source_id == "thaiwater_rid_runoff" else db.query(RainfallStation).count() if source_id == "thaiwater_rainfall" else None
-        latest = None
+        source_rows = []
+        source_url = None
         if source_id == "thaiwater_rid_runoff":
-            record = db.query(WaterStation).order_by(WaterStation.last_updated.desc()).first()
-            latest = record.provenance.get("original_timestamp") if record and isinstance(record.provenance, dict) else None
+            source_rows = [row for row in db.query(WaterStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_API_URL)]
+            source_url = settings.THAIWATER_API_URL
         elif source_id == "thaiwater_rainfall":
-            record = db.query(RainfallStation).order_by(RainfallStation.last_updated.desc()).first()
-            latest = record.observation_time if record else None
+            source_rows = [row for row in db.query(RainfallStation).all() if _is_public_telemetry_station(row, settings.THAIWATER_RAIN_API_URL)]
+            source_url = settings.THAIWATER_RAIN_API_URL
+        count = len(source_rows) if source_url else None
+        measurement_rows = [
+            row for row in source_rows
+            if (getattr(row, "water_level_msl", None) is not None
+                or getattr(row, "rain_24h_mm", None) is not None
+                or getattr(row, "rain_1h_mm", None) is not None)
+        ]
+        timestamp_rows = []
+        for row in measurement_rows:
+            provenance = row.provenance if isinstance(row.provenance, dict) else {}
+            raw = provenance.get("original_timestamp")
+            if isinstance(raw, str):
+                try:
+                    parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                    if parsed.tzinfo is not None:
+                        timestamp_rows.append((parsed.astimezone(timezone.utc), raw))
+                except (TypeError, ValueError, OverflowError):
+                    pass
+        latest = max(timestamp_rows, default=(None, None), key=lambda item: item[0])[1]
         freshness = source_freshness(latest)
         if freshness == FreshnessStatus.UNKNOWN.value:
             latest = None
+        scheduled = scheduler.get("sources", {}).get(source_id, {})
+        current_request = has_current_external_request_evidence(source_status, scheduled)
+        measurements = scheduled.get("measurements_received_last_run")
+        has_measurement_evidence = current_request and isinstance(measurements, int) and not isinstance(measurements, bool) and measurements > 0
+        if source_status == "ACTIVE API":
+            runtime_status = telemetry_runtime_status(
+                current_request,
+                scheduled,
+                scheduler.get("scheduler_active") is True,
+                has_measurement_evidence,
+                bool(count and freshness == FreshnessStatus.CURRENT.value),
+            )
+            runtime_reason = (
+                "UPSTREAM_ERROR" if runtime_status == "UPSTREAM ERROR"
+                else "NO_USABLE_MEASUREMENTS" if runtime_status == "PARTIAL"
+                else "REQUEST_NOT_VERIFIED" if runtime_status in {"INACTIVE", "NOT CHECKED", "UNVERIFIED"}
+                else None
+            )
+        else:
+            runtime_status = source_status
+            runtime_reason = None
         sources.append({
             "source_id": source_id,
             "agency": "Hydro-Informatics Institute (HII) via ThaiWater" if source_id in {"thaiwater_rid_runoff", "thaiwater_rainfall"} else metadata["organization"],
             "dataset": metadata["dataset"],
-            "status": source_status,
+            "status": runtime_status,
             "source_status": source_status,
+            "runtime_status": runtime_status,
             "source_exists": exists,
             "database_records": count,
             "latest_source_timestamp": latest,
             "freshness_status": freshness,
-            "reason_code": reason or ("COUNT_NOT_APPLICABLE" if count is None else "TIMESTAMP_UNAVAILABLE" if not latest else None),
-            "automated_refresh": scheduler.get("sources", {}).get(source_id, {}).get("automated_refresh") is True,
-            "refresh_interval": None,
+            "reason_code": runtime_reason or reason or ("COUNT_NOT_APPLICABLE" if count is None else "TIMESTAMP_UNAVAILABLE" if not latest else None),
+            "automated_refresh": scheduled.get("automated_refresh") is True,
+            "refresh_interval": f"{scheduled['interval_seconds']} วินาที" if isinstance(scheduled.get("interval_seconds"), int) else None,
             "license_verified": False,
         })
+    forecast_health = get_openmeteo_source_health()
+    sources.append({
+        "source_id": "openmeteo_forecast",
+        "agency": "Open-Meteo",
+        "dataset": "Numerical weather forecast",
+        "family": "MODEL",
+        "role": "FORECAST",
+        "status": model_runtime_status(forecast_health),
+        "source_status": model_runtime_status(forecast_health),
+        "runtime_status": model_runtime_status(forecast_health),
+        "database_records": None,
+        "latest_source_timestamp": None,
+        "retrieved_at": forecast_health.get("retrieved_at"),
+        "freshness_status": "CURRENT" if model_runtime_status(forecast_health) == "AVAILABLE MODEL" else "UNKNOWN",
+        "reason_code": forecast_health.get("last_error") or (None if model_runtime_status(forecast_health) == "AVAILABLE MODEL" else "NO_RECENT_USABLE_FORECAST"),
+        "automated_refresh": False,
+        "refresh_interval": None,
+        "license_verified": False,
+    })
+    sources.append({
+        "source_id": "rid_reservoirs",
+        "agency": "Royal Irrigation Department",
+        "dataset": "Reservoir telemetry",
+        "status": "ACCESS REQUIRED",
+        "source_status": "UNAVAILABLE / UNVERIFIED",
+        "runtime_status": "ACCESS REQUIRED",
+        "database_records": None,
+        "latest_source_timestamp": None,
+        "freshness_status": FreshnessStatus.UNKNOWN.value,
+        "reason_code": "RID_ACCESS_AND_CURRENT_DATA_NOT_VERIFIED",
+        "automated_refresh": False,
+        "refresh_interval": None,
+        "license_verified": False,
+    })
     return {
         "sources": sources,
         "limitations": [
             "Missing source evidence remains unavailable.",
-            "Forecast data is unavailable until an eligible application integration is verified.",
+            "Open-Meteo forecast is MODEL output and appears only after a recent usable provider response; it is not an observation.",
+            "RID access, redistribution terms, and current usable telemetry are unverified; static reservoir substitutes are not used.",
             "Local boundary, mask, and DIW artifacts have unverified provenance.",
         ],
     }

@@ -101,7 +101,10 @@ def enforce_production_isolation_during_tests():
                 )
                 db.merge(f)
 
-            stations = asyncio.run(fetch_thaiwater_stations())
+            try:
+                stations = asyncio.run(fetch_thaiwater_stations())
+            except Exception:
+                stations = []
             for item in stations:
                 st = WaterStation(
                     id=item["id"],
@@ -120,7 +123,10 @@ def enforce_production_isolation_during_tests():
                 )
                 db.merge(st)
 
-            reservoirs = asyncio.run(fetch_rid_reservoirs())
+            try:
+                reservoirs = asyncio.run(fetch_rid_reservoirs())
+            except Exception:
+                reservoirs = []
             for item in reservoirs:
                 r = Reservoir(
                     id=item["id"],
@@ -137,7 +143,10 @@ def enforce_production_isolation_during_tests():
                 )
                 db.merge(r)
 
-            rain_stations = asyncio.run(fetch_thaiwater_rainfall())
+            try:
+                rain_stations = asyncio.run(fetch_thaiwater_rainfall())
+            except Exception:
+                rain_stations = []
             for item in rain_stations:
                 rs = RainfallStation(
                     id=item["id"],

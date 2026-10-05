@@ -519,31 +519,28 @@ export const MapPage: React.FC = () => {
           {/* LEGEND A: ระดับความสำคัญในการเฝ้าระวัง */}
           <div className="space-y-1">
             <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
+              จุดแบบจำลองจากข้อมูลสถานี (ไม่ประมาณพื้นที่)
             </span>
-            <div className="grid grid-cols-5 gap-1 text-center">
+            <div className="grid grid-cols-4 gap-1 text-center">
               <div className="flex flex-col items-center">
                 <span className="w-3.5 h-3.5 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูงมาก</span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">เกินวิกฤต</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3.5 h-3.5 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ปานกลาง</span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ถึงเกณฑ์เตือน</span>
               </div>
               <div className="flex flex-col items-center">
                 <span className="w-3.5 h-3.5 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ต่ำ</span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ต่ำกว่าเตือน</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
+                <span className="w-3.5 h-3.5 rounded-full bg-sky-600 border border-white shadow-xs"></span>
+                <span className="text-2xs text-slate-700 font-medium mt-0.5">ข้อมูลฝน</span>
               </div>
             </div>
           </div>
+          <p className="text-[10px] leading-relaxed text-slate-500">สีระดับน้ำเทียบเกณฑ์จากต้นทาง จุดฝนไม่มีเกณฑ์จัดระดับ พื้นที่ระหว่างจุดไม่ได้คำนวณ</p>
 
           {/* LEGEND B: ข้อมูลบนแผนที่ */}
           <div className="space-y-1.5 pt-2 border-t border-slate-100">
@@ -576,13 +573,14 @@ export const MapPage: React.FC = () => {
 
           {/* Clarification Disclaimer (Section 14 & 23) */}
           <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
-            พื้นที่สีแสดงระดับ Monitoring / Verification Priority ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
+            จุดสถานีแสดงระดับ Monitoring / Verification Priority จากข้อมูลต้นทางที่รองรับ ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
           </p>
         </div>
 
       </div>
       <aside className="rw-map-detail-panel rw-card space-y-3 lg:sticky lg:top-20 max-h-none lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-live="polite" aria-label="รายละเอียดแผนที่">
         {loading ? <FeedbackState kind="loading" title="กำลังโหลดชั้นข้อมูล" />
+          : monitoringSurface?.status === 'UNAVAILABLE' ? <FeedbackState kind="unavailable" title="ชั้นข้อมูลเฝ้าระวังไม่พร้อมใช้งาน" detail={monitoringSurface?.reason_code || 'ไม่มีข้อมูลสถานีปัจจุบันที่ผ่านการตรวจแหล่งที่มา'} />
           : !monitoringSurface ? <FeedbackState kind="unavailable" title="ชั้นข้อมูลเฝ้าระวังไม่พร้อมใช้งาน" detail="แผนที่ไม่แสดงข้อมูลที่ API ไม่ได้ส่งกลับ" />
           : (!boundaryData || !waterways) ? <FeedbackState kind="partial" title="แสดงข้อมูลได้บางส่วน" detail="ขอบเขตหรือชั้นข้อมูลทางน้ำบางรายการไม่พร้อมใช้งาน" /> : null}
         <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
@@ -602,7 +600,7 @@ export const MapPage: React.FC = () => {
               {selectedCellData.priority_badge || selectedCellData.priority_level || 'ไม่สามารถยืนยันได้'}
             </span>
           </div>
-          <p className="text-sm text-slate-600">คะแนน: {typeof selectedCellData.priority_score === 'number' ? `${selectedCellData.priority_score.toFixed(2)} / 1.00` : 'ไม่มีข้อมูล'}</p>
+          <p className="text-sm text-slate-600">คะแนน: {typeof selectedCellData.priority_score === 'number' ? `${selectedCellData.priority_score.toFixed(2)} / 1.00` : 'ไม่ได้คำนวณ'}</p>
           <div className="space-y-1.5">
             <h3 className="text-sm font-semibold text-slate-800">ปัจจัยที่ระบบรายงาน</h3>
             {Array.isArray(selectedCellData.contributing_factors) && selectedCellData.contributing_factors.length > 0
@@ -610,7 +608,8 @@ export const MapPage: React.FC = () => {
               : <p className="text-sm text-slate-500">ไม่มีข้อมูล</p>}
           </div>
           <dl className="grid grid-cols-1 gap-2 border-y border-slate-100 py-2 text-sm sm:grid-cols-2 lg:grid-cols-1">
-            <div><dt className="text-slate-500">ฝนสะสม 24 ชม.</dt><dd className="font-semibold text-slate-800">{typeof selectedCellData.rain_24h_mm === 'number' ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : 'ไม่มีข้อมูล'}</dd></div>
+            {selectedCellData.data_kind === 'WATER_LEVEL_OBSERVATION' && <div><dt className="text-slate-500">ระดับน้ำ</dt><dd className="font-semibold text-slate-800">{typeof selectedCellData.water_level_msl === 'number' ? `${selectedCellData.water_level_msl.toFixed(2)} ม. MSL` : 'ไม่มีข้อมูล'}</dd></div>}
+            {selectedCellData.data_kind === 'RAINFALL_OBSERVATION' && <div><dt className="text-slate-500">ฝนสะสม 24 ชม.</dt><dd className="font-semibold text-slate-800">{typeof selectedCellData.rain_24h_mm === 'number' ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : 'ไม่มีข้อมูล'}</dd></div>}
             <div><dt className="text-slate-500">รายงานชุมชน</dt><dd className="font-semibold text-slate-800">{typeof selectedCellData.citizen_report_count === 'number' ? `${selectedCellData.citizen_report_count} รายการ` : 'ไม่มีข้อมูล'}</dd></div>
             <div><dt className="text-slate-500">ความสดใหม่</dt><dd className="font-semibold text-slate-800">{selectedCellData.freshness || 'ไม่มีข้อมูล'}</dd></div>
           </dl>

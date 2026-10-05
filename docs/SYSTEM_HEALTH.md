@@ -1,6 +1,9 @@
 # SYSTEM HEALTH & AUTOMATED REFRESH ARCHITECTURE
 
 > **Current runtime status:** `/health/sources` emits evidence-backed source status, counts, timestamps, and reconciled aggregates. Staff health consumes source, metrics, and authenticated scheduler responses; missing or malformed data is `UNKNOWN`, stopped scheduling is `INACTIVE`, and degraded evidence stays partial or degraded. The supported systemd deployment uses one Uvicorn worker and one in-process scheduler owner. Staff operations use the fixed active `staff_admin_01` / `admin_user` `ADMIN` record; the console refreshes data through authenticated requests and does not use query-token SSE.
+
+> **Telemetry restoration update (2026-10-05):** An `ACTIVE API` label means an application integration exists; it does not prove a recent request. `REAL_EXTERNAL_REQUEST` requires adapter-recorded HTTP 200 evidence within the scheduler interval. `REAL_DATA_RECEIVED` requires measurements from that same recent response. Trusted database rows and their source timestamps are reported separately. Open-Meteo health appears under `model_sources` and requires a recent usable forecast; RID is `ACCESS REQUIRED`. The local QA network could not verify external upstream reachability.
+
 **FLOODTRACE / RUWAIGON — PRACHIN BURI PROVINCE**
 
 ---

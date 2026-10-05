@@ -27,9 +27,14 @@ def test_map_monitoring_priority_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert data["type"] == "FeatureCollection"
-    assert data["features"] == []
-    assert data["status"] == "UNAVAILABLE"
-    assert data["reason_code"] == "LOCAL_PROVENANCE_UNVERIFIED"
+    if data["features"]:
+        assert data["status"] == "AVAILABLE MODEL"
+        assert data["feature_count"] == len(data["features"])
+        assert all(feature["geometry"]["type"] == "Point" for feature in data["features"])
+        assert data["retrieved_at"] is not None
+    else:
+        assert data["status"] == "UNAVAILABLE"
+        assert data["reason_code"] == "NO_CURRENT_VERIFIED_STATION_INPUTS"
 
 def test_map_monitoring_priority_district_filtering():
     resp = client.get("/api/public/map/monitoring-priority?district=กบินทร์บุรี")

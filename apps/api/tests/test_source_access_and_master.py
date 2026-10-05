@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from apps.api.app.main import app
+from apps.api.app.api.v1 import forecast as forecast_api
 from apps.api.app.core.security import rate_limiter
 from apps.api.app.core.database import SessionLocal
 from apps.api.app.models.entities import CitizenReport
@@ -52,7 +53,9 @@ def test_source_access_matrix_all_15_sources():
 
     # Backward compatibility aliases
     assert evaluate_source_access("thaiwater_telemetry").source_id == "thaiwater_rid_runoff"
-    assert evaluate_source_access("rid_reservoirs").source_id == "thaiwater_rid_runoff"
+    rid = evaluate_source_access("rid_reservoirs")
+    assert rid.source_id == "rid_reservoirs"
+    assert rid.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION
 
 def test_source_access_endpoint_evaluation():
     """Test GET /api/v1/governance/source-access returns structured matrix for exactly 15 sources."""
@@ -294,17 +297,21 @@ def test_acceptance_test_3_diw_cannot_enter_private_production_without_private_a
     assert resp.status_code == 404
 
 
-def test_acceptance_test_4_openmeteo_cannot_enter_private_production_without_private_authorization():
+def test_acceptance_test_4_openmeteo_forecast_remains_model_and_outside_ingestion(monkeypatch):
     """TEST 4: Open-Meteo cannot enter private production pipeline without private authorization."""
     eval_fc = evaluate_source_access("tmd_forecast", credential_override=None, enforce_private_production=True)
     assert eval_fc.ingestion_action == IngestionAction.BLOCK_PRODUCTION_INGESTION
 
+    async def forecast(_station):
+        return {"status": "AVAILABLE", "forecast_days": [{"date": "2026-10-05"}], "source_provenance": {"family": "MODEL", "role": "FORECAST"}}
+
+    monkeypatch.setattr(forecast_api, "fetch_openmeteo_forecast", forecast)
     resp = client.get("/api/v1/forecast/?station=prachin_mueang")
     assert resp.status_code == 200
     fc = resp.json()
-    assert fc["status"] == "FORECAST_UNAVAILABLE"
-    assert fc["reason"] == "ACCESS_BLOCKED"
-    assert fc["forecast_days"] == []
+    assert fc["status"] == "AVAILABLE"
+    assert fc["source_provenance"]["family"] == "MODEL"
+    assert fc["forecast_days"]
 
 
 def test_acceptance_test_5_citizen_reports_validation_and_rate_limits():

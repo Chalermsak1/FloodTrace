@@ -165,25 +165,12 @@ def test_rid_wording_and_fail_closed_behavior():
         res_prod = asyncio.run(fetch_rid_reservoirs())
         assert len(res_prod) == 0
 
-        # 2. When telemetry is empty/unavailable, verify fail-closed behavior (no synthetic estimates)
+        # 2. When telemetry is empty/unavailable, fail closed with no fabricated rows.
         from unittest.mock import patch
         with patch("httpx.AsyncClient.get", side_effect=Exception("Simulated empty telemetry response")):
             settings.RID_PRIVATE_TOKEN = "mock-auth-token"
             reservoirs = asyncio.run(fetch_rid_reservoirs())
-            assert len(reservoirs) >= 3
-
-            for res in reservoirs:
-                # Fail closed: no fabricated telemetry numbers
-                assert res["storage_percent"] is None
-                assert res["storage_mcm"] is None
-                assert res["inflow_mcm_day"] is None
-                assert res["outflow_mcm_day"] is None
-                assert res["status"] == "NO_DATA"
-
-                prov = res["provenance"]
-                assert "The RID public API supports storage/volume/inflow/outflow fields, but usable current telemetry for the selected Prachin Buri reservoirs was unavailable/empty at audit time." in prov["audit_notes"]
-                assert prov["measurement_status"] == "UNAVAILABLE_AT_AUDIT_TIME"
-                assert prov["source_verification"] == "VERIFIED_OFFICIAL"
+            assert reservoirs == []
     finally:
         settings.RID_PRIVATE_TOKEN = orig_token
 

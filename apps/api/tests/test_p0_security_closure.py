@@ -7,6 +7,7 @@ from apps.api.app.core import staff_rbac
 from apps.api.app.core.config import settings
 from apps.api.app.core.database import get_db
 from apps.api.app.main import app
+from apps.api.app.api.v1 import forecast as forecast_api
 from apps.api.app.models.entities import Reservoir, StaffUser, WaterStation
 
 
@@ -214,10 +215,21 @@ def test_telemetry_gets_are_read_only_and_do_not_fetch_on_empty_db(monkeypatch, 
 def test_http_test_mode_never_changes_fail_closed_forecast(monkeypatch, data_env, private_gate):
     monkeypatch.setattr(settings, "DATA_ENV", data_env)
     monkeypatch.setattr(settings, "REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION", private_gate)
+    result = {
+        "status": "AVAILABLE",
+        "forecast_days": [{"date": "2026-10-05", "precipitation_sum_mm": 0.0}],
+        "source_provenance": {"family": "MODEL", "role": "FORECAST", "provider": "Open-Meteo"},
+    }
+
+    async def deterministic_forecast(_station):
+        return result
+
+    monkeypatch.setattr(forecast_api, "fetch_openmeteo_forecast", deterministic_forecast)
     normal = client.get("/api/v1/forecast/?station=prachin_mueang")
     test_mode = client.get("/api/v1/forecast/?station=prachin_mueang&test_mode=true")
 
     assert normal.status_code == test_mode.status_code == 200
     assert normal.json() == test_mode.json()
-    assert normal.json()["status"] == "FORECAST_UNAVAILABLE"
-    assert normal.json()["forecast_days"] == []
+    assert normal.json()["status"] == "AVAILABLE"
+    assert normal.json()["source_provenance"]["family"] == "MODEL"
+    assert "test_mode" not in {p["name"] for p in app.openapi()["paths"]["/api/v1/forecast/"]["get"].get("parameters", [])}
