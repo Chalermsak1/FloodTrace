@@ -313,23 +313,23 @@ export const MapPage: React.FC = () => {
             type="button"
             data-map-mode="flood"
             aria-pressed={mapMode === 'flood'}
-            aria-label="พื้นที่น้ำท่วม"
-            title="พื้นที่น้ำท่วม"
+            aria-label="บริเวณที่น้ำท่วม"
+            title="บริเวณที่น้ำท่วม"
             onClick={() => handleModeChange('flood')}
             className={`min-h-9 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${mapMode === 'flood' ? 'bg-sky-700 text-white shadow-sm' : 'text-slate-200 hover:bg-slate-700'}`}
           >
-            <span aria-hidden="true" className="mr-1">🌊</span><span className="rw-map-mode-label-full">น้ำท่วม</span><span className="rw-map-mode-label-compact">ท่วม</span>
+            <span aria-hidden="true" className="mr-1">🌊</span><span className="rw-map-mode-label-full">บริเวณที่น้ำท่วม</span><span className="rw-map-mode-label-compact">บริเวณที่น้ำท่วม</span>
           </button>
           <button
             type="button"
             data-map-mode="monitoring"
             aria-pressed={mapMode === 'monitoring'}
-            aria-label="พื้นที่เฝ้าระวังคุณภาพน้ำ"
-            title="พื้นที่เฝ้าระวังคุณภาพน้ำ"
+            aria-label="เฝ้าระวังสารเคมี"
+            title="เฝ้าระวังสารเคมี"
             onClick={() => handleModeChange('monitoring')}
             className={`min-h-9 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${mapMode === 'monitoring' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-200 hover:bg-slate-700'}`}
           >
-            <span aria-hidden="true" className="mr-1">⚠️</span><span className="rw-map-mode-label-full">เฝ้าระวังน้ำ</span><span className="rw-map-mode-label-compact">เฝ้าระวัง</span>
+            <span aria-hidden="true" className="mr-1">⚠️</span><span className="rw-map-mode-label-full">เฝ้าระวังสารเคมี</span><span className="rw-map-mode-label-compact">เฝ้าระวังสารเคมี</span>
           </button>
         </div>
         </div>
