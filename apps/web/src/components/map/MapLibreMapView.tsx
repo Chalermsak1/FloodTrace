@@ -30,6 +30,7 @@ const safeSetData = (map: maplibregl.Map | null, sourceId: string, data: any) =>
 
 export interface MapLibreMapViewProps {
   monitoringSurface: any; // GeoJSON FeatureCollection of Continuous Priority Cells
+  floodExtent?: any; // GeoJSON FeatureCollection from /api/public/flood-extent
   boundaryData: any;      // Boundary and Outside Mask from /api/public/map/boundary
   waterways: any;         // GeoJSON FeatureCollection of Waterways
   stations: any[];        // Water level telemetry stations
@@ -37,6 +38,7 @@ export interface MapLibreMapViewProps {
   observations: any[];    // Citizen community reports
   visibleLayers: {
     monitoringSurface: boolean;
+    floodExtent?: boolean;
     waterways: boolean;
     stations: boolean;
     rainfallStations: boolean;
@@ -48,6 +50,7 @@ export interface MapLibreMapViewProps {
   selectedDistrict: string;
   onSelectDistrict: (district: string) => void;
   onSelectCell?: (cellProps: any) => void;
+  onSelectFloodFeature?: (featureProps: any) => void;
   onSelectMarker?: (markerProps: any) => void;
   surfaceOpacity?: number;
   basemap?: 'satellite' | 'streets';
@@ -180,6 +183,7 @@ const EMPTY_GEOJSON: any = { type: 'FeatureCollection', features: [] };
 
 export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   monitoringSurface,
+  floodExtent,
   boundaryData,
   waterways,
   stations,
@@ -189,6 +193,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   selectedDistrict,
   onSelectDistrict,
   onSelectCell,
+  onSelectFloodFeature,
   onSelectMarker,
   surfaceOpacity = 0.50,
   basemap = 'satellite',
@@ -198,7 +203,31 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const activeMode = visibleLayers.floodExtent ? 'flood' : 'monitoring';
+  const activeModeRef = useRef(activeMode);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  const trackPopup = (popup: maplibregl.Popup) => {
+    popupRef.current?.remove();
+    popupRef.current = popup;
+    popup.on('close', () => {
+      if (popupRef.current === popup) popupRef.current = null;
+    });
+    return popup;
+  };
+
+  useEffect(() => {
+    if (activeModeRef.current === activeMode) return;
+    activeModeRef.current = activeMode;
+
+    popupRef.current?.remove();
+    popupRef.current = null;
+
+    const map = mapRef.current;
+    if (map?.getLayer('monitoring-surface-highlight')) {
+      map.setFilter('monitoring-surface-highlight', ['==', 'district', '']);
+    }
+  }, [activeMode]);
 
   // Administrative Labels GeoJSON
   const adminLabelsGeoJSON = useRef({
@@ -260,6 +289,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           type: 'geojson',
           data: monitoringSurface || EMPTY_GEOJSON
         },
+        'flood-extent-source': {
+          type: 'geojson',
+          data: floodExtent || EMPTY_GEOJSON
+        },
         'waterways-source': {
           type: 'geojson',
           data: waterways || EMPTY_GEOJSON
@@ -291,8 +324,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           source: 'outside-mask-source',
           layout: { visibility: visibleLayers.outsideMask ? 'visible' : 'none' },
           paint: {
-            'fill-color': '#0f172a',
-            'fill-opacity': 0.58
+            'fill-color': '#CBD5E1',
+            'fill-opacity': 0.48
           }
         },
         // 4. Prachin Buri Boundary Line
@@ -301,9 +334,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           type: 'line',
           source: 'boundary-source',
           paint: {
-            'line-color': '#38bdf8',
-            'line-width': 2.0,
-            'line-opacity': 0.95
+            'line-color': '#0EA5E9',
+            'line-width': 2.5,
+            'line-opacity': 1
           }
         },
         // 5. Monitoring Priority Surface (Color Fills: Red, Orange, Yellow, Green, Gray)
@@ -380,6 +413,24 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             'line-width': ['coalesce', ['get', 'line_width'], 3.2],
             'line-opacity': 1.0
           }
+        },
+        // Baseline current flood extent polygons.
+        {
+          id: 'flood-extent-fill',
+          type: 'fill',
+          source: 'flood-extent-source',
+          layout: { visibility: visibleLayers.floodExtent ? 'visible' : 'none' },
+          paint: {
+            'fill-color': ['coalesce', ['get', 'flood_depth_color'], '#94A3B8'],
+            'fill-opacity': 0.3
+          }
+        },
+        {
+          id: 'flood-extent-outline',
+          type: 'line',
+          source: 'flood-extent-source',
+          layout: { visibility: visibleLayers.floodExtent ? 'visible' : 'none' },
+          paint: { 'line-color': '#0EA5E9', 'line-width': 2, 'line-opacity': 0.9 }
         },
         // 11. Waterway Labels along Line
         {
@@ -476,6 +527,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       safeSetData(map, 'outside-mask-source', boundaryData?.outside_mask);
       safeSetData(map, 'boundary-source', boundaryData?.boundary);
       safeSetData(map, 'monitoring-surface-source', monitoringSurface);
+      safeSetData(map, 'flood-extent-source', floodExtent);
       safeSetData(map, 'waterways-source', waterways);
 
       setTimeout(() => {
@@ -496,8 +548,6 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
       map.setFilter('monitoring-surface-highlight', ['==', 'district', props.district]);
 
-      if (popupRef.current) popupRef.current.remove();
-
       let factorsHtml = '';
       try {
         const factors = typeof props.contributing_factors === 'string' 
@@ -508,7 +558,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         }
       } catch (_) {}
 
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
+      const popup = trackPopup(new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' }))
         .setLngLat(e.lngLat)
         .setHTML(`
           <div class="p-3 font-sans space-y-2">
@@ -533,42 +583,44 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       popupRef.current = popup;
     });
 
+    map.on('click', 'flood-extent-fill', (e) => {
+      const properties = e.features?.[0]?.properties;
+      if (!properties) return;
+      if (properties.district) onSelectDistrict(String(properties.district));
+      onSelectFloodFeature?.(properties);
+
+      const content = document.createElement('div');
+      content.className = 'space-y-1.5 p-3 font-sans text-xs text-slate-700';
+      const title = document.createElement('p');
+      title.className = 'font-semibold text-slate-900';
+      title.textContent = properties.name || properties.district || 'พื้นที่ที่เลือก';
+      const layer = document.createElement('p');
+      layer.textContent = 'พื้นที่อ้างอิงน้ำท่วม';
+      const status = document.createElement('p');
+      status.textContent = 'ข้อมูลอ้างอิง / ยังไม่ได้ยืนยันสถานการณ์ปัจจุบัน';
+      const depth = document.createElement('p');
+      const depthValue = typeof properties.water_depth_est === 'string' && properties.water_depth_est.trim()
+        ? properties.water_depth_est
+        : 'ไม่ระบุในข้อมูลที่ได้รับ';
+      depth.textContent = `ช่วงระดับน้ำที่ระบุในข้อมูลอ้างอิง: ${depthValue}`;
+      content.append(title, layer, status, depth);
+
+      trackPopup(new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' }))
+        .setLngLat(e.lngLat)
+        .setDOMContent(content)
+        .addTo(map);
+    });
+
     map.on('mouseenter', 'monitoring-surface-fill', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
     map.on('mouseleave', 'monitoring-surface-fill', () => {
       map.getCanvas().style.cursor = '';
     });
-
-    // Interaction: Click Outside Analysis Scope Mask (Section 13 & 85)
-    map.on('click', 'outside-mask-fill', (e) => {
-      if (popupRef.current) popupRef.current.remove();
-
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '280px' })
-        .setLngLat(e.lngLat)
-        .setHTML(`
-          <div class="p-3 font-sans space-y-1.5">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
-              <span class="text-sm font-bold text-slate-900">นอกพื้นที่วิเคราะห์</span>
-            </div>
-            <p class="text-xs text-slate-700 leading-relaxed font-medium">
-              FloodTrace ให้บริการวิเคราะห์เชิงพื้นที่สำหรับจังหวัดปราจีนบุรี
-            </p>
-            <p class="text-2xs text-slate-400 pt-1 border-t border-slate-100 leading-normal">
-              พื้นที่สีเทาหมายถึงอยู่นอกขอบเขตการคำนวณของระบบ ไม่ได้หมายความว่าปลอดภัยหรือไม่มีน้ำท่วม
-            </p>
-          </div>
-        `)
-        .addTo(map);
-
-      popupRef.current = popup;
+    map.on('mouseenter', 'flood-extent-fill', () => {
+      map.getCanvas().style.cursor = 'pointer';
     });
-
-    map.on('mouseenter', 'outside-mask-fill', () => {
-      map.getCanvas().style.cursor = 'help';
-    });
-    map.on('mouseleave', 'outside-mask-fill', () => {
+    map.on('mouseleave', 'flood-extent-fill', () => {
       map.getCanvas().style.cursor = '';
     });
 
@@ -588,8 +640,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     safeSetData(map, 'outside-mask-source', boundaryData?.outside_mask);
     safeSetData(map, 'boundary-source', boundaryData?.boundary);
     safeSetData(map, 'monitoring-surface-source', monitoringSurface);
+    safeSetData(map, 'flood-extent-source', floodExtent);
     safeSetData(map, 'waterways-source', waterways);
-  }, [boundaryData, monitoringSurface, waterways, mapLoaded]);
+  }, [boundaryData, monitoringSurface, floodExtent, waterways, mapLoaded]);
 
   // Update Surface Opacity and Layer Visibilities
   useEffect(() => {
@@ -611,6 +664,13 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     }
     if (map.getLayer('monitoring-surface-lines')) {
       map.setLayoutProperty('monitoring-surface-lines', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
+    }
+    if (map.getLayer('monitoring-surface-highlight')) {
+      map.setLayoutProperty('monitoring-surface-highlight', 'visibility', visibleLayers.monitoringSurface ? 'visible' : 'none');
+    }
+    if (map.getLayer('flood-extent-fill')) {
+      map.setLayoutProperty('flood-extent-fill', 'visibility', visibleLayers.floodExtent ? 'visible' : 'none');
+      map.setLayoutProperty('flood-extent-outline', 'visibility', visibleLayers.floodExtent ? 'visible' : 'none');
     }
     if (map.getLayer('outside-mask-fill')) {
       map.setLayoutProperty('outside-mask-fill', 'visibility', visibleLayers.outsideMask ? 'visible' : 'none');
@@ -706,7 +766,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(st);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([st.longitude, st.latitude])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
@@ -758,7 +818,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(rs);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([rs.longitude, rs.latitude])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">
@@ -826,7 +886,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           e.stopPropagation();
           if (onSelectMarker) onSelectMarker(cluster.lastObs);
 
-          new maplibregl.Popup({ offset: 16 })
+          trackPopup(new maplibregl.Popup({ offset: 16 }))
             .setLngLat([cluster.lng, cluster.lat])
             .setHTML(`
               <div class="p-3.5 font-sans space-y-2 min-w-[250px]">

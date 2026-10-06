@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { 
-  Layers, 
   Search, 
   MapPin, 
-  Sliders, 
   Info, 
   X, 
   ChevronRight, 
   AlertCircle, 
   ChevronDown,
   Compass,
-  Clock,
-  Layers2,
-  SlidersHorizontal,
   Plus,
   Minus,
   RotateCcw,
@@ -40,6 +35,17 @@ const PRACHIN_DISTRICTS = [
   'ศรีมโหสถ'
 ];
 
+const FLOOD_DEPTH_COLORS = ['#BAE6FD', '#7DD3FC', '#0284C7', '#075985'];
+
+const parseEstimatedWaterDepth = (value: unknown) => {
+  if (typeof value !== 'string' || !/(เมตร|\bmeters?\b|\bmetres?\b)/i.test(value)) return null;
+  const numbers = [...value.matchAll(/\d+(?:[.,]\d+)?/g)].map(([match]) => Number(match.replace(',', '.')));
+  if (!numbers.length || numbers.some(number => !Number.isFinite(number) || number < 0)) return null;
+  const upperMeters = numbers.length > 1 ? numbers[1] : numbers[0];
+  if (upperMeters < numbers[0]) return null;
+  return { label: value.trim(), upperMeters };
+};
+
 export const MapPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const districtParam = searchParams.get('district') || 'กบินทร์บุรี';
@@ -47,8 +53,9 @@ export const MapPage: React.FC = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<string>(districtParam);
   const [selectedCellData, setSelectedCellData] = useState<any>(null);
   const [selectedMarkerData, setSelectedMarkerData] = useState<any>(null);
-  const [showLayerPanel, setShowLayerPanel] = useState<boolean>(false);
-  const [surfaceOpacity, setSurfaceOpacity] = useState<number>(0.35);
+  const [mapMode, setMapMode] = useState<'flood' | 'monitoring'>('monitoring');
+  const [selectedFloodFeature, setSelectedFloodFeature] = useState<any>(null);
+  const [isLegendExpanded, setIsLegendExpanded] = useState(false);
   const [basemap, setBasemap] = useState<'satellite' | 'streets'>('satellite');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -60,29 +67,60 @@ export const MapPage: React.FC = () => {
 
   // Real GIS Telemetry Data States
   const [monitoringSurface, setMonitoringSurface] = useState<any>(null);
+  const [floodExtent, setFloodExtent] = useState<any>(null);
   const [boundaryData, setBoundaryData] = useState<any>(null);
   const [waterways, setWaterways] = useState<any>(null);
   const [stations, setStations] = useState<any[]>([]);
   const [rainfallStations, setRainfallStations] = useState<any[]>([]);
   const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [monitoringSurfaceStatus, setMonitoringSurfaceStatus] = useState<'loading' | 'available' | 'unavailable'>('loading');
 
-  // Layer Controls (Section 13: Clean & Focused Defaults)
-  const [visibleLayers, setVisibleLayers] = useState({
-    monitoringSurface: true, // ANALYSIS: Monitoring Priority Surface
-    waterways: true,         // HYDROLOGY: Rivers & Canals
-    stations: true,          // HYDROLOGY: Water-level stations
-    rainfallStations: true,  // HYDROLOGY: Rainfall stations
-    observations: true,      // COMMUNITY: Citizen Reports
-    outsideMask: true,       // GEOGRAPHY: Gray outside-analysis mask
-    adminLabels: true,       // GEOGRAPHY: Geographic labels
-    roadOverlay: true        // GEOGRAPHY: Transportation roads
-  });
-
-  const toggleLayer = (key: keyof typeof visibleLayers) => {
-    setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  const visibleLayers = useMemo(() => ({
+    monitoringSurface: mapMode === 'monitoring',
+    floodExtent: mapMode === 'flood',
+    waterways: true,
+    stations: false,
+    rainfallStations: false,
+    observations: mapMode === 'monitoring',
+    outsideMask: true,
+    adminLabels: true,
+    roadOverlay: true
+  }), [mapMode]);
+  const floodPresentation = useMemo(() => {
+    const features = Array.isArray(floodExtent?.features) ? floodExtent.features : [];
+    const ranges = features
+      .map((feature: any) => parseEstimatedWaterDepth(feature.properties?.water_depth_est))
+      .filter((range: ReturnType<typeof parseEstimatedWaterDepth>): range is NonNullable<typeof range> => range !== null)
+      .sort((a: NonNullable<ReturnType<typeof parseEstimatedWaterDepth>>, b: NonNullable<ReturnType<typeof parseEstimatedWaterDepth>>) => a.upperMeters - b.upperMeters || a.label.localeCompare(b.label));
+    const uniqueRanges = ranges.filter((range, index) => ranges.findIndex(candidate => candidate.label === range.label) === index);
+    const depthBounds = [...new Set<number>(uniqueRanges.map(range => range.upperMeters))].sort((a, b) => a - b);
+    const colorByRange = new Map<string, string>();
+    uniqueRanges.forEach(range => {
+      const depthIndex = depthBounds.indexOf(range.upperMeters);
+      const paletteIndex = depthBounds.length <= 1
+        ? 1
+        : Math.round(depthIndex * (FLOOD_DEPTH_COLORS.length - 1) / (depthBounds.length - 1));
+      colorByRange.set(range.label, FLOOD_DEPTH_COLORS[paletteIndex]);
+    });
+    const classes = uniqueRanges.map(range => ({ ...range, color: colorByRange.get(range.label)! }));
+    const displayFeatures = features.map((feature: any) => {
+      const depth = parseEstimatedWaterDepth(feature.properties?.water_depth_est);
+      return {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          flood_depth_color: depth ? colorByRange.get(depth.label) : null
+        }
+      };
+    });
+    return {
+      mapData: floodExtent && Array.isArray(floodExtent.features) ? { ...floodExtent, features: displayFeatures } : null,
+      classes,
+      missingDepthCount: features.filter((feature: any) => !parseEstimatedWaterDepth(feature.properties?.water_depth_est)).length
+    };
+  }, [floodExtent]);
+  const selectedFloodProperties = selectedFloodFeature;
 
   useEffect(() => {
     if (districtParam && PRACHIN_DISTRICTS.includes(districtParam)) {
@@ -94,27 +132,34 @@ export const MapPage: React.FC = () => {
   const loadMapData = () => {
     setLoading(true);
     Promise.all([
-      fetch('/api/public/map/monitoring-priority').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/map/monitoring-priority').then(async r => {
+        if (!r.ok) {
+          setMonitoringSurfaceStatus('unavailable');
+          return null;
+        }
+        const data = await r.json();
+        const validFeatureCollection = data?.type === 'FeatureCollection' && Array.isArray(data.features);
+        setMonitoringSurfaceStatus(validFeatureCollection ? 'available' : 'unavailable');
+        return validFeatureCollection ? data : null;
+      }).catch(() => {
+        setMonitoringSurfaceStatus('unavailable');
+        return null;
+      }),
+      fetch('/api/public/flood-extent').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/map/boundary').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/stations').then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/public/rainfall-stations').then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/public/observations').then(r => r.ok ? r.json() : []).catch(() => [])
-    ]).then(([surfaceRes, boundRes, waterRes, stationsRes, rainRes, obsRes]) => {
+    ]).then(([surfaceRes, floodRes, boundRes, waterRes, stationsRes, rainRes, obsRes]) => {
       setMonitoringSurface(surfaceRes);
+      setFloodExtent(floodRes?.type === 'FeatureCollection' && Array.isArray(floodRes.features) ? floodRes : null);
       setBoundaryData(boundRes);
       setWaterways(waterRes);
       setStations(Array.isArray(stationsRes) ? stationsRes : []);
       setRainfallStations(Array.isArray(rainRes) ? rainRes : []);
       setObservations(Array.isArray(obsRes) ? obsRes : []);
 
-      if (surfaceRes?.features && selectedDistrict) {
-        const found = surfaceRes.features.find((f: any) => f.properties.district === selectedDistrict);
-        if (found) {
-          setSelectedCellData(found.properties);
-        }
-      }
-      setLastRefreshedAt(new Date());
       setLoading(false);
     });
   };
@@ -132,6 +177,7 @@ export const MapPage: React.FC = () => {
 
   const handleSelectDistrict = (d: string) => {
     setSelectedDistrict(d);
+    setSelectedFloodFeature(null);
     setTargetCoords(null);
     if (monitoringSurface?.features) {
       const found = monitoringSurface.features.find((f: any) => f.properties.district === d);
@@ -144,6 +190,7 @@ export const MapPage: React.FC = () => {
   const handleSelectCell = (props: any) => {
     setSelectedCellData(props);
     setSelectedMarkerData(null);
+    setSelectedFloodFeature(null);
     if (props.district) {
       setSelectedDistrict(props.district);
     }
@@ -152,6 +199,20 @@ export const MapPage: React.FC = () => {
 
   const handleSelectMarker = (markerProps: any) => {
     setSelectedMarkerData(markerProps);
+  };
+
+  const handleSelectFloodFeature = (featureProps: any) => {
+    setSelectedFloodFeature(featureProps);
+    setSelectedCellData(null);
+    setSelectedMarkerData(null);
+  };
+
+  const handleModeChange = (mode: 'flood' | 'monitoring') => {
+    setMapMode(mode);
+    setIsLegendExpanded(false);
+    setSelectedFloodFeature(null);
+    setSelectedMarkerData(null);
+    setSelectedCellData(null);
   };
 
   // Search Results Filtering (Districts, Authentic Subdistricts, Waterways)
@@ -209,6 +270,7 @@ export const MapPage: React.FC = () => {
     setTargetCoords(result.coords);
     setSearchQuery(result.title);
     setIsSearchFocused(false);
+    setSelectedFloodFeature(null);
 
     if (monitoringSurface?.features) {
       const found = monitoringSurface.features.find((f: any) => f.properties.district === result.district);
@@ -234,42 +296,66 @@ export const MapPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex flex-col space-y-2">
+    <div className="rw-map-page w-full flex flex-col space-y-2">
       
-      {/* 1. Header Bar: Compact Navigation Context */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2 bg-slate-900/90 text-white rounded-2xl backdrop-blur-md border border-slate-800 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <span>แผนที่เฝ้าระวังสิ่งแวดล้อม (Environmental Watch Map)</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-400/30">
-              ดาวเทียมสิ่งแวดล้อม
-            </span>
+      {/* Compact province context and mutually exclusive map modes. */}
+      <div className="rw-map-toolbar flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-900/90 text-white rounded-xl backdrop-blur-md border border-slate-800 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 aria-label="แผนที่เฝ้าระวังสิ่งแวดล้อม" className="text-sm sm:text-base font-bold text-white tracking-tight">
+            <span className="rw-map-title-full">แผนที่เฝ้าระวังสิ่งแวดล้อม</span>
+            <span className="rw-map-title-compact">แผนที่</span>
           </h1>
+          <span className="shrink-0 text-2xs font-semibold px-2 py-1 rounded-full bg-slate-700 text-slate-100">จ.ปราจีนบุรี</span>
         </div>
-
-        {/* Refresh & Scope Indicators */}
-        <div className="flex items-center gap-3.5 text-xs sm:text-sm text-slate-300">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            <span>ขอบเขตการวิเคราะห์: <strong className="text-white font-semibold">จ.ปราจีนบุรี</strong></span>
-          </div>
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span>อัปเดตอัตโนมัติ: {lastRefreshedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
-          </div>
+        <div className="flex min-w-0 items-center gap-2">
+          <div role="group" aria-label="เลือกโหมดแผนที่" className="rw-map-mode-selector inline-flex items-center gap-0.5 rounded-lg border border-slate-600 bg-slate-800 p-1">
+          <button
+            type="button"
+            data-map-mode="flood"
+            aria-pressed={mapMode === 'flood'}
+            aria-label="บริเวณที่น้ำท่วม"
+            title="บริเวณที่น้ำท่วม"
+            onClick={() => handleModeChange('flood')}
+            className={`min-h-9 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${mapMode === 'flood' ? 'bg-sky-700 text-white shadow-sm' : 'text-slate-200 hover:bg-slate-700'}`}
+          >
+            <span aria-hidden="true" className="mr-1">🌊</span><span className="rw-map-mode-label-full">บริเวณที่น้ำท่วม</span><span className="rw-map-mode-label-compact">บริเวณที่น้ำท่วม</span>
+          </button>
+          <button
+            type="button"
+            data-map-mode="monitoring"
+            aria-pressed={mapMode === 'monitoring'}
+            aria-label="เฝ้าระวังสารเคมี"
+            title="เฝ้าระวังสารเคมี"
+            onClick={() => handleModeChange('monitoring')}
+            className={`min-h-9 rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${mapMode === 'monitoring' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-200 hover:bg-slate-700'}`}
+          >
+            <span aria-hidden="true" className="mr-1">⚠️</span><span className="rw-map-mode-label-full">เฝ้าระวังสารเคมี</span><span className="rw-map-mode-label-compact">เฝ้าระวังสารเคมี</span>
+          </button>
+        </div>
         </div>
       </div>
+        <p className="px-1 text-xs sm:text-sm text-slate-600" aria-live="polite">
+          {mapMode === 'flood'
+            ? 'พื้นที่อ้างอิงจากระบบเดิม ยังไม่ใช่การยืนยันสถานการณ์น้ำท่วมปัจจุบัน และยังไม่มีข้อมูลยืนยันจากแหล่งภายนอกในชั้นข้อมูลนี้'
+            : monitoringSurfaceStatus === 'loading'
+              ? 'กำลังโหลดพื้นที่เฝ้าระวัง…'
+              : monitoringSurfaceStatus === 'unavailable'
+                ? 'ชั้นข้อมูลเฝ้าระวังยังไม่พร้อมใช้งาน จึงยังแสดงพื้นที่จากข้อมูลจริงไม่ได้'
+                : monitoringSurface?.features?.length
+                  ? 'ดูพื้นที่ที่ควรได้รับการเฝ้าระวังหรือตรวจสอบเพิ่มเติม'
+                  : 'ไม่มีพื้นที่เฝ้าระวังในข้อมูลที่ได้รับ'}
+        </p>
 
       {/* 2. Full-bleed Map Canvas Container (Matching Reference Layout) */}
       <div 
         ref={mapContainerRef}
-        className="relative w-full h-[78vh] min-h-[580px] max-h-[880px] rounded-3xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-950"
+        className="rw-map-canvas relative w-full h-[78vh] min-h-[580px] max-h-[880px] rounded-3xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-950"
       >
         
         {/* Full WebGL MapLibre Map Engine */}
         <MapLibreMapView
           monitoringSurface={monitoringSurface}
+          floodExtent={floodPresentation.mapData}
           boundaryData={boundaryData}
           waterways={waterways}
           stations={stations}
@@ -279,14 +365,15 @@ export const MapPage: React.FC = () => {
           selectedDistrict={selectedDistrict}
           onSelectDistrict={handleSelectDistrict}
           onSelectCell={handleSelectCell}
+          onSelectFloodFeature={handleSelectFloodFeature}
           onSelectMarker={handleSelectMarker}
-          surfaceOpacity={surfaceOpacity}
+          surfaceOpacity={0.35}
           basemap={basemap}
           targetCoords={targetCoords}
         />
 
         {/* 3. Floating Search Bar at Top (Section 11 - Visual Reference Layout) */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-30">
+        <div className="rw-map-search absolute top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-30">
           <div className="relative">
             <div className="flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 px-4 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[#0C65E8] focus-within:border-transparent min-h-[46px]">
               <Search className="w-5 h-5 text-slate-400 shrink-0 mr-2.5" />
@@ -306,13 +393,6 @@ export const MapPage: React.FC = () => {
                   <X className="w-4 h-4" />
                 </button>
               )}
-              <button
-                onClick={() => setShowLayerPanel(!showLayerPanel)}
-                title="ตัวเลือกชั้นข้อมูล"
-                className={`p-1.5 rounded-xl transition-colors ${showLayerPanel ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
             </div>
 
             {/* Typeahead Search Results Dropdown */}
@@ -348,7 +428,7 @@ export const MapPage: React.FC = () => {
         </div>
 
         {/* 4. Minimal Floating Map Controls (Top-Right, Section 12) */}
-        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+        <div className="rw-map-controls absolute top-4 right-4 z-20 flex flex-col gap-2">
           {/* Zoom & Re-center Group */}
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden flex flex-col divide-y divide-slate-100">
             <button
@@ -357,13 +437,6 @@ export const MapPage: React.FC = () => {
               className="p-2.5 hover:bg-slate-100 text-slate-700 hover:text-[#0C65E8] transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowLayerPanel(!showLayerPanel)}
-              title="ชั้นข้อมูลแผนที่"
-              className={`p-2.5 transition-colors ${showLayerPanel ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-700'}`}
-            >
-              <Layers2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setBasemap(basemap === 'satellite' ? 'streets' : 'satellite')}
@@ -382,303 +455,177 @@ export const MapPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Floating Layer Control Panel (Section 13) */}
-        {showLayerPanel && (
-          <div className="absolute top-20 right-4 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 z-30 animate-in fade-in slide-in-from-right-2 duration-150 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#0C65E8]" />
-                <span className="text-sm font-bold text-slate-800">ชั้นข้อมูลแผนที่</span>
-              </div>
-              <button
-                onClick={() => setShowLayerPanel(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* ANALYSIS */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">การวิเคราะห์ความเสี่ยง</span>
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                  <span className="font-medium">พื้นผิวระดับการเฝ้าระวัง</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.monitoringSurface}
-                  onChange={() => toggleLayer('monitoringSurface')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-
-              {/* Opacity Slider */}
-              {visibleLayers.monitoringSurface && (
-                <div className="pt-1 px-2 space-y-1">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>ความโปร่งแสงพื้นผิว</span>
-                    <span className="font-semibold text-slate-700">{Math.round(surfaceOpacity * 100)}%</span>
+        <div className={`rw-map-legend absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/90 p-2 max-w-[360px] ${isLegendExpanded ? 'is-expanded' : ''}`} aria-live="polite">
+          <button
+            type="button"
+            aria-expanded={isLegendExpanded}
+            aria-controls="map-legend-content"
+            aria-label={`คำอธิบายแผนที่${mapMode === 'flood' ? 'น้ำท่วม' : 'เฝ้าระวังคุณภาพน้ำ'}`}
+            onClick={() => setIsLegendExpanded(value => !value)}
+            className="flex min-h-8 items-center justify-between gap-3 rounded-lg px-2 text-xs font-semibold text-slate-800 hover:bg-slate-100"
+          >
+            <span>คำอธิบาย · {mapMode === 'flood' ? 'น้ำท่วม' : 'เฝ้าระวังคุณภาพน้ำ'}</span>
+            <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isLegendExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isLegendExpanded && (
+            <div id="map-legend-content" className="mt-1 max-h-[35vh] overflow-y-auto border-t border-slate-100 px-2 pt-2 text-2xs leading-snug text-slate-700">
+              {mapMode === 'flood' ? (
+                <div className="space-y-1.5">
+                  <p className="font-semibold text-slate-900">พื้นที่อ้างอิงน้ำท่วม</p>
+                  <p>สถานะ: ข้อมูลอ้างอิง / ยังไม่ได้ยืนยันสถานการณ์ปัจจุบัน</p>
+                  <p className="font-semibold text-slate-900">ช่วงระดับน้ำที่ระบุในข้อมูลอ้างอิง</p>
+                  {floodPresentation.classes.map(({ label, color }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className="h-3 w-3 shrink-0 rounded-sm border border-sky-800/30" style={{ backgroundColor: color }} />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                  {floodPresentation.missingDepthCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="h-3 w-3 shrink-0 rounded-sm border border-slate-400 bg-slate-400" />
+                      <span>พื้นที่อ้างอิงน้ำท่วม · ไม่ระบุช่วงระดับน้ำ</span>
+                    </div>
+                  )}
+                  {!floodExtent?.features?.length && (
+                    <p>{loading ? 'กำลังโหลดข้อมูลขอบเขตน้ำท่วม…' : 'ไม่มีข้อมูลขอบเขตน้ำท่วมให้แสดง'}</p>
+                  )}
+                  <div className="border-t border-slate-100 pt-1.5 text-slate-500">
+                    <p>ข้อมูลขอบเขตอ้างอิงจากระบบเดิม ยังไม่ใช่การยืนยันสถานการณ์น้ำท่วมปัจจุบัน</p>
                   </div>
-                  <input
-                    type="range"
-                    min="0.15"
-                    max="0.65"
-                    step="0.05"
-                    value={surfaceOpacity}
-                    onChange={(e) => setSurfaceOpacity(parseFloat(e.target.value))}
-                    className="w-full accent-[#0C65E8] cursor-pointer h-2 bg-slate-200 rounded-lg"
-                  />
+                  <div className="flex items-center gap-2 border-t border-slate-100 pt-1.5">
+                    <span className="w-4 shrink-0 border-t-2 border-sky-700" />ลำน้ำ
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 shrink-0 border-t-2 border-sky-500" />ขอบเขตจังหวัด
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {monitoringSurfaceStatus === 'loading' ? (
+                    <p role="status">กำลังโหลดชั้นข้อมูลเฝ้าระวัง…</p>
+                  ) : monitoringSurfaceStatus === 'unavailable' ? (
+                    <p role="status">ชั้นข้อมูลเฝ้าระวังไม่พร้อมใช้งาน จึงไม่มีพื้นที่สีจากข้อมูลจริงให้แสดง</p>
+                  ) : !monitoringSurface?.features?.length ? (
+                    <p role="status">ไม่มีพื้นที่เฝ้าระวังในข้อมูลที่ได้รับ</p>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="mb-1 font-semibold text-slate-900">ระดับการเฝ้าระวัง</p>
+                        <div className="grid grid-cols-5 gap-1 text-center">
+                          {[
+                            ['#DC2626', 'สูงมาก'],
+                            ['#EA5808', 'สูง'],
+                            ['#EAB308', 'ปานกลาง'],
+                            ['#10B981', 'ต่ำ'],
+                            ['#64748B', 'ไม่มีข้อมูล']
+                          ].map(([color, label]) => (
+                            <div key={label} className="flex flex-col items-center">
+                              <span className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: color }} />
+                              <span className="mt-0.5 text-2xs">{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 border-t border-slate-100 pt-1.5">
+                        <span className="h-3 w-3 shrink-0 rounded-full bg-[#0D9488]" />รายงานจากประชาชน
+                      </div>
+                      <p className="border-t border-slate-100 pt-1.5 text-slate-600">
+                        ระดับการเฝ้าระวังใช้เพื่อช่วยจัดลำดับพื้นที่ที่ควรตรวจสอบเพิ่มเติม ไม่ใช่ผลยืนยันการปนเปื้อน
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* HYDROLOGY */}
-            <div className="space-y-2 border-t border-slate-100 pt-2.5">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">โครงข่ายอุทกวิทยา</span>
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-sky-500"></span>
-                  <span className="font-medium">แม่น้ำและลำคลองสายหลัก</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.waterways}
-                  onChange={() => toggleLayer('waterways')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-blue-600"></span>
-                  <span className="font-medium">สถานีวัดระดับน้ำ (โทรมาตร)</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.stations}
-                  onChange={() => toggleLayer('stations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-purple-600"></span>
-                  <span className="font-medium">สถานีวัดน้ำฝนอัตโนมัติ</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.rainfallStations}
-                  onChange={() => toggleLayer('rainfallStations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-            </div>
-
-            {/* COMMUNITY */}
-            <div className="space-y-2 border-t border-slate-100 pt-2.5">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ภาคประชาชน</span>
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-emerald-600"></span>
-                  <span className="font-medium">รายงานข้อสังเกตชุมชน</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.observations}
-                  onChange={() => toggleLayer('observations')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-            </div>
-
-            {/* GEOGRAPHY */}
-            <div className="space-y-2 border-t border-slate-100 pt-2.5">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ภูมิศาสตร์และป้ายชื่อ</span>
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-slate-700"></span>
-                  <span className="font-medium">หน้ากากนอกเขตปราจีนบุรี</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.outsideMask}
-                  onChange={() => toggleLayer('outsideMask')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-
-              <label className="flex items-center justify-between text-sm text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50">
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                  <span className="font-medium">ป้ายชื่อตำบลและอำเภอ</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={visibleLayers.adminLabels}
-                  onChange={() => toggleLayer('adminLabels')}
-                  className="rounded text-[#0C65E8] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* 6. Split Map Legends (Section 23: Mandatory Split into Legend A and Legend B) */}
-        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-3.5 max-w-[360px] space-y-2.5">
-          {/* Legend Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์ (Map Legends)</span>
-            <span className="text-2xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">จ.ปราจีนบุรี</span>
-          </div>
-
-          {/* LEGEND A: ระดับความสำคัญในการเฝ้าระวัง */}
-          <div className="space-y-1">
-            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
-            </span>
-            <div className="grid grid-cols-5 gap-1 text-center">
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#DC2626] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูงมาก</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#EA580C] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">สูง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#EAB308] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ปานกลาง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#10B981] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ต่ำ</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#64748B] border border-white shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
-              </div>
-            </div>
-          </div>
-
-          {/* LEGEND B: ข้อมูลบนแผนที่ */}
-          <div className="space-y-1.5 pt-2 border-t border-slate-100">
-            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ข้อมูลบนแผนที่ (Map Markers)
-            </span>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#0284C7] shrink-0 border border-white shadow-xs"></span>
-                <span className="text-2xs">สถานีระดับน้ำ</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#EA580C] shrink-0 border border-white shadow-xs"></span>
-                <span className="text-2xs">สถานีวัดน้ำฝน</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#0D9488] shrink-0 border border-white shadow-xs"></span>
-                <span className="text-2xs">รายงานจากประชาชน</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#9333EA] shrink-0 border border-white shadow-xs"></span>
-                <span className="text-2xs">ข้อมูลสิ่งแวดล้อม</span>
-              </div>
-              <div className="flex items-center gap-1.5 col-span-2">
-                <span className="w-3 h-3 rounded-full bg-[#DC2626] shrink-0 border border-white shadow-xs"></span>
-                <span className="text-2xs font-medium text-rose-700">เหตุการณ์ที่อยู่ระหว่างการติดตาม (Alert)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Clarification Disclaimer (Section 14 & 23) */}
-          <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
-            พื้นที่สีแสดงระดับ Monitoring / Verification Priority ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
-          </p>
+          )}
         </div>
 
         {/* 7. Slide-out Detail Drawer (Non-blocking, on Selected Cell or Marker) */}
-        {selectedCellData && (
-          <div className="absolute top-4 left-4 z-20 w-84 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3.5 animate-in fade-in slide-in-from-left-2 duration-150 max-h-[85%] overflow-y-auto">
-            <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+        {mapMode === 'monitoring' && selectedCellData && (
+          <div className="rw-map-detail-panel rw-map-monitoring-detail absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200 p-3 space-y-2 animate-in fade-in slide-in-from-left-2 duration-150 overflow-y-auto" aria-live="polite" aria-label="รายละเอียดพื้นที่เฝ้าระวัง">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
               <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">พื้นที่วิเคราะห์</span>
-                <h3 className="text-base font-bold text-slate-900 leading-snug">
+                <span className="text-2xs font-semibold text-slate-500">พื้นที่เฝ้าระวัง</span>
+                <h3 className="text-sm font-bold text-slate-900 leading-snug">
                   {selectedCellData.cell_name || `ต.${selectedCellData.subdistrict} (อ.${selectedCellData.district})`}
                 </h3>
               </div>
               <button
+                type="button"
+                aria-label="ปิดรายละเอียดพื้นที่เฝ้าระวัง"
                 onClick={() => setSelectedCellData(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="min-h-8 min-w-8 flex items-center justify-center text-slate-500 hover:text-slate-700 rounded-lg"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Priority Status Pill */}
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-              <span className="text-sm text-slate-600">ลำดับการเฝ้าระวัง:</span>
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2.5 py-2 border border-slate-100">
+              <span className="text-xs text-slate-600">ลำดับการเฝ้าระวัง</span>
               <span 
-                className="text-xs font-bold px-3 py-1 rounded-full text-white shadow-xs"
+                className="text-2xs font-bold px-2.5 py-1 rounded-full text-white shadow-xs"
                 style={{ backgroundColor: selectedCellData.color || '#0284c7' }}
               >
-                {selectedCellData.priority_badge || selectedCellData.priority_level}
+                {selectedCellData.priority_badge || selectedCellData.priority_level || 'ไม่ระบุ'}
               </span>
             </div>
 
-            {/* Priority Score */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-sm text-slate-600">
-                <span>คะแนนความสำคัญ:</span>
-                <span className="font-bold text-slate-900">{selectedCellData.priority_score ?? '-'} / 1.00</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div 
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${Math.min(100, Math.max(5, (selectedCellData.priority_score || 0) * 100))}%`,
-                    backgroundColor: selectedCellData.color || '#0284c7'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Contributing Factors */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-bold text-slate-700">ปัจจัยที่นำมาประมวลผล:</span>
-              <ul className="space-y-1 text-xs text-slate-600 pl-1 leading-relaxed">
-                {selectedCellData.contributing_factors && selectedCellData.contributing_factors.map((f: string, i: number) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-[#0C65E8] shrink-0 font-bold">•</span>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs border-t border-slate-100 pt-2.5">
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-2xs text-slate-400 block mb-0.5">ฝนสะสม 24 ชม.</span>
-                <span className="font-bold text-sm text-slate-800">{selectedCellData.rain_24h_mm ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : '-'}</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-2xs text-slate-400 block mb-0.5">รายงานชุมชน</span>
-                <span className="font-bold text-sm text-slate-800">{selectedCellData.citizen_report_count ?? 0} รายการ</span>
-              </div>
-            </div>
-
-            {/* Provenance & Action Link */}
-            <div className="text-xs text-slate-500 pt-2 flex items-center justify-between border-t border-slate-100">
-              <span>ความสดใหม่: {selectedCellData.freshness || 'สดใหม่'}</span>
-              <Link 
+            <div className="flex items-center justify-between gap-2 text-2xs text-slate-500">
+              <span>ความสดใหม่: {selectedCellData.freshness || 'ไม่ระบุ'}</span>
+              {selectedCellData.district && <Link
                 to={`/my-area?district=${selectedCellData.district}`}
                 className="text-[#0C65E8] font-semibold hover:underline flex items-center gap-1"
               >
                 <span>ดูข้อมูลอำเภอ</span>
                 <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+              </Link>}
+            </div>
+            <details className="border-t border-slate-100 pt-2 text-xs">
+              <summary className="cursor-pointer font-semibold text-slate-700">รายละเอียดข้อมูล</summary>
+              <div className="space-y-2 pt-2">
+                <p>คะแนนความสำคัญ: {typeof selectedCellData.priority_score === 'number' ? `${selectedCellData.priority_score} / 1.00` : 'ไม่ระบุ'}</p>
+                <div>
+                  <span className="font-semibold">ปัจจัยที่นำมาประมวลผล:</span>
+                  {Array.isArray(selectedCellData.contributing_factors) && selectedCellData.contributing_factors.length > 0
+                    ? <ul className="list-disc pl-4 text-slate-600">{selectedCellData.contributing_factors.map((factor: string, index: number) => <li key={index}>{factor}</li>)}</ul>
+                    : <p className="text-slate-500">ไม่ระบุ</p>}
+                </div>
+                <p>ฝนสะสม 24 ชม.: {typeof selectedCellData.rain_24h_mm === 'number' ? `${selectedCellData.rain_24h_mm.toFixed(1)} มม.` : 'ไม่ระบุ'}</p>
+                <p>รายงานชุมชน: {typeof selectedCellData.citizen_report_count === 'number' ? `${selectedCellData.citizen_report_count} รายการ` : 'ไม่ระบุ'}</p>
+              </div>
+            </details>
+          </div>
+        )}
+
+        {mapMode === 'flood' && selectedFloodProperties && (
+          <div className="rw-map-detail-panel rw-map-flood-detail absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200 p-3 space-y-2 animate-in fade-in slide-in-from-left-2 duration-150 overflow-y-auto" aria-live="polite" aria-label="รายละเอียดขอบเขตน้ำท่วม">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+              <div>
+                <span className="text-2xs font-semibold text-slate-500">พื้นที่อ้างอิงน้ำท่วม</span>
+                <h3 className="text-sm font-bold text-slate-900 leading-snug break-words">
+                  {selectedFloodProperties.name || selectedFloodProperties.district || 'พื้นที่ที่เลือก'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                aria-label="ปิดรายละเอียดพื้นที่น้ำท่วม"
+                onClick={() => setSelectedFloodFeature(null)}
+                className="min-h-8 min-w-8 flex items-center justify-center text-slate-500 hover:text-slate-700 rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <dl className="space-y-1.5 text-xs text-slate-700">
+              <div>
+                <dt className="font-semibold text-slate-600">ช่วงระดับน้ำที่ระบุในข้อมูลอ้างอิง</dt>
+                <dd>{typeof selectedFloodProperties.water_depth_est === 'string' && selectedFloodProperties.water_depth_est.trim()
+                  ? selectedFloodProperties.water_depth_est
+                  : 'ไม่ระบุในข้อมูลที่ได้รับ'}</dd>
+              </div>
+              <div><dt className="font-semibold text-slate-600">สถานะ</dt><dd>ข้อมูลอ้างอิง / ยังไม่ได้ยืนยันสถานการณ์ปัจจุบัน</dd></div>
+            </dl>
+            <div className="space-y-1 border-t border-slate-100 pt-2 text-2xs text-slate-500 break-words">
+              <p>ยังไม่มีข้อมูลยืนยันสถานการณ์น้ำท่วมปัจจุบันจากแหล่งภายนอกในชั้นข้อมูลนี้</p>
             </div>
           </div>
         )}

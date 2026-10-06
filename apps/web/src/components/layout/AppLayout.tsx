@@ -99,11 +99,11 @@ export const AppLayout: React.FC = () => {
   const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967]">
+    <div className="rw-app-shell min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967]">
       
       {/* 1. Legal & Purpose Top Information Bar (Section 4 & 50.3) */}
-      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className="bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70]">
-        <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className="rw-scope-bar bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70]">
+        <div className="rw-shell rw-scope-bar-inner max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-xs sm:text-sm text-sky-100 font-medium">
@@ -127,38 +127,38 @@ export const AppLayout: React.FC = () => {
       </aside>
 
       {/* 2. Main Navigation Header (Section 5 & 50.6) */}
-      <header className="sticky top-0 z-40 w-full bg-[#063B70] text-white shadow-md border-b border-[#0C65E8]/30">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3 sm:gap-5">
+      <header className="rw-site-header sticky top-0 z-40 w-full bg-[#063B70] text-white shadow-md border-b border-[#0C65E8]/30">
+        <div className="rw-shell rw-header-inner max-w-[1500px] mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3 sm:gap-5">
           
           {/* Brand Logo & Subtitle */}
           <Link 
             to="/overview"
-            className="flex items-center gap-3 select-none shrink-0 group"
+            className="rw-brand flex items-center gap-3 select-none shrink-0 group"
           >
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#0C65E8] flex items-center justify-center shadow-inner border border-white/20 group-hover:bg-[#0E62DE] transition-colors">
+            <div className="rw-brand-mark w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#0C65E8] flex items-center justify-center shadow-inner border border-white/20 group-hover:bg-[#0E62DE] transition-colors">
               <Waves className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-none">FloodTrace</span>
+              <div className="rw-brand-copy flex items-center gap-2">
+                <span className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-none">Ruwaigon</span>
                 <span className="text-xs font-semibold bg-white/15 text-sky-100 px-2 py-0.5 rounded-full border border-white/20">
-                  Ruwaigon
+                  ปราจีนบุรี
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-sky-200/90 font-medium leading-tight mt-1 line-clamp-1">
+              <p className="rw-brand-subtitle text-xs sm:text-sm text-sky-200/90 font-medium leading-tight mt-1 line-clamp-1">
                 ระบบติดตามคุณภาพสิ่งแวดล้อมและน้ำท่วม
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links (Section 50.6: font-size 15-16px, weight 500-600) */}
-          <nav className="hidden lg:flex items-center gap-1.5">
+          <nav className="rw-primary-nav hidden lg:flex items-center gap-1.5">
             {primaryNavLinks.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `px-3.5 py-2 rounded-xl text-[15px] transition-colors flex items-center gap-2 min-h-[40px] ${
+                  `rw-nav-link px-3.5 py-2 rounded-xl text-[15px] transition-colors flex items-center gap-2 min-h-[40px] ${isActive ? 'is-active' : ''} ${
                     isActive
                       ? 'bg-[#0C65E8] text-white shadow-sm font-semibold border border-white/25'
                       : 'text-white/90 hover:text-white hover:bg-white/10 font-medium'
@@ -173,11 +173,11 @@ export const AppLayout: React.FC = () => {
             {/* Extra Links on Full Screen (2xl) */}
             <div className="hidden 2xl:flex items-center gap-1.5">
               {secondaryNavLinks.map((item) => (
-                <NavLink
+              <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `px-3.5 py-2 rounded-xl text-[15px] transition-colors flex items-center gap-2 min-h-[40px] ${
+                  `rw-nav-link px-3.5 py-2 rounded-xl text-[15px] transition-colors flex items-center gap-2 min-h-[40px] ${isActive ? 'is-active' : ''} ${
                       isActive
                         ? 'bg-[#0C65E8] text-white shadow-sm font-semibold border border-white/25'
                         : 'text-white/90 hover:text-white hover:bg-white/10 font-medium'
@@ -191,11 +191,11 @@ export const AppLayout: React.FC = () => {
             </div>
 
             {/* Dropdown "เพิ่มเติม" on compact desktop (lg - xl) */}
-            <div className="2xl:hidden relative" ref={moreMenuRef}>
+            <div className="rw-more-wrap 2xl:hidden relative" ref={moreMenuRef}>
               <button
                 type="button"
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className={`px-3.5 py-2 rounded-xl text-[15px] font-medium transition-colors flex items-center gap-1.5 min-h-[40px] ${
+                className={`rw-nav-link px-3.5 py-2 rounded-xl text-[15px] font-medium transition-colors flex items-center gap-1.5 min-h-[40px] ${showMoreMenu ? 'is-active' : ''} ${
                   showMoreMenu
                     ? 'bg-white/20 text-white'
                     : 'text-white/90 hover:text-white hover:bg-white/10'
@@ -206,14 +206,14 @@ export const AppLayout: React.FC = () => {
               </button>
 
               {showMoreMenu && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white text-[#073967] rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn">
+                <div className="rw-more-menu absolute right-0 top-full mt-2 w-56 bg-white text-[#073967] rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn">
                   {secondaryNavLinks.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       onClick={() => setShowMoreMenu(false)}
                       className={({ isActive }) =>
-                        `px-4 py-2.5 text-sm font-medium flex items-center gap-2.5 transition-colors ${
+                        `rw-nav-link px-4 py-2.5 text-sm font-medium flex items-center gap-2.5 transition-colors ${isActive ? 'is-active' : ''} ${
                           isActive
                             ? 'bg-[#0C65E8]/10 text-[#0C65E8] font-semibold'
                             : 'text-slate-700 hover:bg-slate-50'
@@ -238,10 +238,10 @@ export const AppLayout: React.FC = () => {
             </div>
           </nav>
           {/* Right: Search, Notification & TH Language Indicator */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="rw-header-actions flex items-center gap-2 sm:gap-3 shrink-0">
             
             {/* Quick District Search Input (Section 50.12) */}
-            <div className="relative">
+            <div className="rw-district-search relative">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -260,7 +260,7 @@ export const AppLayout: React.FC = () => {
                     setShowSearchResults(true);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className="w-36 sm:w-56 lg:w-72 bg-white/10 border border-white/20 text-white placeholder-white/65 text-sm rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[42px]"
+                  className="rw-search-field w-36 sm:w-56 lg:w-72 bg-white/10 border border-white/20 text-white placeholder-white/65 text-sm rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[42px]"
                 />
                 <Search className="w-4 h-4 text-white/70 absolute left-3 pointer-events-none" />
               </form>
@@ -268,7 +268,7 @@ export const AppLayout: React.FC = () => {
               {/* Autocomplete Dropdown */}
               {showSearchResults && searchTerm.trim() && (
                 <div 
-                  className="absolute right-0 top-full mt-2 w-64 bg-white text-[#073967] rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden"
+                  className="rw-search-results absolute right-0 top-full mt-2 w-64 bg-white text-[#073967] rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden"
                   onMouseLeave={() => setShowSearchResults(false)}
                 >
                   <div className="px-3.5 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
@@ -343,7 +343,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"}
-              className="lg:hidden p-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="rw-menu-toggle lg:hidden p-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -354,18 +354,18 @@ export const AppLayout: React.FC = () => {
 
         {/* Mobile Slide-down Menu Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-[#04274B] border-t border-white/10 px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top duration-150">
+          <div className="rw-mobile-menu lg:hidden bg-[#04274B] border-t border-white/10 px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top duration-150">
             <div className="text-xs font-bold text-sky-300 uppercase tracking-wider px-2">
               เมนูทั้งหมด
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="rw-mobile-menu-inner grid grid-cols-1 sm:grid-cols-2 gap-2">
               {allNavLinks.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `px-4 py-3 rounded-xl text-base font-medium flex items-center gap-3 transition-colors min-h-[48px] ${
+                    `rw-nav-link px-4 py-3 rounded-xl text-base font-medium flex items-center gap-3 transition-colors min-h-[48px] ${isActive ? 'is-active' : ''} ${
                       isActive
                         ? 'bg-[#0C65E8] text-white font-semibold'
                         : 'text-sky-100 hover:bg-white/10'
@@ -383,7 +383,7 @@ export const AppLayout: React.FC = () => {
               <Link
                 to="/report"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-colors"
+                className="rw-mobile-report w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2 min-h-[48px] transition-colors"
               >
                 <MessageSquarePlus className="w-5 h-5" />
                 <span>+ ส่งรายงานข้อสังเกตใหม่</span>
@@ -405,21 +405,21 @@ export const AppLayout: React.FC = () => {
       </header>
 
       {/* 3. Page Content Outlet */}
-      <main className="flex-1 pb-20 lg:pb-8">
+      <main className="rw-main flex-1 pb-20 lg:pb-8">
         <Outlet />
       </main>
 
       {/* 4. Footer */}
-      <footer className="w-full bg-[#063B70] text-white border-t border-[#0C65E8]/30 py-8 px-4 sm:px-6">
-        <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="rw-site-footer w-full bg-[#063B70] text-white border-t border-[#0C65E8]/30 py-8 px-4 sm:px-6">
+        <div className="rw-shell rw-footer-inner max-w-[1500px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           
           {/* Left: Brand & Mission */}
-          <div className="flex items-center gap-3">
+          <div className="rw-footer-brand flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#0C65E8] flex items-center justify-center shrink-0 border border-white/20">
               <Waves className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-lg tracking-tight text-white">FloodTrace</div>
+              <div className="font-bold text-lg tracking-tight text-white">Ruwaigon</div>
               <div className="text-sm text-sky-200 font-medium">
                 เฝ้าระวังการปนเปื้อนในสิ่งแวดล้อม เพื่อชุมชนที่ปลอดภัย
               </div>
@@ -427,7 +427,7 @@ export const AppLayout: React.FC = () => {
           </div>
 
           {/* Center: Transparency Links */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-sky-200">
+          <div className="rw-footer-links flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-sky-200">
             <Link
               to="/data-methodology"
               className="hover:text-white hover:underline transition-colors flex items-center gap-1.5"
@@ -462,7 +462,7 @@ export const AppLayout: React.FC = () => {
           </div>
 
           {/* Right: Disclaimer & Provenance Notice */}
-          <div className="text-center md:text-right">
+          <div className="rw-footer-note text-center md:text-right">
             <div className="text-sm text-sky-200 font-semibold">
               ข้อมูลเปิดเพื่อประโยชน์สาธารณะ
             </div>
@@ -475,11 +475,11 @@ export const AppLayout: React.FC = () => {
       </footer>
 
       {/* 5. Mobile Bottom Navigation Bar (Touch targets >= 44x44px) */}
-      <nav aria-label="การนำทางบนมือถือ" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#063B70] border-t border-[#0C65E8]/40 shadow-2xl flex items-center justify-around h-16 px-1 safe-area-inset-bottom">
+      <nav aria-label="การนำทางบนมือถือ" className="rw-mobile-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#063B70] border-t border-[#0C65E8]/40 shadow-2xl flex items-center justify-around h-16 px-1 safe-area-inset-bottom">
         <NavLink
           to="/overview"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+            `rw-nav-link flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${isActive ? 'is-active' : ''} ${
               isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
             }`
           }
@@ -491,7 +491,7 @@ export const AppLayout: React.FC = () => {
         <NavLink
           to="/map"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+            `rw-nav-link flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${isActive ? 'is-active' : ''} ${
               isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
             }`
           }
@@ -503,7 +503,7 @@ export const AppLayout: React.FC = () => {
         <NavLink
           to="/my-area"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+            `rw-nav-link flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${isActive ? 'is-active' : ''} ${
               isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
             }`
           }
@@ -515,7 +515,7 @@ export const AppLayout: React.FC = () => {
         <NavLink
           to="/cases"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+            `rw-nav-link flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${isActive ? 'is-active' : ''} ${
               isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
             }`
           }

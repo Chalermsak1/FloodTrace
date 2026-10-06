@@ -129,7 +129,7 @@ export const OverviewPage: React.FC = () => {
       <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#F0F7FF] via-[#F8FAFC] to-[#EFF6FF] border border-[#BFDBFE]/60 p-6 sm:p-10 lg:p-12 shadow-sm">
         
         {/* Subtle decorative water gradient backdrop */}
-        <div className="absolute -right-20 -top-20 w-96 h-96 bg-[#0C65E8]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-20 max-lg:-right-6 -top-20 w-96 h-96 bg-[#0C65E8]/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           
