@@ -161,6 +161,13 @@ class EventInformationService:
         if not ts or not event_start:
             return "UNKNOWN"
 
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if event_start.tzinfo is None:
+            event_start = event_start.replace(tzinfo=timezone.utc)
+        if event_end and event_end.tzinfo is None:
+            event_end = event_end.replace(tzinfo=timezone.utc)
+
         # Operational correlation window: from 24h prior to event start up to 48h after event end (or now if active)
         window_start = event_start - timedelta(hours=24)
         window_end = (event_end or datetime.now(timezone.utc)) + timedelta(hours=48)

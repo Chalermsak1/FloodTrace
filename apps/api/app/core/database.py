@@ -59,12 +59,13 @@ def reconcile_database_schema(target_engine=None):
     eng = target_engine or engine
     Base.metadata.create_all(bind=eng)
 
-    try:
-        MigrationManager.apply_migrations(eng)
-    except Exception as e:
-        # Fallback for environments with strict execution limits or SQLite quirks
-        import logging
-        logging.getLogger(__name__).warning(f"Versioned migration note: {e}")
+    if "postgresql" in str(eng.url):
+        try:
+            MigrationManager.apply_migrations(eng)
+        except Exception as e:
+            # Fallback for environments with strict execution limits
+            import logging
+            logging.getLogger(__name__).warning(f"Versioned migration note: {e}")
 
     if "postgresql" in str(eng.url):
         with eng.begin() as conn:
