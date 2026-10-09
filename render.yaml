@@ -11,13 +11,17 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: ENVIRONMENT
-        value: production
+        value: staging
       - key: DATA_ENV
         value: PRODUCTION
       - key: ALLOW_OFFICIAL_PUBLIC_PRODUCTION
         value: "true"
       - key: DATABASE_URL
-        sync: false
+        value: sqlite:///data/floodtrace.db
+      - key: ADMIN_API_KEY
+        value: dev-admin-secret-key-change-in-prod
+      - key: SECRET_KEY
+        value: floodtrace_secret_key_staging_32chars_secure
 
   # 2. FloodTrace React/Vite Frontend Static Site (Free Tier)
   - type: web
