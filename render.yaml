@@ -20,8 +20,9 @@ services:
         sync: false
 
   # 2. FloodTrace React/Vite Frontend Static Site (Free Tier)
-  - type: static
+  - type: web
     name: floodtrace-web
+    runtime: static
     buildCommand: cd apps/web && npm install && npm run build
     staticPublishPath: apps/web/dist
     routes:
