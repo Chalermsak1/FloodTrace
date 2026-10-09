@@ -15,6 +15,7 @@ import math
 from typing import Dict, Any, List, Optional, Tuple
 from sqlalchemy.orm import Session
 from apps.api.app.models.entities import WaterStation
+from apps.api.app.core.provenance import compute_source_freshness, FreshnessStatus
 
 # Approximate km per degree in Central Thailand (lat ~14.0 deg)
 KM_PER_LAT_DEG = 111.0
@@ -381,6 +382,13 @@ VERIFIED_STATION_WATERWAY_MATCHES = {
         "waterway_name": "คลองลำพญาธาร",
         "confidence": "REQUIRES_REVIEW",
         "basis": "สะพานคลองลำพญาธาร อ.นาดี บนลำน้ำสาขาในเขตป่าอนุรักษ์"
+    },
+    "KIZ003": {
+        "waterway_id": "riv_hanuman",
+        "segment_id": "seg_hanuman",
+        "waterway_name": "คลองห้วยยาง (สาขาแม่น้ำหนุมาน)",
+        "confidence": "REQUIRES_REVIEW",
+        "basis": "สถานีคลองห้วยยาง อ.นาดี (สสน.) ตั้งอยู่บนลำคลองสาขา ห่างจากแนวแม่น้ำหนุมาน 0.77 กม. ต้องตรวจสอบจุดติดตั้งจริงก่อนนำมาประเมินสภาพลำน้ำหลัก"
     }
 }
 
@@ -394,6 +402,8 @@ class HydrologicalIntelligenceService:
     def match_station_to_waterway(cls, station: WaterStation) -> Dict[str, Any]:
         """
         Calculates or retrieves verified station-to-waterway match with confidence level.
+        Every HIGH_CONFIDENCE match has defensible evidence beyond distance alone
+        (official basin registry, RID benchmark code, or explicit reach alignment).
         """
         station_id = station.id
         if station_id in VERIFIED_STATION_WATERWAY_MATCHES:
@@ -422,12 +432,12 @@ class HydrologicalIntelligenceService:
                 best_reach = r
 
         # Criteria:
-        # Distance < 1.0 km -> High confidence if basin/district aligns
+        # Distance alone (< 1.0 km) without explicit agency verification yields REQUIRES_REVIEW for safety.
         # Distance 1.0 - 8.0 km -> Requires Review
         # Distance > 8.0 km -> Unmatched
         if min_dist < 1.0:
-            confidence = "HIGH_CONFIDENCE"
-            basis = f"พิกัดสถานีอยู่ใกล้ลำน้ำ {best_reach['river_name']} ในระยะ {min_dist:.2f} กม. (ผ่านเกณฑ์ระยะประชิด < 1.0 กม.)"
+            confidence = "REQUIRES_REVIEW"
+            basis = f"พิกัดสถานีอยู่ใกล้ลำน้ำ {best_reach['river_name']} ในระยะ {min_dist:.2f} กม. แต่ยังไม่มีการยืนยันตามทะเบียนสถานี จึงจัดเป็นสถานะต้องตรวจสอบ"
         elif min_dist <= 8.0:
             confidence = "REQUIRES_REVIEW"
             basis = f"พิกัดสถานีห่างจากลำน้ำ {best_reach['river_name']} {min_dist:.2f} กม. (เกินระยะความปลอดภัย 1.0 กม. จำเป็นต้องตรวจสอบโดยเจ้าหน้าที่)"
@@ -513,13 +523,27 @@ class HydrologicalIntelligenceService:
                     crit_level = station.critical_level_msl
                     warn_level = station.warning_level_msl
                     obs_time = station.last_updated.isoformat() if station.last_updated else None
-                    freshness = "RECENT" if station.status == "STAGE_RECORDED" else "STALE"
 
-                    if water_level is None or station.status in ["NO_DATA", "SENSOR_OUTLIER_STALE"]:
+                    prov = station.provenance or {}
+                    obs_raw = prov.get("original_timestamp") or obs_time
+                    fresh_meta = compute_source_freshness(obs_raw, nominal_interval_seconds=3600, stale_threshold_seconds=86400)
+                    freshness = fresh_meta["status_str"]
+
+                    age_seconds = fresh_meta.get("age_seconds")
+                    is_stale_data = (
+                        fresh_meta["status"] in [FreshnessStatus.OFFLINE, FreshnessStatus.UNKNOWN]
+                        or (age_seconds is not None and age_seconds > 86400) # Stale if older than 24 hours
+                    )
+
+                    if water_level is None or station.status in ["NO_DATA", "SENSOR_OUTLIER_STALE"] or is_stale_data:
                         monitoring_status = "NO_DATA"
                         status_label_th = "ข้อมูลไม่เป็นปัจจุบัน"
                         color = "#94a3b8" # Slate gray
-                        status_explanation = "เซนเซอร์โทรมาตรของสถานีไม่มีการส่งข้อมูลหรือสัญญาณขัดข้อง"
+                        if is_stale_data:
+                            hrs = int((age_seconds or 0) / 3600)
+                            status_explanation = f"ข้อมูลตรวจวัดระดับน้ำค้างเก่า ({hrs} ชม.ที่แล้ว) ไม่นำมาประเมินสภาพน้ำปัจจุบัน"
+                        else:
+                            status_explanation = "เซนเซอร์โทรมาตรของสถานีไม่มีการส่งข้อมูลหรือสัญญาณขัดข้อง"
                     elif crit_level is not None and water_level >= crit_level:
                         monitoring_status = "CRITICAL"
                         status_label_th = "วิกฤต (น้ำล้นตลิ่ง)"
@@ -672,6 +696,9 @@ class HydrologicalIntelligenceService:
         stations_res = []
         for s in w_query.all():
             m_info = cls.match_station_to_waterway(s)
+            prov = s.provenance or {}
+            obs_raw = prov.get("original_timestamp") or (s.last_updated.isoformat() if s.last_updated else None)
+            f_meta = compute_source_freshness(obs_raw, nominal_interval_seconds=3600, stale_threshold_seconds=86400)
             stations_res.append({
                 "station_id": s.id,
                 "name_th": s.name_th,
@@ -684,7 +711,7 @@ class HydrologicalIntelligenceService:
                 "warning_level_msl": s.warning_level_msl,
                 "status": s.status,
                 "observed_at_bkk": s.last_updated.strftime("%d ต.ค. %H:%M น.") if s.last_updated else None,
-                "freshness_status": "RECENT" if s.status == "STAGE_RECORDED" else "STALE",
+                "freshness_status": f_meta["status_str"],
                 "matched_waterway_id": m_info.get("matched_waterway_id"),
                 "matched_waterway_name": m_info.get("matched_waterway_name"),
                 "match_confidence": m_info.get("match_confidence"),
@@ -710,25 +737,37 @@ class HydrologicalIntelligenceService:
         area_reaches = []
         for reach in PRACHIN_WATERWAY_REACHES:
             if not district or district == "ทั้งหมด" or reach.get("district") == district:
-                # determine status
                 p_st_id = reach.get("primary_station_id")
                 p_st = db.query(WaterStation).filter(WaterStation.id == p_st_id).first() if p_st_id else None
                 m_stat = "UNMONITORED"
                 col = "#0284c7"
                 lbl = "ไม่มีจุดตรวจวัดในส่วนนี้"
-                if p_st and p_st.water_level_msl is not None:
-                    if p_st.critical_level_msl and p_st.water_level_msl >= p_st.critical_level_msl:
-                        m_stat = "CRITICAL"
-                        col = "#ef4444"
-                        lbl = "วิกฤต (น้ำล้นตลิ่ง)"
-                    elif p_st.critical_level_msl and p_st.water_level_msl >= (p_st.critical_level_msl * 0.9):
-                        m_stat = "WATCH"
-                        col = "#f59e0b"
-                        lbl = "เฝ้าระวัง (ระดับน้ำสูง)"
-                    else:
-                        m_stat = "NORMAL"
-                        col = "#10b981"
-                        lbl = "ปกติ"
+
+                if p_st:
+                    p_info = cls.match_station_to_waterway(p_st)
+                    if p_info.get("match_confidence") == "HIGH_CONFIDENCE":
+                        p_prov = p_st.provenance or {}
+                        p_obs = p_prov.get("original_timestamp") or (p_st.last_updated.isoformat() if p_st.last_updated else None)
+                        p_fresh = compute_source_freshness(p_obs, nominal_interval_seconds=3600, stale_threshold_seconds=86400)
+                        p_age = p_fresh.get("age_seconds")
+                        p_stale = p_fresh["status"] in [FreshnessStatus.OFFLINE, FreshnessStatus.UNKNOWN] or (p_age is not None and p_age > 86400)
+
+                        if p_st.water_level_msl is None or p_st.status in ["NO_DATA", "SENSOR_OUTLIER_STALE"] or p_stale:
+                            m_stat = "NO_DATA"
+                            col = "#94a3b8"
+                            lbl = "ข้อมูลไม่เป็นปัจจุบัน"
+                        elif p_st.critical_level_msl and p_st.water_level_msl >= p_st.critical_level_msl:
+                            m_stat = "CRITICAL"
+                            col = "#ef4444"
+                            lbl = "วิกฤต (น้ำล้นตลิ่ง)"
+                        elif (p_st.critical_level_msl and p_st.water_level_msl >= (p_st.critical_level_msl * 0.9)) or (p_st.warning_level_msl and p_st.water_level_msl >= p_st.warning_level_msl):
+                            m_stat = "WATCH"
+                            col = "#f59e0b"
+                            lbl = "เฝ้าระวัง (ระดับน้ำสูง)"
+                        else:
+                            m_stat = "NORMAL"
+                            col = "#10b981"
+                            lbl = "ปกติ"
 
                 area_reaches.append({
                     "segment_id": reach["segment_id"],
