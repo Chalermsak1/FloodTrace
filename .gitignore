@@ -42,6 +42,8 @@ yarn-error.log*
 .env.local
 .env.*.local
 *.local
+*.db
+*.sqlite*
 
 # macOS & OS files
 .DS_Store
@@ -66,5 +68,8 @@ backups/*.dump
 !backups/.gitkeep
 
 /backups/
+data/backups/
+*.sql
+*.dump
 /logs/
 .env.production

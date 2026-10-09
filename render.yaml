@@ -1,0 +1,39 @@
+services:
+  # 1. FloodTrace FastAPI Backend Service (Free Tier)
+  - type: web
+    name: floodtrace-api
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r apps/api/requirements.txt
+    startCommand: python -m uvicorn apps.api.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DATA_ENV
+        value: PRODUCTION
+      - key: ALLOW_OFFICIAL_PUBLIC_PRODUCTION
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+
+  # 2. FloodTrace React/Vite Frontend Static Site (Free Tier)
+  - type: web
+    name: floodtrace-web
+    runtime: static
+    region: singapore
+    plan: free
+    buildCommand: cd apps/web && npm install && npm run build
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://floodtrace-api.onrender.com/api/*
+      - type: rewrite
+        source: /uploads/*
+        destination: https://floodtrace-api.onrender.com/uploads/*
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -39,8 +39,10 @@ import {
   Server,
   Database,
   Play,
-  HelpCircle
+  HelpCircle,
+  Globe
 } from 'lucide-react';
+import { ExternalEvidenceAdminView } from '../components/admin/ExternalEvidenceAdminView';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -156,8 +158,8 @@ export const AdminReportsPage: React.FC = () => {
   const [systemContext, setSystemContext] = useState<any | null>(null);
   const [auditTimeline, setAuditTimeline] = useState<any[]>([]);
 
-  // Navigation Tabs (Queue vs System Health)
-  const [adminActiveTab, setAdminActiveTab] = useState<'queue' | 'system_health'>('queue');
+  // Navigation Tabs (Queue vs External Evidence vs System Health)
+  const [adminActiveTab, setAdminActiveTab] = useState<'queue' | 'external_evidence' | 'system_health'>('queue');
   const [systemHealthData, setSystemHealthData] = useState<any>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(false);
   const [triggeringSource, setTriggeringSource] = useState<string | null>(null);
@@ -970,6 +972,17 @@ export const AdminReportsPage: React.FC = () => {
             }`}>
               {totalCount}
             </span>
+          </button>
+          <button
+            onClick={() => setAdminActiveTab('external_evidence')}
+            className={`px-4 py-2.5 text-sm font-semibold flex items-center gap-2 border-b-2 transition ${
+              adminActiveTab === 'external_evidence'
+                ? 'border-white text-white bg-blue-900/50'
+                : 'border-transparent text-blue-200 hover:text-white hover:bg-blue-900/30'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            <span>หลักฐานจากแหล่งภายนอก (External Evidence)</span>
           </button>
           <button
             onClick={() => setAdminActiveTab('system_health')}
@@ -1805,6 +1818,12 @@ export const AdminReportsPage: React.FC = () => {
 
         </div>
           </>
+        ) : adminActiveTab === 'external_evidence' ? (
+          <ExternalEvidenceAdminView
+            currentRole={currentRole}
+            currentUsername={currentUsername}
+            getAuthHeaders={getAuthHeaders}
+          />
         ) : (
           /* System Health & Automated Refresh Monitoring View (Section 53 & 54) */
           <div className="space-y-6">

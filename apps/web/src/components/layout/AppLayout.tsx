@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Waves, 
   Search, 
@@ -18,7 +18,10 @@ import {
   TrendingUp,
   BookOpen,
   ChevronDown,
-  Clock
+  Clock,
+  Home,
+  Newspaper,
+  User
 } from 'lucide-react';
 
 const PRACHIN_DISTRICTS = [
@@ -33,6 +36,8 @@ const PRACHIN_DISTRICTS = [
 
 export const AppLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOverview = location.pathname === '/overview' || location.pathname === '/';
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -99,18 +104,18 @@ export const AppLayout: React.FC = () => {
   const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967]">
+    <div className="min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967] overflow-x-hidden w-full">
       
       {/* 1. Legal & Purpose Top Information Bar (Section 4 & 50.3) */}
-      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className="bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70]">
-        <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className={`${isOverview ? 'hidden lg:block' : 'block'} bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70] overflow-hidden`}>
+        <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-xs sm:text-sm text-sky-100 font-medium">
               ข้อมูลจากหน่วยงานภาครัฐ ข้อมูลจากภาคประชาชน และการวิเคราะห์เชิงพื้นที่ เพื่อการเฝ้าระวังและลดความเสี่ยงด้านสิ่งแวดล้อม
             </span>
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center sm:justify-end">
             <span className="text-xs sm:text-sm text-sky-300 flex items-center gap-1.5 font-medium">
               <Clock className="w-3.5 h-3.5 text-sky-400" />
               <span>{latestSystemUpdate ? `อัปเดตล่าสุด ${latestSystemUpdate}` : 'ตรวจสอบเวลาการอัปเดตล่าสุด'}</span>
@@ -127,7 +132,7 @@ export const AppLayout: React.FC = () => {
       </aside>
 
       {/* 2. Main Navigation Header (Section 5 & 50.6) */}
-      <header className="sticky top-0 z-40 w-full bg-[#063B70] text-white shadow-md border-b border-[#0C65E8]/30">
+      <header className={`sticky top-0 z-40 w-full bg-[#063B70]/95 backdrop-blur-md text-white shadow-sm border-b border-white/10 ${isOverview ? 'hidden lg:block' : 'block'}`}>
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3 sm:gap-5">
           
           {/* Brand Logo & Subtitle */}
@@ -145,7 +150,7 @@ export const AppLayout: React.FC = () => {
                   Ruwaigon
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-sky-200/90 font-medium leading-tight mt-1 line-clamp-1">
+              <p className="hidden sm:block text-xs sm:text-sm text-sky-200/90 font-medium leading-tight mt-1 line-clamp-1">
                 ระบบติดตามคุณภาพสิ่งแวดล้อมและน้ำท่วม
               </p>
             </div>
@@ -241,7 +246,7 @@ export const AppLayout: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
             {/* Quick District Search Input (Section 50.12) */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -260,7 +265,7 @@ export const AppLayout: React.FC = () => {
                     setShowSearchResults(true);
                   }}
                   onFocus={() => setShowSearchResults(true)}
-                  className="w-36 sm:w-56 lg:w-72 bg-white/10 border border-white/20 text-white placeholder-white/65 text-sm rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[42px]"
+                  className="w-44 lg:w-72 bg-white/10 border border-white/20 text-white placeholder-white/65 text-sm rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] focus:bg-white/20 transition-all min-h-[42px]"
                 />
                 <Search className="w-4 h-4 text-white/70 absolute left-3 pointer-events-none" />
               </form>
@@ -405,7 +410,7 @@ export const AppLayout: React.FC = () => {
       </header>
 
       {/* 3. Page Content Outlet */}
-      <main className="flex-1 pb-20 lg:pb-8">
+      <main className="flex-1 pb-safe lg:pb-8 w-full">
         <Outlet />
       </main>
 
@@ -474,64 +479,69 @@ export const AppLayout: React.FC = () => {
         </div>
       </footer>
 
-      {/* 5. Mobile Bottom Navigation Bar (Touch targets >= 44x44px) */}
-      <nav aria-label="การนำทางบนมือถือ" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#063B70] border-t border-[#0C65E8]/40 shadow-2xl flex items-center justify-around h-16 px-1 safe-area-inset-bottom">
+      {/* 5. Mobile Bottom Navigation Bar (Following Reference: Clean Light Surface, Touch targets >= 44x44px, Safe-Area aware) */}
+      <nav 
+        aria-label="การนำทางบนมือถือ" 
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] flex items-center justify-around h-[calc(4rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,0px)] px-1"
+      >
         <NavLink
           to="/overview"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
+            `flex flex-col items-center justify-center flex-1 h-full min-h-[48px] min-w-[44px] transition-all rounded-xl py-1 ${
+              isActive ? 'text-[#1D68BD] font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
             }`
           }
         >
-          <LayoutDashboard className="w-5 h-5 mb-0.5" />
-          <span className="text-xs font-medium">หน้าหลัก</span>
+          <Home className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] leading-none">หน้าหลัก</span>
+        </NavLink>
+
+        <NavLink
+          to="/official-updates?tab=news"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center flex-1 h-full min-h-[48px] min-w-[44px] transition-all rounded-xl py-1 ${
+              isActive ? 'text-[#1D68BD] font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
+            }`
+          }
+        >
+          <Newspaper className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] leading-none">ข่าวสาร</span>
         </NavLink>
 
         <NavLink
           to="/map"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
+            `flex flex-col items-center justify-center flex-1 h-full min-h-[48px] min-w-[44px] transition-all rounded-xl py-1 ${
+              isActive ? 'text-[#1D68BD] font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
             }`
           }
         >
           <Map className="w-5 h-5 mb-0.5" />
-          <span className="text-xs font-medium">แผนที่</span>
+          <span className="text-[11px] leading-none">แผนที่</span>
         </NavLink>
 
         <NavLink
-          to="/my-area"
+          to="/report"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
+            `flex flex-col items-center justify-center flex-1 h-full min-h-[48px] min-w-[44px] transition-all rounded-xl py-1 ${
+              isActive ? 'text-amber-600 font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
             }`
           }
         >
-          <Compass className="w-5 h-5 mb-0.5" />
-          <span className="text-xs font-medium">พื้นที่ฉัน</span>
-        </NavLink>
-
-        <NavLink
-          to="/cases"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
-              isActive ? 'text-white font-bold' : 'text-sky-200/70 hover:text-white'
-            }`
-          }
-        >
-          <FileWarning className="w-5 h-5 mb-0.5" />
-          <span className="text-xs font-medium">รายงาน</span>
+          <MessageSquarePlus className="w-5 h-5 mb-0.5" />
+          <span className="text-[11px] leading-none">รายงานเหตุ</span>
         </NavLink>
 
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="เมนูทั้งหมด"
-          className="flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] text-sky-200/70 hover:text-white transition-colors"
+          aria-label="เมนูเพิ่มเติม"
+          className={`flex flex-col items-center justify-center flex-1 h-full min-h-[48px] min-w-[44px] transition-all rounded-xl py-1 ${
+            isMobileMenuOpen ? 'text-[#1D68BD] font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
+          }`}
         >
-          <Menu className="w-5 h-5 mb-0.5" />
-          <span className="text-xs font-medium">เมนู</span>
+          {isMobileMenuOpen ? <X className="w-5 h-5 mb-0.5" /> : <User className="w-5 h-5 mb-0.5" />}
+          <span className="text-[11px] leading-none">โปรไฟล์</span>
         </button>
       </nav>
 

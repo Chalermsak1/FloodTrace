@@ -34,6 +34,7 @@ export const App: React.FC = () => {
             <Route path="report" element={<ReportPage />} />
             <Route path="cases" element={<CasesPage />} />
             <Route path="official-updates" element={<OfficialUpdatesPage />} />
+            <Route path="news" element={<Navigate to="/official-updates?tab=news" replace />} />
             <Route path="forecast" element={<ForecastPage />} />
             <Route path="knowledge" element={<KnowledgePage />} />
             <Route path="data-methodology" element={<DataMethodologyPage />} />

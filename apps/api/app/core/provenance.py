@@ -13,11 +13,145 @@ class DataCategory(str, Enum):
     UNVERIFIED = "UNVERIFIED"              # Source/evidence insufficient for factual use
 
 class FreshnessStatus(str, Enum):
-    CURRENT = "CURRENT"        # < 24 hours
-    RECENT = "RECENT"          # 1 to 7 days
-    STALE = "STALE"            # 8 to 30 days (or stale sensor telemetry)
-    HISTORICAL = "HISTORICAL"  # > 30 days (e.g. historical snapshot)
-    UNKNOWN = "UNKNOWN"        # Unstated observation timestamp
+    LIVE = "LIVE"              # Near-real-time: observation age <= expected interval
+    RECENT = "RECENT"          # Slightly older than expected interval
+    DELAYED = "DELAYED"        # Upstream late beyond warning threshold
+    STALE = "STALE"            # Observation outside acceptable freshness window
+    OFFLINE = "OFFLINE"        # Source requests repeatedly fail or circuit breaker open
+    UNKNOWN = "UNKNOWN"        # Insufficient/unstated timestamp
+    
+    # Backwards compatibility aliases
+    CURRENT = "CURRENT"        # Alias for backward compatibility (< 24h)
+    HISTORICAL = "HISTORICAL"  # Alias for backward compatibility (> 30d)
+
+class DataTimingMetadata(BaseModel):
+    """
+    Explicit Timing Model (Section 3, 37):
+    Every observation conceptually tracks:
+      observed_at: when the upstream source says the measurement occurred
+      ingested_at: when FloodTrace successfully received the observation
+      processed_at: when FloodTrace finished normalization & derivation
+      published_at: when the updated result became available to API/SSE/UI consumers
+    """
+    observed_at: Optional[datetime] = None
+    observed_at_bkk: Optional[str] = None
+    ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    processed_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+    
+    # Latency tracking
+    source_delay_seconds: Optional[float] = None
+    ingestion_latency_ms: Optional[float] = None
+    processing_latency_ms: Optional[float] = None
+    publication_latency_ms: Optional[float] = None
+    end_to_end_latency_seconds: Optional[float] = None
+
+def compute_source_freshness(
+    original_timestamp: Optional[Any],
+    nominal_interval_seconds: int = 900,
+    warning_threshold_seconds: Optional[float] = None,
+    stale_threshold_seconds: Optional[float] = None,
+    is_source_healthy: bool = True
+) -> Dict[str, Any]:
+    """
+    Computes strict source-aware data freshness classification (Section 7, 8, 38).
+    Considers:
+      - age_seconds = current_time - observed_at
+      - source-specific nominal interval & thresholds
+      - source operational health
+    """
+    warning_th = warning_threshold_seconds or (nominal_interval_seconds * 1.5)
+    stale_th = stale_threshold_seconds or (nominal_interval_seconds * 3.0)
+
+    if not is_source_healthy:
+        return {
+            "status": FreshnessStatus.OFFLINE,
+            "status_str": FreshnessStatus.OFFLINE.value,
+            "age_seconds": None,
+            "age_minutes": None,
+            "nominal_interval_seconds": nominal_interval_seconds,
+            "warning_threshold_seconds": warning_th,
+            "stale_threshold_seconds": stale_th,
+            "observed_at_utc": None,
+            "observed_at_bkk": None,
+            "is_source_healthy": False
+        }
+
+    if original_timestamp is None:
+        return {
+            "status": FreshnessStatus.UNKNOWN,
+            "status_str": FreshnessStatus.UNKNOWN.value,
+            "age_seconds": None,
+            "age_minutes": None,
+            "nominal_interval_seconds": nominal_interval_seconds,
+            "warning_threshold_seconds": warning_th,
+            "stale_threshold_seconds": stale_th,
+            "observed_at_utc": None,
+            "observed_at_bkk": None,
+            "is_source_healthy": is_source_healthy
+        }
+
+    now_utc = datetime.now(timezone.utc)
+    from apps.api.app.core.datetime_utils import parse_thaiwater_timestamp, BANGKOK_TZ
+
+    dt_utc = None
+    dt_bkk_str = None
+
+    try:
+        if isinstance(original_timestamp, datetime):
+            if original_timestamp.tzinfo is None:
+                dt_utc = original_timestamp.replace(tzinfo=BANGKOK_TZ).astimezone(timezone.utc)
+                dt_bkk_str = original_timestamp.replace(tzinfo=BANGKOK_TZ).isoformat()
+            else:
+                dt_utc = original_timestamp.astimezone(timezone.utc)
+                dt_bkk_str = original_timestamp.astimezone(BANGKOK_TZ).isoformat()
+        elif isinstance(original_timestamp, str):
+            t_meta = parse_thaiwater_timestamp(original_timestamp, allow_future=True)
+            dt_utc = t_meta["dt_utc"]
+            dt_bkk_str = t_meta["normalized_bkk"]
+        elif isinstance(original_timestamp, date):
+            dt_naive = datetime.combine(original_timestamp, datetime.min.time())
+            dt_utc = dt_naive.replace(tzinfo=BANGKOK_TZ).astimezone(timezone.utc)
+            dt_bkk_str = dt_naive.replace(tzinfo=BANGKOK_TZ).isoformat()
+    except Exception:
+        return {
+            "status": FreshnessStatus.UNKNOWN,
+            "status_str": FreshnessStatus.UNKNOWN.value,
+            "age_seconds": None,
+            "age_minutes": None,
+            "nominal_interval_seconds": nominal_interval_seconds,
+            "warning_threshold_seconds": warning_th,
+            "stale_threshold_seconds": stale_th,
+            "observed_at_utc": None,
+            "observed_at_bkk": None,
+            "is_source_healthy": is_source_healthy
+        }
+
+    delta_sec = (now_utc - dt_utc).total_seconds()
+    age_seconds = max(0.0, delta_sec)
+    age_minutes = round(age_seconds / 60.0, 1)
+
+    if age_seconds <= (nominal_interval_seconds * 1.1):
+        status = FreshnessStatus.LIVE
+    elif age_seconds <= warning_th:
+        status = FreshnessStatus.RECENT
+    elif age_seconds <= stale_th:
+        status = FreshnessStatus.DELAYED
+    else:
+        status = FreshnessStatus.STALE
+
+    return {
+        "status": status,
+        "status_str": status.value,
+        "age_seconds": round(age_seconds, 1),
+        "age_minutes": age_minutes,
+        "nominal_interval_seconds": nominal_interval_seconds,
+        "warning_threshold_seconds": warning_th,
+        "stale_threshold_seconds": stale_th,
+        "observed_at_utc": dt_utc.isoformat(),
+        "observed_at_bkk": dt_bkk_str,
+        "is_source_healthy": is_source_healthy
+    }
 
 class SourceVerification(str, Enum):
     VERIFIED_OFFICIAL = "VERIFIED_OFFICIAL"    # Directly traced to official agency publishing endpoint

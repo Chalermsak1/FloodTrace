@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Droplets, 
   CloudRain, 
@@ -12,8 +13,11 @@ import {
   CheckCircle2,
   ChevronRight,
   X,
-  Gauge
+  Gauge,
+  Newspaper
 } from 'lucide-react';
+import { NewsCard } from '../components/news/NewsCard';
+import { InformationDetailModal, ExternalInformationDetail } from '../components/news/InformationDetailModal';
 
 const PRACHIN_DISTRICTS = [
   'ทั้งหมด',
@@ -27,7 +31,12 @@ const PRACHIN_DISTRICTS = [
 ];
 
 export const OfficialUpdatesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'water' | 'level' | 'rain' | 'announcements'>('water');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'water' | 'level' | 'rain' | 'announcements'>(
+    initialTabParam === 'news' || initialTabParam === 'announcements' ? 'announcements' : 'water'
+  );
+  const [newsFilter, setNewsFilter] = useState<'ALL' | 'CURATED_NEWS' | 'OFFICIAL'>('ALL');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ทั้งหมด');
   
   // Data states
@@ -35,14 +44,27 @@ export const OfficialUpdatesPage: React.FC = () => {
   const [rainStations, setRainStations] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [selectedSourceModal, setSelectedSourceModal] = useState<any | null>(null);
+  const [selectedInfoItem, setSelectedInfoItem] = useState<ExternalInformationDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (initialTabParam === 'news' || initialTabParam === 'announcements') {
+      setActiveTab('announcements');
+    }
+  }, [initialTabParam]);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetch('/api/public/stations').then(r => r.json()).catch(() => []),
       fetch('/api/public/rainfall-stations').then(r => r.json()).catch(() => []),
-      fetch('/api/public/official-updates').then(r => r.json()).catch(() => [])
+      fetch('/api/public/information?limit=100')
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(infoRes => {
+          if (Array.isArray(infoRes) && infoRes.length > 0) return infoRes;
+          return fetch('/api/public/official-updates').then(r => r.json()).catch(() => []);
+        })
     ]).then(([stRes, rainRes, annRes]) => {
       setStations(Array.isArray(stRes) ? stRes : []);
       setRainStations(Array.isArray(rainRes) ? rainRes : []);
@@ -60,7 +82,10 @@ export const OfficialUpdatesPage: React.FC = () => {
   );
 
   const filteredAnnouncements = announcements.filter(a =>
-    selectedDistrict === 'ทั้งหมด' || a.related_area?.includes(selectedDistrict)
+    selectedDistrict === 'ทั้งหมด' || 
+    a.related_area?.includes(selectedDistrict) ||
+    a.district === selectedDistrict ||
+    a.district?.includes(selectedDistrict)
   );
 
   return (
@@ -102,7 +127,7 @@ export const OfficialUpdatesPage: React.FC = () => {
           { id: 'water', label: 'คุณภาพน้ำ', icon: Droplets },
           { id: 'level', label: `ระดับน้ำ (${filteredStations.length})`, icon: Gauge },
           { id: 'rain', label: `ฝน (${filteredRainStations.length})`, icon: CloudRain },
-          { id: 'announcements', label: `ประกาศและผลตรวจ (${filteredAnnouncements.length})`, icon: FileText },
+          { id: 'announcements', label: `ข่าวสารและข้อมูลทางการ (${filteredAnnouncements.length})`, icon: FileText },
         ].map(tab => (
           <button
             key={tab.id}
@@ -326,48 +351,84 @@ export const OfficialUpdatesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: ประกาศและผลตรวจทางการ */}
+      {/* Tab 4: ข่าวสารและประกาศทางการ */}
       {activeTab === 'announcements' && (
-        <div className="space-y-4">
-          {filteredAnnouncements.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-2xl p-6 border border-slate-200 shadow-subtle space-y-4 hover:shadow-card transition-all"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-[#0C65E8]" />
-                  <span className="font-bold text-sm text-[#063B70]">{item.agency}</span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-sm text-slate-500">{item.document_type}</span>
-                </div>
-                <span className="text-xs text-slate-500">
-                  {item.published_at ? new Date(item.published_at).toLocaleDateString('th-TH') : 'วันนี้'}
-                </span>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-lg text-slate-900 leading-snug">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                  {item.summary || item.related_area}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-sm">
-                <span className="text-slate-600 font-medium">พื้นที่: {item.related_area}</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSourceModal({ agency: item.agency, dataset: item.title, url: item.document_url })}
-                  className="text-[#0C65E8] font-semibold hover:underline inline-flex items-center gap-1"
-                >
-                  <span>ดูแหล่งข้อมูลและต้นฉบับ</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+        <div className="space-y-5">
+          {/* Subheader and Filter Pills */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-lg text-[#063B70] flex items-center gap-2">
+                <Newspaper className="w-5 h-5 text-[#0C65E8]" />
+                <span>ข่าวสารคัดสรรและประกาศสถานการณ์</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                ข่าวสารจากสื่อมวลชนที่คัดสรรโดยโครงการ และประกาศแจ้งเตือนสถานการณ์อย่างเป็นทางการ
+              </p>
             </div>
-          ))}
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setNewsFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  newsFilter === 'ALL'
+                    ? 'bg-[#0C65E8] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ทั้งหมด ({filteredAnnouncements.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewsFilter('CURATED_NEWS')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  newsFilter === 'CURATED_NEWS'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ข่าวสารคัดสรร ({filteredAnnouncements.filter(a => a.authority_level === 'CURATED_PUBLIC_SOURCE' || a.source_type === 'NEWS_MEDIA' || a.verification_status === 'CURATED').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewsFilter('OFFICIAL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  newsFilter === 'OFFICIAL'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ประกาศทางการ ({filteredAnnouncements.filter(a => a.authority_level === 'OFFICIAL').length})
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredAnnouncements
+              .filter(item => {
+                if (newsFilter === 'CURATED_NEWS') {
+                  return item.authority_level === 'CURATED_PUBLIC_SOURCE' || item.source_type === 'NEWS_MEDIA' || item.verification_status === 'CURATED';
+                }
+                if (newsFilter === 'OFFICIAL') {
+                  return item.authority_level === 'OFFICIAL';
+                }
+                return true;
+              })
+              .map((item) => (
+                <NewsCard 
+                  key={item.id} 
+                  item={item} 
+                  onSelect={(selected) => setSelectedInfoItem(selected as any)}
+                />
+              ))}
+
+            {filteredAnnouncements.length === 0 && (
+              <div className="col-span-full py-12 text-center text-slate-400">
+                ยังไม่พบข้อมูลสาธารณะที่ตรวจสอบแหล่งต้นทางได้
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -418,6 +479,12 @@ export const OfficialUpdatesPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Information Detail Modal */}
+      <InformationDetailModal 
+        item={selectedInfoItem} 
+        onClose={() => setSelectedInfoItem(null)} 
+      />
 
     </div>
   );

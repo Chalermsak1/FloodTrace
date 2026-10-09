@@ -45,7 +45,7 @@ export const HomeMapPreview: React.FC = () => {
     roadOverlay: false
   });
 
-  useEffect(() => {
+  const loadPreviewData = () => {
     setLoading(true);
     setMapError(false);
 
@@ -53,25 +53,36 @@ export const HomeMapPreview: React.FC = () => {
       fetch('/api/public/map/monitoring-priority').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/map/boundary').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/public/stations').then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch('/api/public/observations').then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch('/api/public/stations').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/observations').then(r => r.ok ? r.json() : null).catch(() => null)
     ])
       .then(([surfaceRes, boundRes, waterRes, stationsRes, obsRes]) => {
         if (!surfaceRes && !boundRes) {
-          setMapError(true);
+          setMonitoringSurface((prev: any) => {
+            if (!prev) setMapError(true);
+            return prev;
+          });
         } else {
-          setMonitoringSurface(surfaceRes);
-          setBoundaryData(boundRes);
-          setWaterways(waterRes);
-          setStations(Array.isArray(stationsRes) ? stationsRes : []);
-          setObservations(Array.isArray(obsRes) ? obsRes : []);
+          if (surfaceRes) setMonitoringSurface(surfaceRes);
+          if (boundRes) setBoundaryData(boundRes);
+          if (waterRes) setWaterways(waterRes);
+          if (Array.isArray(stationsRes)) setStations(stationsRes);
+          if (Array.isArray(obsRes)) setObservations(obsRes);
+          setMapError(false);
         }
         setLoading(false);
       })
       .catch(() => {
-        setMapError(true);
+        setMonitoringSurface((prev: any) => {
+          if (!prev) setMapError(true);
+          return prev;
+        });
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadPreviewData();
   }, []);
 
   const handleSelectCell = (props: any) => {
@@ -134,7 +145,7 @@ export const HomeMapPreview: React.FC = () => {
               ระบบกำลังเชื่อมต่อสถานีโทรมาตรและข้อมูลเชิงพื้นที่ กรุณาลองใหม่อีกครั้ง
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => loadPreviewData()}
               className="px-5 py-2.5 bg-[#0C65E8] text-white text-sm font-semibold rounded-xl hover:bg-[#063B70] transition-colors min-h-[44px]"
             >
               โหลดใหม่อีกครั้ง
@@ -155,6 +166,7 @@ export const HomeMapPreview: React.FC = () => {
             surfaceOpacity={0.35}
             basemap="satellite"
             targetCoords={targetCoords}
+            suppressMapPopup={true}
           />
         )}
 
@@ -183,7 +195,7 @@ export const HomeMapPreview: React.FC = () => {
         </div>
 
         {/* Floating Split Map Legend (Section 13, 23, 50.9, 50.10) */}
-        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl border border-slate-200/90 max-w-[320px] sm:max-w-sm animate-fadeIn space-y-2">
+        <div className="absolute bottom-3 sm:bottom-4 left-2 right-2 sm:left-4 sm:right-auto z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl border border-slate-200/90 w-[calc(100%-1rem)] sm:w-auto sm:max-w-sm animate-fadeIn space-y-2">
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์ (Map Legends)</span>
             <span className="text-2xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">จ.ปราจีนบุรี</span>
@@ -240,54 +252,96 @@ export const HomeMapPreview: React.FC = () => {
           </p>
         </div>
 
-        {/* Selected Cell Preview Card (If Clicked) */}
-        {selectedCell && (
-          <div className="absolute top-4 right-4 sm:top-16 sm:right-4 z-20 w-[90%] sm:w-80 bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 animate-fadeIn">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-2 mb-2">
-              <div>
-                <h4 className="font-bold text-base text-[#063B70] leading-snug">
-                  {selectedCell.cell_name || selectedCell.subdistrict}
-                </h4>
-                <span className="text-xs text-slate-500">อ.{selectedCell.district} จ.ปราจีนบุรี</span>
-              </div>
-              <button
-                onClick={() => setSelectedCell(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+        {/* Selected Cell Preview Card (If Clicked) - Merged Information from both cards */}
+        {selectedCell && (() => {
+          let factors: string[] = [];
+          try {
+            const raw = typeof selectedCell.contributing_factors === 'string'
+              ? JSON.parse(selectedCell.contributing_factors)
+              : selectedCell.contributing_factors;
+            if (Array.isArray(raw)) factors = raw;
+          } catch (_) {}
 
-            <div className="space-y-2.5 text-sm">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-slate-600 text-xs sm:text-sm">ลำดับการเฝ้าระวัง:</span>
-                <span 
-                  className="font-bold px-2.5 py-1 rounded-full text-white text-xs"
-                  style={{ backgroundColor: selectedCell.color || '#0284c7' }}
+          return (
+            <div className="absolute top-3 left-2 right-2 sm:left-auto sm:top-16 sm:right-4 z-20 w-[calc(100%-1rem)] sm:w-88 md:w-96 bg-white rounded-2xl p-4 sm:p-5 shadow-2xl border border-slate-200 animate-fadeIn max-h-[85vh] overflow-y-auto">
+              {/* Header with Title, District & Close Button */}
+              <div className="flex items-start justify-between border-b border-slate-100 pb-2.5 mb-2.5">
+                <div>
+                  <h4 className="font-bold text-base sm:text-lg text-[#063B70] leading-snug">
+                    {selectedCell.cell_name || selectedCell.subdistrict}
+                  </h4>
+                  <span className="text-xs text-slate-500">อ.{selectedCell.district} จ.ปราจีนบุรี</span>
+                </div>
+                <button
+                  onClick={() => setSelectedCell(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                  title="ปิด"
                 >
-                  {selectedCell.priority_level}
-                </span>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <div className="flex justify-between text-xs sm:text-sm text-slate-600">
-                <span>คะแนนความสำคัญ:</span>
-                <span className="font-bold text-slate-900">{selectedCell.priority_score ?? '-'} / 1.00</span>
-              </div>
+              <div className="space-y-2.5 text-sm">
+                {/* 1. Priority Level Container with Color-coded Badge */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 text-xs sm:text-sm font-medium">ลำดับการเฝ้าระวัง:</span>
+                  <span 
+                    className="font-bold px-2.5 py-1 rounded-full text-white text-xs shadow-xs"
+                    style={{ backgroundColor: selectedCell.color || '#0284c7' }}
+                  >
+                    {selectedCell.priority_level}
+                  </span>
+                </div>
 
-              <div className="text-xs sm:text-sm text-slate-600 pt-0.5">
-                รายงานประชาชนในพื้นที่: <strong className="text-slate-900">{selectedCell.citizen_report_count ?? 0} รายการ</strong>
-              </div>
+                {/* 2. Priority Score */}
+                <div className="flex justify-between items-center text-xs sm:text-sm text-slate-600">
+                  <span>คะแนนความสำคัญ:</span>
+                  <span className="font-bold text-slate-900">
+                    {selectedCell.priority_score ?? '-'} <span className="font-normal text-slate-500">/ 1.00</span>
+                  </span>
+                </div>
 
-              <Link
-                to={`/map?district=${encodeURIComponent(selectedCell.district)}`}
-                className="mt-3 w-full py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-sm font-semibold rounded-xl text-center flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
-              >
-                <span>ดูรายละเอียดในแผนที่ใหญ่</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+                {/* 3. Contributing Factors / Spatial Evaluation Bullet Points (From Image 2) */}
+                {factors.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-100/80 space-y-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">
+                      ปัจจัยและการประเมินเชิงพื้นที่:
+                    </span>
+                    <ul className="space-y-1.5 pl-0.5">
+                      {factors.slice(0, 3).map((factor, idx) => (
+                        <li key={idx} className="text-xs text-slate-700 leading-snug flex items-start gap-1.5">
+                          <span className="text-slate-400 shrink-0 mt-0.5">•</span>
+                          <span>{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 4. Citizen Reports Count (From Image 1) */}
+                <div className="flex justify-between items-center text-xs sm:text-sm text-slate-600 pt-0.5">
+                  <span>รายงานประชาชนในพื้นที่:</span>
+                  <strong className="text-slate-900 font-semibold">{selectedCell.citizen_report_count ?? 0} รายการ</strong>
+                </div>
+
+                {/* 5. Freshness & District Tag (From Image 2) */}
+                <div className="text-xs text-slate-500 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span>ความสดใหม่: <strong className="text-slate-700 font-medium">{selectedCell.freshness || 'ข้อมูลรายวัน (24 ชม.)'}</strong></span>
+                  <span className="text-[#0C65E8] font-bold">อ.{selectedCell.district}</span>
+                </div>
+
+                {/* 6. Primary Action Button (From Image 1) */}
+                <Link
+                  to={`/map?district=${encodeURIComponent(selectedCell.district)}`}
+                  className="mt-3 w-full py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-sm font-semibold rounded-xl text-center flex items-center justify-center gap-1.5 transition-colors min-h-[44px] shadow-xs"
+                >
+                  <span>ดูรายละเอียดในแผนที่ใหญ่</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </section>

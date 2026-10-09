@@ -52,10 +52,10 @@ export const ForecastPage: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch('/api/public/zones').then(r => r.json()).catch(() => null),
-      fetch('/api/public/flood-extent').then(r => r.json()).catch(() => null),
-      fetch(`/api/public/forecast-zones?horizon=${selectedHorizon}`).then(r => r.json()).catch(() => null),
-      fetch('/api/public/waterways').then(r => r.json()).catch(() => null)
+      fetch('/api/public/zones').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/flood-extent').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`/api/public/forecast-zones?horizon=${selectedHorizon}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/public/waterways').then(r => r.ok ? r.json() : null).catch(() => null)
     ]).then(([zonesRes, floodRes, forecastRes, waterRes]) => {
       setZones(zonesRes);
       setFloodExtent(floodRes);

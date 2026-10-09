@@ -18,7 +18,7 @@ import urllib.parse
 import urllib.error
 from datetime import datetime
 
-BACKEND_BASE = "http://localhost:8001"
+BACKEND_BASE = os.getenv("BACKEND_URL", "http://localhost:8000")
 STAFF_HEADERS = {
     "X-Admin-Key": "dev-admin-secret-key-change-in-prod",
     "X-Staff-Role": "ADMIN",

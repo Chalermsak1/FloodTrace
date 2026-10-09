@@ -135,3 +135,34 @@ def format_thai_display(dt: datetime) -> str:
     time_str = dt_bkk.strftime("%H:%M")
     return f"{dt_bkk.day} {month_name} {buddhist_year} {time_str} น."
 
+
+def format_relative_age_thai(age_seconds: Optional[float]) -> str:
+    """
+    Formats observation age into honest Thai relative string (Section 20).
+    Never claims 'real-time' without qualification.
+    """
+    if age_seconds is None or age_seconds < 0:
+        return "ไม่ระบุเวลาสังเกตการณ์"
+    if age_seconds < 60:
+        return f"ตรวจวัดเมื่อ {int(age_seconds)} วินาทีที่แล้ว"
+    if age_seconds < 3600:
+        return f"ตรวจวัดเมื่อ {int(age_seconds / 60)} นาทีที่แล้ว"
+    if age_seconds < 86400:
+        return f"ตรวจวัดเมื่อ {int(age_seconds / 3600)} ชั่วโมงที่แล้ว"
+    return f"ตรวจวัดเมื่อ {int(age_seconds / 86400)} วันที่แล้ว"
+
+
+def format_relative_age_en(age_seconds: Optional[float]) -> str:
+    """
+    Formats observation age into concise English relative string (Section 20).
+    """
+    if age_seconds is None or age_seconds < 0:
+        return "Unknown observation time"
+    if age_seconds < 60:
+        return f"Observed {int(age_seconds)}s ago"
+    if age_seconds < 3600:
+        return f"Observed {int(age_seconds / 60)}m ago"
+    if age_seconds < 86400:
+        return f"Observed {int(age_seconds / 3600)}h ago"
+    return f"Observed {int(age_seconds / 86400)}d ago"
+

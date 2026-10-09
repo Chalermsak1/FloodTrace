@@ -110,6 +110,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     Enforces per-minute caps based on endpoint sensitivity.
     """
     async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+
+        # Whitelist long-lived SSE streams, health checks, and API docs from request throttling
+        if (
+            path.startswith("/api/v1/realtime/events")
+            or path in ("/health", "/docs", "/redoc", "/openapi.json", "/favicon.ico")
+        ):
+            return await call_next(request)
+
         # Extract IP supporting reverse proxy / load balancer (Section 3 & 25)
         cf_ip = request.headers.get("CF-Connecting-IP")
         forwarded = request.headers.get("X-Forwarded-For")
@@ -120,21 +129,27 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         else:
             client_ip = request.client.host if request.client else "127.0.0.1"
             
-        path = request.url.path
         req_id = getattr(request.state, "request_id", f"req_{uuid.uuid4().hex[:12]}")
 
-        # Determine rate limit tier
-        limit = settings.RATE_LIMIT_PER_MINUTE
+        # Determine rate limit tier and separate keys per operation type
+        tier = "public_read"
+        limit = max(settings.RATE_LIMIT_PER_MINUTE, 1200)
+
         if "/admin" in path:
-            limit = max(settings.RATE_LIMIT_PER_MINUTE * 5, 300) # Staff operations console
+            tier = "admin"
+            limit = max(settings.RATE_LIMIT_PER_MINUTE * 2, 600)  # Staff operations console
         elif "/reports/upload-photo" in path:
-            limit = 5 # Max 5 photo uploads per minute
+            tier = "upload_photo"
+            limit = 15  # 15 photo uploads per minute per IP
         elif ("/public/reports" in path or "/reports" in path) and request.method == "POST":
-            limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE # 10/min for citizen report submissions
+            tier = "submit_report"
+            limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE  # Protected submission cap
         elif "/governance/takedown" in path and request.method == "POST":
+            tier = "takedown"
             limit = settings.SUBMIT_RATE_LIMIT_PER_MINUTE
 
-        allowed, retry_after = rate_limiter.is_allowed(client_ip, limit, window_seconds=60)
+        rate_key = f"{client_ip}:{tier}"
+        allowed, retry_after = rate_limiter.is_allowed(rate_key, limit, window_seconds=60)
         if not allowed:
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,

@@ -29,7 +29,10 @@ from apps.api.app.models.entities import (
     RainfallStation,
     CitizenReport,
     WaterLevelObservation,
-    RainfallObservation
+    RainfallObservation,
+    ExternalEvidence,
+    MonitoringEvent,
+    EvidenceEventLink
 )
 
 logger = logging.getLogger(__name__)
@@ -170,6 +173,18 @@ class SpatialMonitoringService:
             cls._instance = cls()
         return cls._instance
 
+    def invalidate_cache(self):
+        """Invalidates cached monitoring surface when new telemetry or reports are committed."""
+        self._cache_geojson = None
+        self._cache_timestamp = None
+        logger.info("SpatialMonitoringService: Monitoring surface cache invalidated.")
+
+    @classmethod
+    def invalidate_global_cache(cls):
+        """Class method to invalidate the singleton cache on external event."""
+        if cls._instance is not None:
+            cls._instance.invalidate_cache()
+
     def _initialize_geometries(self):
         """Loads boundary geojson and partitions Prachin Buri into continuous Voronoi cells."""
         try:
@@ -282,6 +297,18 @@ class SpatialMonitoringService:
             not_(CitizenReport.reporter_name.ilike("%Fixture%")),
             not_(CitizenReport.reporter_name.ilike("%Synthetic%"))
         ).all()
+
+        # 3. Fetch Real External Evidence (Active, non-rejected, non-withheld)
+        active_evidence = db.query(ExternalEvidence).filter(
+            ExternalEvidence.publication_status.notin_(["WITHHELD", "REJECTED"]),
+            ExternalEvidence.verification_status != "REJECTED"
+        ).all()
+
+        # Fetch contradicting evidence links to detect conflicting claims
+        contra_links = db.query(EvidenceEventLink.evidence_id).filter(
+            EvidenceEventLink.relation_type == "CONTRADICTING_EVIDENCE"
+        ).all()
+        contra_ev_ids = {row[0] for row in contra_links}
 
         features = []
 
@@ -413,20 +440,108 @@ class SpatialMonitoringService:
                 obs_score = 0.00
                 obs_summary = "ไม่มีรายงานข้อสังเกตจากประชาชนในพื้นที่นี้"
 
+            # E. External Evidence Factor (Weight: 0.15) (Sections 6, 7, 12, 13, 14, 18, 19)
+            # Match external evidence for this cell and cluster by source_group_id
+            matched_evidence = []
+            for ev in active_evidence:
+                # Do NOT force UNKNOWN or PROVINCE-level evidence onto individual cells (Section 5 & 31)
+                if ev.location_precision in ("UNKNOWN", "PROVINCE"):
+                    continue
+
+                is_match = False
+                if ev.location_precision == "EXACT" and ev.latitude and ev.longitude:
+                    ev_pt = Point(ev.longitude, ev.latitude)
+                    if poly.contains(ev_pt):
+                        is_match = True
+                elif ev.district == cell["district"]:
+                    if ev.subdistrict and ev.subdistrict == cell["subdistrict"]:
+                        is_match = True
+                    elif ev.location_precision in ("DISTRICT", "NEARBY"):
+                        is_match = True
+
+                if is_match:
+                    matched_evidence.append(ev)
+
+            # Deduplicate by canonical source group ID (clusters reposts/mirrors to prevent priority inflation)
+            unique_ev_groups: Dict[str, List[Any]] = {}
+            for ev in matched_evidence:
+                gid = ev.source_group_id or ev.parent_evidence_id or ev.content_hash or ev.id
+                if gid not in unique_ev_groups:
+                    unique_ev_groups[gid] = []
+                unique_ev_groups[gid].append(ev)
+
+            total_ev_records = len(matched_evidence)
+
+            # Separate supporting groups from contradicting/disputed groups
+            supporting_groups: Dict[str, List[Any]] = {}
+            contradicting_groups: Dict[str, List[Any]] = {}
+
+            for gid, grp_items in unique_ev_groups.items():
+                is_contra = any(
+                    it.id in contra_ev_ids or it.verification_status == "DISPUTED"
+                    for it in grp_items
+                )
+                if is_contra:
+                    contradicting_groups[gid] = grp_items
+                else:
+                    supporting_groups[gid] = grp_items
+
+            independent_ev_count = len(supporting_groups)
+            contradicting_ev_count = len(contradicting_groups)
+
+            verified_ev_count = 0
+            corroborated_ev_count = 0
+            unverified_ev_count = 0
+
+            for gid, grp_items in supporting_groups.items():
+                statuses = {it.verification_status for it in grp_items}
+                if "LAB_CONFIRMED" in statuses:
+                    verified_ev_count += 1
+                elif "OFFICIAL_VERIFIED" in statuses:
+                    verified_ev_count += 1
+                elif "CORROBORATED" in statuses:
+                    corroborated_ev_count += 1
+                else:
+                    unverified_ev_count += 1
+
+            if verified_ev_count >= 1:
+                ev_score = 0.85
+                ev_summary = f"พบหลักฐานภายนอกที่มีการรับรองทางการ {verified_ev_count} แหล่งอิสระ (รวม {total_ev_records} รายการ)"
+            elif corroborated_ev_count >= 1:
+                ev_score = 0.65
+                ev_summary = f"พบหลักฐานภายนอกสอดคล้อง {corroborated_ev_count} แหล่งอิสระ (รวม {total_ev_records} รายการ)"
+            elif independent_ev_count >= 2:
+                ev_score = 0.40
+                ev_summary = f"พบหลักฐานภายนอก {independent_ev_count} แหล่งอิสระ (รวม {total_ev_records} รายการ รอการตรวจสอบ)"
+            elif independent_ev_count == 1:
+                ev_score = 0.25
+                ev_summary = f"พบหลักฐานภายนอก 1 แหล่ง (รวม {total_ev_records} รายการ รอการตรวจสอบ)"
+            else:
+                ev_score = 0.00
+                ev_summary = "ไม่มีหลักฐานภายนอกในพื้นที่นี้"
+
+            # Contradicting evidence adjustment: actively penalizes score and signals review
+            if contradicting_ev_count > 0:
+                ev_score = max(0.0, ev_score - 0.20)
+                ev_summary += f" [พบข้อมูลแย้ง {contradicting_ev_count} แหล่ง]"
+
             # Compute Weighted Monitoring Priority Score
+            # Multi-signal integration: Water: 0.30, Rain: 0.20, Conn: 0.20, Citizen Obs: 0.15, Evidence: 0.15
             raw_score = (
-                (water_score * 0.35) +
-                (rain_score * 0.25) +
+                (water_score * 0.30) +
+                (rain_score * 0.20) +
                 (conn_score * 0.20) +
-                (obs_score * 0.20)
+                (obs_score * 0.15) +
+                (ev_score * 0.15)
             )
 
-            # CRITICAL AUDIT RULE:
-            # "Never allow a single unverified citizen report to automatically create a 'confirmed high-risk' area."
-            if total_obs <= 1 and verified_count == 0 and water_score < 0.70 and rain_score < 0.70:
+            # CRITICAL AUDIT RULE (Section 12, 18, 27, 31):
+            # "Never allow a single unverified citizen report or unverified image to automatically create a high-risk area."
+            if (verified_count == 0 and verified_ev_count == 0 and corroborated_ev_count == 0) and water_score < 0.70 and rain_score < 0.70:
                 raw_score = min(raw_score, 0.45)
 
             priority_score = round(raw_score, 2)
+
 
             # Map to Priority Level and Visual Color
             if priority_score >= 0.68:
@@ -470,6 +585,12 @@ class SpatialMonitoringService:
                 contributing_factors.append(f"✓ {conn_summary}")
             if total_obs > 0:
                 contributing_factors.append(f"✓ {obs_summary}")
+            if total_ev_records > 0:
+                contributing_factors.append(f"✓ {ev_summary}")
+            if contradicting_ev_count > 0:
+                contributing_factors.append(
+                    f"⚠️ พบหลักฐานหรือรายงานที่มีข้อเท็จจริงขัดแย้ง {contradicting_ev_count} แหล่ง — ปรับลดคะแนนและส่งสัญญาณตรวจสอบ"
+                )
             contributing_factors.append("○ ข้อมูลนี้จัดทำเพื่อจัดลำดับการเฝ้าระวังทางอุทกวิทยา ไม่ใช่การยืนยันการปนเปื้อนสารเคมี")
 
             # Data Freshness & Quality
@@ -496,16 +617,21 @@ class SpatialMonitoringService:
                     "freshness": freshness,
                     "observed_at": (observed_at_water or observed_at_rain or now).isoformat() if hasattr(observed_at_water or observed_at_rain or now, 'isoformat') else str(observed_at_water or observed_at_rain or now),
                     "retrieved_at": now.isoformat(),
-                    "source_count": (1 if nearest_water_st else 0) + (1 if nearest_rain_st else 0) + total_obs,
+                    "source_count": (1 if nearest_water_st else 0) + (1 if nearest_rain_st else 0) + total_obs + independent_ev_count,
                     "contributing_factors": contributing_factors,
                     "water_summary": water_summary,
                     "rain_24h_mm": rain_24h_mm,
                     "citizen_report_count": total_obs,
                     "verified_report_count": verified_count,
+                    "external_evidence_count": total_ev_records,
+                    "independent_evidence_count": independent_ev_count,
+                    "contradicting_evidence_count": contradicting_ev_count,
+                    "verified_evidence_count": verified_ev_count,
+                    "corroborated_evidence_count": corroborated_ev_count,
                     "waterway_name": nearest_waterway_name,
                     "distance_to_waterway_km": dist_waterway_km,
                     "provenance": {
-                        "source_agency": "FloodTrace Multi-source Spatial Integration (ThaiWater / RID / DWR / Citizen Reports)",
+                        "source_agency": "FloodTrace Multi-source Spatial Integration (ThaiWater / RID / DWR / Citizen Reports / External Evidence)",
                         "dataset_name": "ลำดับความสำคัญในการเฝ้าระวังเชิงพื้นที่ (Monitoring / Verification Priority Surface)",
                         "category": "MODEL",
                         "category_th": "ผลวิเคราะห์เชิงพื้นที่",

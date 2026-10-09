@@ -8,15 +8,16 @@ Master Architecture & Safety-by-Design Compliance:
 """
 
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import not_
+from sqlalchemy import not_, func, or_
 
 from apps.api.app.core.database import get_db
 from apps.api.app.core.config import settings
-from apps.api.app.core.datetime_utils import BANGKOK_TZ
+from apps.api.app.core.datetime_utils import BANGKOK_TZ, to_bangkok_iso
+from apps.api.app.core.provenance import compute_source_freshness
 from apps.api.app.core.security import (
     validate_prachin_coordinates,
     generalize_coordinates,
@@ -24,6 +25,7 @@ from apps.api.app.core.security import (
     format_standard_error
 )
 from apps.api.app.models.entities import CitizenReport, WaterStation, RainfallStation, WaterLevelObservation, RainfallObservation
+from apps.api.app.services.source_metadata_service import SourceMetadataService
 
 
 public_router = APIRouter(prefix="/public", tags=["FloodTrace Public Information Platform"])
@@ -109,6 +111,10 @@ class PublicOfficialUpdateDTO(BaseModel):
     related_area: str
     factual_summary: str
     source_url: str
+    source_domain: Optional[str] = None
+    source_image_url: Optional[str] = None
+    source_image_fetched_at: Optional[str] = None
+    image_source_type: Optional[str] = Field(default="FALLBACK", description="OG_IMAGE, TWITTER_IMAGE, SOURCE_IMAGE, PDF_PREVIEW, FALLBACK")
     lab_detected_substance: Optional[str] = None
     attribution_status: str = Field(default="ยังไม่ทราบ / อยู่ระหว่างตรวจสอบ", description="ยังไม่ทราบ, อยู่ระหว่างตรวจสอบ, หรือ หน่วยงานระบุแหล่งกำเนิดแล้ว")
     badge: str = Field(default="OFFICIAL", description="ข้อมูลจากหน่วยงาน")
@@ -125,6 +131,14 @@ class PublicTelemetryStationDTO(BaseModel):
     warning_level_msl: Optional[float] = None
     critical_level_msl: Optional[float] = None
     status: str
+    observed_at: Optional[str] = None
+    observed_at_bkk: Optional[str] = None
+    ingested_at: Optional[str] = None
+    freshness_status: Optional[str] = "LIVE"
+    observation_age_seconds: Optional[float] = None
+    expected_interval_seconds: Optional[int] = 900
+    data_category: str = "MEASURED_FACT"
+    value_nature: str = "OBSERVED"
     provenance: PublicProvenanceDTO
 
 class PublicRainfallStationDTO(BaseModel):
@@ -139,6 +153,14 @@ class PublicRainfallStationDTO(BaseModel):
     rain_1h_mm: Optional[float] = None
     agency: Optional[str] = None
     status: str
+    observed_at: Optional[str] = None
+    observed_at_bkk: Optional[str] = None
+    ingested_at: Optional[str] = None
+    freshness_status: Optional[str] = "LIVE"
+    observation_age_seconds: Optional[float] = None
+    expected_interval_seconds: Optional[int] = 900
+    data_category: str = "MEASURED_FACT"
+    value_nature: str = "OBSERVED"
     provenance: PublicProvenanceDTO
 
 class HistoricalObservationDTO(BaseModel):
@@ -147,13 +169,17 @@ class HistoricalObservationDTO(BaseModel):
     value: Optional[float] = None
     unit: str
     source_timestamp: Optional[str] = None
+    observed_at: Optional[str] = None
+    observed_at_bkk: Optional[str] = None
     retrieved_at: str
+    ingested_at: Optional[str] = None
     source_name: str
     organization: str
     dataset: str
     data_classification: str
     freshness_status: str
     ingestion_mode: str
+    data_category: str = "MEASURED_FACT"
 
 class StationHistoryResponseDTO(BaseModel):
     station_id: str
@@ -902,13 +928,15 @@ def get_public_waterways():
 @public_router.get("/stations", response_model=List[PublicTelemetryStationDTO])
 def get_public_telemetry_stations(db: Session = Depends(get_db)):
     """
-    Returns verified public river gauge and telemetry stations.
+    Returns verified public river gauge and telemetry stations with explicit timing and freshness model.
     Zero private/industrial coordinates.
     """
     stations = db.query(WaterStation).all()
     results = []
     for s in stations:
         prov = s.provenance or {}
+        obs_raw = prov.get("original_timestamp") or (s.last_updated.isoformat() if s.last_updated else None)
+        fresh = compute_source_freshness(obs_raw, nominal_interval_seconds=900)
         results.append(PublicTelemetryStationDTO(
             station_id=s.id,
             name_th=s.name_th,
@@ -920,6 +948,14 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
             warning_level_msl=s.warning_level_msl,
             critical_level_msl=s.critical_level_msl,
             status=s.status,
+            observed_at=fresh["observed_at_utc"],
+            observed_at_bkk=fresh["observed_at_bkk"],
+            ingested_at=s.last_updated.isoformat() if s.last_updated else None,
+            freshness_status=fresh["status_str"],
+            observation_age_seconds=fresh["age_seconds"],
+            expected_interval_seconds=900,
+            data_category="MEASURED_FACT",
+            value_nature="OBSERVED",
             provenance=PublicProvenanceDTO(
                 source_agency=prov.get("source_agency", "สสน. / กรมชลประทาน (ThaiWater / RID)"),
                 dataset_name="ข้อมูลตรวจวัดระดับน้ำโทรมาตร (Telemetry Gauging)",
@@ -934,13 +970,15 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
 @public_router.get("/rainfall-stations", response_model=List[PublicRainfallStationDTO])
 def get_public_rainfall_stations(db: Session = Depends(get_db)):
     """
-    Returns verified public automatic rain gauge stations across Prachin Buri.
+    Returns verified public automatic rain gauge stations across Prachin Buri with explicit freshness.
     Direct live telemetry from HII / ThaiWater under Open Government License Thailand (OGL-TH).
     """
     stations = db.query(RainfallStation).all()
     results = []
     for s in stations:
         prov = s.provenance or {}
+        obs_raw = prov.get("original_timestamp") or s.observation_time or (s.last_updated.isoformat() if s.last_updated else None)
+        fresh = compute_source_freshness(obs_raw, nominal_interval_seconds=900)
         results.append(PublicRainfallStationDTO(
             station_id=s.id,
             name_th=s.name_th,
@@ -953,6 +991,14 @@ def get_public_rainfall_stations(db: Session = Depends(get_db)):
             rain_1h_mm=s.rain_1h_mm,
             agency=s.agency or "สสน.",
             status=s.status,
+            observed_at=fresh["observed_at_utc"],
+            observed_at_bkk=fresh["observed_at_bkk"],
+            ingested_at=s.last_updated.isoformat() if s.last_updated else None,
+            freshness_status=fresh["status_str"],
+            observation_age_seconds=fresh["age_seconds"],
+            expected_interval_seconds=900,
+            data_category="MEASURED_FACT",
+            value_nature="OBSERVED",
             provenance=PublicProvenanceDTO(
                 source_agency=prov.get("source_agency", "สถาบันสารสนเทศทรัพยากรน้ำ (องค์การมหาชน) - ThaiWater"),
                 dataset_name="ข้อมูลตรวจวัดปริมาณน้ำฝนอัตโนมัติ 24 ชั่วโมง (Rainfall Telemetry)",
@@ -964,6 +1010,44 @@ def get_public_rainfall_stations(db: Session = Depends(get_db)):
         ))
     return results
 
+@public_router.get("/telemetry/sources")
+def get_public_telemetry_sources_status():
+    """
+    Returns honest public health, cadence, and freshness status of all external telemetry sources (Section 8, 24).
+    Sanitized: Zero internal credentials or private exception traces exposed.
+    """
+    from apps.api.app.core.scheduler import source_scheduler
+    status_data = source_scheduler.get_status()
+    public_sources = []
+    
+    for s_id, s_info in status_data.get("sources", {}).items():
+        public_sources.append({
+            "source_id": s_id,
+            "source_name": s_info.get("source_name", s_id),
+            "dataset": s_info.get("dataset"),
+            "data_type": s_info.get("data_type", "TELEMETRY"),
+            "data_category": s_info.get("data_category", "MEASURED_FACT"),
+            "nominal_interval_seconds": s_info.get("nominal_interval_seconds", 900),
+            "poll_interval_seconds": s_info.get("poll_interval_seconds", 180),
+            "automated_refresh": s_info.get("automated_refresh", False),
+            "freshness_status": s_info.get("freshness_status", "UNKNOWN"),
+            "data_age_seconds": s_info.get("data_age_seconds"),
+            "source_delay_seconds": s_info.get("source_delay_seconds"),
+            "last_observed_at": s_info.get("last_observed_at"),
+            "last_success": s_info.get("last_success"),
+            "records_received": s_info.get("records_received_last_run", 0),
+            "records_inserted": s_info.get("records_inserted_last_run", 0),
+            "records_updated": s_info.get("records_updated_last_run", 0),
+            "circuit_breaker": s_info.get("circuit_breaker_status", "CLOSED")
+        })
+        
+    return {
+        "status": "OPERATIONAL" if status_data.get("scheduler_active") else "STANDBY",
+        "system_time": status_data.get("system_time"),
+        "timezone": "Asia/Bangkok (UTC+07:00)",
+        "sources": public_sources
+    }
+
 @public_router.get("/stations/{station_id}/history", response_model=StationHistoryResponseDTO)
 def get_station_water_level_history(
     station_id: str,
@@ -971,8 +1055,8 @@ def get_station_water_level_history(
     db: Session = Depends(get_db)
 ):
     """
-    Master Prompt Section 18:
-    Returns historical time-series telemetry observations for a water level station.
+    Master Prompt Section 18 & 23:
+    Returns historical time-series telemetry observations for a water level station sorted chronologically by observed_at.
     Never overwrites historical records. Supports 24H, 7D, 30D.
     """
     st = db.query(WaterStation).filter(WaterStation.id == station_id).first()
@@ -986,24 +1070,29 @@ def get_station_water_level_history(
     records = db.query(WaterLevelObservation).filter(
         WaterLevelObservation.station_id == station_id,
         WaterLevelObservation.source_timestamp >= cutoff
-    ).order_by(WaterLevelObservation.source_timestamp.desc()).all()
+    ).order_by(WaterLevelObservation.source_timestamp.asc()).all()
 
     obs_dtos = []
     if records:
         for r in records:
+            dt_obs = r.observed_at or r.source_timestamp
             obs_dtos.append(HistoricalObservationDTO(
                 id=r.id,
                 station_id=r.station_id,
                 value=r.water_level_msl,
                 unit="m MSL",
                 source_timestamp=r.source_timestamp.isoformat() if r.source_timestamp else None,
+                observed_at=dt_obs.isoformat() if dt_obs else None,
+                observed_at_bkk=to_bangkok_iso(dt_obs) if dt_obs else None,
                 retrieved_at=r.retrieved_at.isoformat() if r.retrieved_at else now.isoformat(),
+                ingested_at=r.ingested_at.isoformat() if r.ingested_at else (r.retrieved_at.isoformat() if r.retrieved_at else None),
                 source_name=r.source_name,
                 organization=r.organization,
                 dataset=r.dataset,
                 data_classification=r.data_classification,
                 freshness_status=r.freshness_status,
-                ingestion_mode=r.ingestion_mode
+                ingestion_mode=r.ingestion_mode,
+                data_category="MEASURED_FACT"
             ))
     elif st.water_level_msl is not None:
         obs_dtos.append(HistoricalObservationDTO(
@@ -1012,16 +1101,20 @@ def get_station_water_level_history(
             value=st.water_level_msl,
             unit="m MSL",
             source_timestamp=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
+            observed_at=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
+            observed_at_bkk=to_bangkok_iso(st.last_updated) if st.last_updated else None,
             retrieved_at=now.isoformat(),
+            ingested_at=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
             source_name="ThaiWater",
             organization="HII / RID",
             dataset="waterlevel_load",
             data_classification="HIGH_FREQUENCY",
-            freshness_status="FRESH",
-            ingestion_mode="EXTERNAL_API"
+            freshness_status="LIVE",
+            ingestion_mode="EXTERNAL_API",
+            data_category="MEASURED_FACT"
         ))
 
-    latest_ts = obs_dtos[0].source_timestamp if obs_dtos else None
+    latest_ts = obs_dtos[-1].source_timestamp if obs_dtos else None
 
     return StationHistoryResponseDTO(
         station_id=st.id,
@@ -1048,8 +1141,8 @@ def get_station_rainfall_history(
     db: Session = Depends(get_db)
 ):
     """
-    Master Prompt Section 18:
-    Returns historical time-series telemetry observations for a rainfall station.
+    Master Prompt Section 18 & 23:
+    Returns historical time-series telemetry observations for a rainfall station sorted chronologically by observed_at.
     Never overwrites historical records. Supports 24H, 7D, 30D.
     """
     st = db.query(RainfallStation).filter(RainfallStation.id == station_id).first()
@@ -1063,24 +1156,29 @@ def get_station_rainfall_history(
     records = db.query(RainfallObservation).filter(
         RainfallObservation.station_id == station_id,
         RainfallObservation.source_timestamp >= cutoff
-    ).order_by(RainfallObservation.source_timestamp.desc()).all()
+    ).order_by(RainfallObservation.source_timestamp.asc()).all()
 
     obs_dtos = []
     if records:
         for r in records:
+            dt_obs = r.observed_at or r.source_timestamp
             obs_dtos.append(HistoricalObservationDTO(
                 id=r.id,
                 station_id=r.station_id,
                 value=r.rain_24h_mm,
                 unit="mm",
                 source_timestamp=r.source_timestamp.isoformat() if r.source_timestamp else None,
+                observed_at=dt_obs.isoformat() if dt_obs else None,
+                observed_at_bkk=to_bangkok_iso(dt_obs) if dt_obs else None,
                 retrieved_at=r.retrieved_at.isoformat() if r.retrieved_at else now.isoformat(),
+                ingested_at=r.ingested_at.isoformat() if r.ingested_at else (r.retrieved_at.isoformat() if r.retrieved_at else None),
                 source_name=r.source_name,
                 organization=r.organization,
                 dataset=r.dataset,
                 data_classification=r.data_classification,
                 freshness_status=r.freshness_status,
-                ingestion_mode=r.ingestion_mode
+                ingestion_mode=r.ingestion_mode,
+                data_category="MEASURED_FACT"
             ))
     elif st.rain_24h_mm is not None:
         obs_dtos.append(HistoricalObservationDTO(
@@ -1088,17 +1186,21 @@ def get_station_rainfall_history(
             station_id=st.id,
             value=st.rain_24h_mm,
             unit="mm",
-            source_timestamp=st.observation_time or now.isoformat(),
+            source_timestamp=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
+            observed_at=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
+            observed_at_bkk=to_bangkok_iso(st.last_updated) if st.last_updated else None,
             retrieved_at=now.isoformat(),
+            ingested_at=st.last_updated.isoformat() if st.last_updated else now.isoformat(),
             source_name="ThaiWater",
             organization="HII / TMD",
             dataset="rain_24h",
             data_classification="HIGH_FREQUENCY",
-            freshness_status="FRESH",
-            ingestion_mode="EXTERNAL_API"
+            freshness_status="LIVE",
+            ingestion_mode="EXTERNAL_API",
+            data_category="MEASURED_FACT"
         ))
 
-    latest_ts = obs_dtos[0].source_timestamp if obs_dtos else None
+    latest_ts = obs_dtos[-1].source_timestamp if obs_dtos else None
 
     return StationHistoryResponseDTO(
         station_id=st.id,
@@ -1254,11 +1356,12 @@ def get_public_observations(
 @public_router.get("/official-updates", response_model=List[PublicOfficialUpdateDTO])
 def get_public_official_updates():
     """
-    Returns verified official government announcements and lab results.
+    Returns verified official government announcements and lab results with source preview image metadata.
     Detection != Source Attribution.
     """
     results = []
     for item in OFFICIAL_UPDATES_DATA:
+        meta = SourceMetadataService.get_metadata(item["source_url"], item["agency"])
         results.append(PublicOfficialUpdateDTO(
             id=item["id"],
             agency=item["agency"],
@@ -1268,6 +1371,10 @@ def get_public_official_updates():
             related_area=item["related_area"],
             factual_summary=item["factual_summary"],
             source_url=item["source_url"],
+            source_domain=meta.get("source_domain"),
+            source_image_url=meta.get("source_image_url"),
+            source_image_fetched_at=meta.get("source_image_fetched_at"),
+            image_source_type=meta.get("image_source_type", "FALLBACK"),
             lab_detected_substance=item["lab_detected_substance"],
             attribution_status=item["attribution_status"],
             badge="OFFICIAL",
@@ -1682,3 +1789,513 @@ def track_citizen_report_status(report_id: str, db: Session = Depends(get_db)):
         "verification_level_th": verif_th,
         "last_updated": (report.updated_at or report.created_at).isoformat() if (report.updated_at or report.created_at) else None
     }
+
+
+# ============================================================
+# Public External Evidence & Monitoring Events Endpoints (Section 24, 28)
+# ============================================================
+
+from apps.api.app.models.entities import (
+    ExternalEvidence,
+    ExternalEvidenceMedia,
+    MonitoringEvent,
+    EvidenceEventLink,
+    ExternalInformation
+)
+from apps.api.app.services.external_evidence_service import ExternalEvidenceService
+from apps.api.app.services.event_information_service import EventInformationService
+from apps.api.app.core.source_registry import SourceRegistry
+
+
+def get_evidence_related_sources_and_news(db: Session, ev: ExternalEvidence) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Finds other distinct, non-duplicate external evidence items that share the same source_group_id
+    or are linked to the same monitoring_event_id.
+    Also retrieves related news articles (ExternalInformation) linked to that monitoring_event_id.
+    """
+    related_sources = []
+
+    group_filter = []
+    if ev.source_group_id:
+        group_filter.append(ExternalEvidence.source_group_id == ev.source_group_id)
+    if ev.monitoring_event_id:
+        group_filter.append(ExternalEvidence.monitoring_event_id == ev.monitoring_event_id)
+    if ev.id:
+        group_filter.append(ExternalEvidence.parent_evidence_id == ev.id)
+
+    if group_filter:
+        query_related = db.query(ExternalEvidence).filter(
+            or_(*group_filter),
+            ExternalEvidence.id != ev.id,
+            ExternalEvidence.is_duplicate.is_(False),
+            ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
+            ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
+        ).all()
+
+        for rel in query_related:
+            rel_media = db.query(ExternalEvidenceMedia).filter(ExternalEvidenceMedia.evidence_id == rel.id).all()
+            related_sources.append({
+                "id": rel.id,
+                "source_platform": rel.source_platform,
+                "source_name": rel.source_name,
+                "source_url": rel.source_url,
+                "title_or_summary": rel.title_or_summary,
+                "description": rel.description,
+                "evidence_type": rel.evidence_type,
+                "verification_status": rel.verification_status,
+                "district": rel.district,
+                "subdistrict": rel.subdistrict,
+                "location_text": rel.location_text,
+                "published_at": rel.published_at.isoformat() if rel.published_at else None,
+                "observed_at": rel.observed_at.isoformat() if rel.observed_at else None,
+                "media_references": [
+                    {
+                        "id": m.id,
+                        "media_type": m.media_type,
+                        "source_media_url": m.source_media_url
+                    }
+                    for m in rel_media
+                ]
+            })
+
+    related_news = []
+    if ev.monitoring_event_id:
+        news_items = db.query(ExternalInformation).filter(
+            ExternalInformation.monitoring_event_id == ev.monitoring_event_id,
+            ExternalInformation.source_type == "NEWS_MEDIA",
+            ExternalInformation.publication_status.in_(["PUBLIC", "PUBLISHED", "PUBLIC_SAFE"])
+        ).limit(5).all()
+
+        for n in news_items:
+            related_news.append({
+                "id": n.id,
+                "source_name": n.source_name,
+                "title": n.title,
+                "summary": n.summary,
+                "source_url": n.canonical_url or n.source_url,
+                "published_at": n.published_at.isoformat() if n.published_at else None,
+                "source_image_url": n.source_image_url,
+                "authority_level": n.authority_level
+            })
+
+    return related_sources, related_news
+
+
+@public_router.get("/external-evidence", response_model=List[Dict[str, Any]])
+def get_public_external_evidence(
+    district: Optional[str] = Query(None),
+    event_type: Optional[str] = Query(None),
+    verification_status: Optional[str] = Query(None),
+    include_duplicates: bool = Query(False, description="รวมข้อมูลที่ถูกตรวจพบว่าซ้ำซ้อนหรือไม่ (ค่าเริ่มต้น: ซ่อน)"),
+    group_by_event: bool = Query(False, description="รวมกลุ่มรายงานที่เกี่ยวข้องกับเหตุการณ์เดียวกันเป็นบัตรหลักใบเดียว"),
+    sort_order: Optional[str] = Query("desc", description="ลำดับเวลา (desc/asc)"),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns public-approved external evidence items.
+    Strictly scrubs internal staff notes, reviewer usernames, and private credentials.
+    Filters out WITHHELD, INTERNAL_ONLY, and REJECTED items.
+    By default filters out duplicate items (is_duplicate=False) and supports event/source grouping.
+    Sorted by semantic event time (observed_at, fallback published_at, then retrieved_at).
+    """
+    query = db.query(ExternalEvidence).filter(
+        ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
+        ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
+    )
+
+    if not include_duplicates:
+        query = query.filter(ExternalEvidence.is_duplicate.is_(False))
+
+    if district:
+        query = query.filter(ExternalEvidence.district == district)
+    if event_type:
+        query = query.filter(ExternalEvidence.event_type == event_type)
+    if verification_status:
+        query = query.filter(ExternalEvidence.verification_status == verification_status)
+
+    semantic_time = func.coalesce(ExternalEvidence.observed_at, ExternalEvidence.published_at, ExternalEvidence.retrieved_at)
+    if sort_order == "asc":
+        query = query.order_by(semantic_time.asc())
+    else:
+        query = query.order_by(semantic_time.desc())
+
+    raw_items = query.all()
+
+    if group_by_event:
+        # Group items by source_group_id or monitoring_event_id
+        grouped_dict: Dict[str, List[ExternalEvidence]] = {}
+        for ev in raw_items:
+            # Determine grouping key
+            group_key = ev.source_group_id or (f"MON_{ev.monitoring_event_id}" if ev.monitoring_event_id else ev.id)
+            grouped_dict.setdefault(group_key, []).append(ev)
+
+        items = []
+        for gkey, g_evs in grouped_dict.items():
+            # Pick canonical primary: prefer parent_evidence_id is None, then first in list
+            primary = next((e for e in g_evs if not e.parent_evidence_id), g_evs[0])
+            items.append(primary)
+
+        # Slice after grouping
+        items = items[offset:offset + limit]
+    else:
+        items = raw_items[offset:offset + limit]
+
+    results = []
+    for ev in items:
+        media_items = db.query(ExternalEvidenceMedia).filter(ExternalEvidenceMedia.evidence_id == ev.id).all()
+
+        pub_lat = round(ev.latitude, 2) if (ev.latitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+        pub_lon = round(ev.longitude, 2) if (ev.longitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+
+        related_sources, related_news = get_evidence_related_sources_and_news(db, ev)
+
+        results.append({
+            "id": ev.id,
+            "source_platform": ev.source_platform,
+            "source_name": ev.source_name,
+            "source_url": ev.source_url,
+            "title_or_summary": ev.title_or_summary,
+            "description": ev.description,
+            "text_excerpt": ev.text_excerpt,
+            "event_type": ev.event_type,
+            "evidence_type": ev.evidence_type,
+            "verification_status": ev.verification_status,
+            "publication_status": ev.publication_status,
+            "location_text": ev.location_text,
+            "public_latitude": pub_lat,
+            "public_longitude": pub_lon,
+            "location_precision": ev.location_precision,
+            "district": ev.district,
+            "subdistrict": ev.subdistrict,
+            "published_at": ev.published_at.isoformat() if ev.published_at else None,
+            "observed_at": ev.observed_at.isoformat() if ev.observed_at else None,
+            "retrieved_at": ev.retrieved_at.isoformat() if ev.retrieved_at else None,
+            "monitoring_event_id": ev.monitoring_event_id,
+            "parent_evidence_id": ev.parent_evidence_id,
+            "source_group_id": ev.source_group_id,
+            "is_duplicate": ev.is_duplicate,
+            "duplicate_reason": ev.duplicate_reason,
+            "related_sources_count": len(related_sources) + 1,
+            "related_sources": related_sources,
+            "related_news": related_news,
+            "media_references": [
+                {
+                    "id": m.id,
+                    "media_type": m.media_type,
+                    "source_media_url": m.source_media_url,
+                    "license_or_permission_status": m.license_or_permission_status
+                }
+                for m in media_items
+            ],
+            "provenance": {
+                "source_agency": ev.source_name,
+                "dataset_name": "ข้อมูลหลักฐานอ้างอิงจากแหล่งภายนอก (External Evidence)",
+                "category": "OFFICIAL_OBSERVED" if ev.source_platform == "OFFICIAL_PUBLIC" else "DERIVED",
+                "category_th": "ข้อมูลจากแหล่งภายนอก",
+                "disclaimer": "ข้อมูลนี้รวบรวมจากแหล่งสาธารณะภายนอกเพื่อประกอบการเฝ้าระวัง ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้กระทำผิด"
+            }
+        })
+
+    return results
+
+
+@public_router.get("/external-evidence/{evidence_id}", response_model=Dict[str, Any])
+def get_public_external_evidence_detail(evidence_id: str, db: Session = Depends(get_db)):
+    """
+    Returns sanitized public details of a single external evidence item.
+    Returns 404 if item is withheld, internal-only, or non-existent.
+    """
+    ev = db.query(ExternalEvidence).filter(
+        ExternalEvidence.id == evidence_id,
+        ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
+        ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
+    ).first()
+
+    if not ev:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="ไม่พบข้อมูลหลักฐานภายนอกที่ระบุ หรือข้อมูลดังกล่าวถูกจำกัดการเข้าถึงเฉพาะภายใน"
+        )
+
+    media_items = db.query(ExternalEvidenceMedia).filter(ExternalEvidenceMedia.evidence_id == ev.id).all()
+    pub_lat = round(ev.latitude, 2) if (ev.latitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+    pub_lon = round(ev.longitude, 2) if (ev.longitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+
+    related_sources, related_news = get_evidence_related_sources_and_news(db, ev)
+
+    return {
+        "id": ev.id,
+        "source_platform": ev.source_platform,
+        "source_name": ev.source_name,
+        "source_url": ev.source_url,
+        "title_or_summary": ev.title_or_summary,
+        "description": ev.description,
+        "text_excerpt": ev.text_excerpt,
+        "event_type": ev.event_type,
+        "evidence_type": ev.evidence_type,
+        "verification_status": ev.verification_status,
+        "publication_status": ev.publication_status,
+        "location_text": ev.location_text,
+        "public_latitude": pub_lat,
+        "public_longitude": pub_lon,
+        "location_precision": ev.location_precision,
+        "district": ev.district,
+        "subdistrict": ev.subdistrict,
+        "published_at": ev.published_at.isoformat() if ev.published_at else None,
+        "observed_at": ev.observed_at.isoformat() if ev.observed_at else None,
+        "retrieved_at": ev.retrieved_at.isoformat() if ev.retrieved_at else None,
+        "monitoring_event_id": ev.monitoring_event_id,
+        "parent_evidence_id": ev.parent_evidence_id,
+        "source_group_id": ev.source_group_id,
+        "is_duplicate": ev.is_duplicate,
+        "duplicate_reason": ev.duplicate_reason,
+        "related_sources_count": len(related_sources) + 1,
+        "related_sources": related_sources,
+        "related_news": related_news,
+        "media_references": [
+            {
+                "id": m.id,
+                "media_type": m.media_type,
+                "source_media_url": m.source_media_url,
+                "license_or_permission_status": m.license_or_permission_status
+            }
+            for m in media_items
+        ],
+        "provenance": {
+            "source_agency": ev.source_name,
+            "dataset_name": "ข้อมูลหลักฐานอ้างอิงจากแหล่งภายนอก (External Evidence)",
+            "category": "OFFICIAL_OBSERVED" if ev.source_platform == "OFFICIAL_PUBLIC" else "DERIVED",
+            "category_th": "ข้อมูลจากแหล่งภายนอก",
+            "disclaimer": "ข้อมูลนี้รวบรวมจากแหล่งสาธารณะภายนอกเพื่อประกอบการเฝ้าระวัง ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้กระทำผิด"
+        }
+    }
+
+
+@public_router.get("/monitoring-events", response_model=List[Dict[str, Any]])
+def get_public_monitoring_events(
+    district: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query("ACTIVE"),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns public monitoring events representing ongoing operational situations.
+    Filters out internal-only and withheld events.
+    """
+    query = db.query(MonitoringEvent).filter(
+        MonitoringEvent.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"])
+    )
+    if status_filter:
+        query = query.filter(MonitoringEvent.status == status_filter)
+    if district:
+        query = query.filter(MonitoringEvent.district == district)
+
+    events = query.order_by(MonitoringEvent.updated_at.desc()).all()
+    results = []
+    for ev in events:
+        links = db.query(EvidenceEventLink).filter(EvidenceEventLink.event_id == ev.id).all()
+        ev_ids = [l.evidence_id for l in links]
+        ev_items = db.query(ExternalEvidence).filter(
+            ExternalEvidence.id.in_(ev_ids),
+            ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
+            ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
+        ).all() if ev_ids else []
+        unique_groups = set(e.source_group_id or e.id for e in ev_items)
+
+        results.append({
+            "id": ev.id,
+            "title": ev.title,
+            "description": ev.description,
+            "event_type": ev.event_type,
+            "status": ev.status,
+            "monitoring_priority": ev.monitoring_priority,
+            "district": ev.district,
+            "subdistrict": ev.subdistrict,
+            "location_precision": ev.location_precision,
+            "waterway_name": ev.waterway_name,
+            "start_time": ev.start_time.isoformat() if ev.start_time else None,
+            "end_time": ev.end_time.isoformat() if ev.end_time else None,
+            "source_summary": ev.source_summary,
+            "priority_factors": ev.priority_factors,
+            "evidence_count": len(ev_items),
+            "independent_evidence_count": len(unique_groups),
+            "created_at": ev.created_at.isoformat() if ev.created_at else None,
+            "updated_at": ev.updated_at.isoformat() if ev.updated_at else None,
+            "provenance": ev.provenance
+        })
+
+    return results
+
+
+@public_router.get("/monitoring-events/{event_id}/evidence-packet", response_model=Dict[str, Any])
+def get_public_event_evidence_packet(event_id: str, db: Session = Depends(get_db)):
+    """
+    Returns structured 7-section Evidence Packet for a Monitoring Event.
+    Restricted to public-safe items only.
+    """
+    try:
+        packet = ExternalEvidenceService.get_evidence_packet_for_event(db=db, event_id=event_id, public_only=True)
+        return packet
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ไม่พบเหตุการณ์เฝ้าระวัง {event_id} หรือข้อมูลดังกล่าวถูกจำกัดการเข้าถึงเฉพาะภายใน"
+        )
+
+
+# Direct Diagram Aliases for Architecture Alignment (Diagram 1: Public Evidence API)
+@public_router.get("/evidence-events", response_model=List[Dict[str, Any]])
+def get_public_evidence_events_alias(
+    district: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query("ACTIVE"),
+    db: Session = Depends(get_db)
+):
+    """Alias for /monitoring-events matching System Overview diagram."""
+    return get_public_monitoring_events(district=district, status_filter=status_filter, db=db)
+
+
+@public_router.get("/evidence-events/{event_id}", response_model=Dict[str, Any])
+def get_public_evidence_event_detail_alias(event_id: str, db: Session = Depends(get_db)):
+    """Alias for /monitoring-events/{event_id}/evidence-packet matching System Overview diagram."""
+    return get_public_event_evidence_packet(event_id=event_id, db=db)
+
+
+# ============================================================
+# Event-Centric Multi-Source Information System (Sections 26, 27)
+# ============================================================
+
+@public_router.get("/information", response_model=List[Dict[str, Any]])
+def get_public_information(
+    event_id: Optional[str] = Query(None),
+    district: Optional[str] = Query(None),
+    source_type: Optional[str] = Query(None),
+    authority_level: Optional[str] = Query(None),
+    category: Optional[str] = Query(None, description="all, official, news, public"),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns public-approved multi-source information items (Official, News, Public Social, Citizen).
+    Strictly fail-closed: filters out INTERNAL_ONLY, WITHHELD, and REJECTED items.
+    Strips staff PII, internal moderator notes, and unredacted sensitive coordinates.
+    """
+    EventInformationService.reconcile_default_information(db)
+    return EventInformationService.get_public_information(
+        db=db,
+        event_id=event_id,
+        district=district,
+        source_type=source_type,
+        authority_level=authority_level,
+        category=category,
+        limit=limit,
+        offset=offset
+    )
+
+
+@public_router.get("/information/sources", response_model=Dict[str, Any])
+def get_public_source_registry():
+    """
+    Returns public registry of monitored information sources and connector operational status.
+    Truthfully exposes whether connectors are ACTIVE, LIMITED, or NOT_CONFIGURED.
+    """
+    sources = SourceRegistry.list_sources(enabled_only=True)
+    summary = SourceRegistry.get_operational_summary()
+    return {
+        "sources": sources,
+        "summary": summary
+    }
+
+
+@public_router.get("/information/{info_id}", response_model=Dict[str, Any])
+def get_public_information_item(info_id: str, db: Session = Depends(get_db)):
+    """
+    Returns sanitized public details of a single information item.
+    Returns 404 if item is withheld, internal-only, or non-existent.
+    """
+    EventInformationService.reconcile_default_information(db)
+    item = EventInformationService.get_public_information_detail(db, info_id)
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="ไม่พบข้อมูลสาธารณะที่ระบุ หรือข้อมูลดังกล่าวถูกจำกัดการเข้าถึงเฉพาะภายใน"
+        )
+    return item
+
+
+@public_router.get("/events/{event_id}/information", response_model=List[Dict[str, Any]])
+def get_public_event_information(event_id: str, db: Session = Depends(get_db)):
+    """
+    Returns all public information items correlated with a specific Monitoring Event.
+    """
+    EventInformationService.reconcile_default_information(db)
+    return EventInformationService.get_public_information(
+        db=db,
+        event_id=event_id,
+        limit=50,
+        offset=0
+    )
+
+
+@public_router.get("/events/{event_id}/external-evidence", response_model=List[Dict[str, Any]])
+def get_public_event_external_evidence(event_id: str, db: Session = Depends(get_db)):
+    """
+    Returns public external evidence linked to a specific Monitoring Event via EvidenceEventLink.
+    """
+    links = db.query(EvidenceEventLink).filter(EvidenceEventLink.event_id == event_id).all()
+    ev_ids = [l.evidence_id for l in links]
+    if not ev_ids:
+        return []
+
+    items = db.query(ExternalEvidence).filter(
+        ExternalEvidence.id.in_(ev_ids),
+        ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
+        ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
+    ).all()
+
+    results = []
+    for ev in items:
+        media_items = db.query(ExternalEvidenceMedia).filter(ExternalEvidenceMedia.evidence_id == ev.id).all()
+        pub_lat = round(ev.latitude, 2) if (ev.latitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+        pub_lon = round(ev.longitude, 2) if (ev.longitude is not None and ev.location_precision not in ("UNKNOWN", "PROVINCE")) else None
+
+        results.append({
+            "id": ev.id,
+            "source_platform": ev.source_platform,
+            "source_name": ev.source_name,
+            "source_url": ev.source_url,
+            "title_or_summary": ev.title_or_summary,
+            "description": ev.description,
+            "text_excerpt": ev.text_excerpt,
+            "event_type": ev.event_type,
+            "evidence_type": ev.evidence_type,
+            "verification_status": ev.verification_status,
+            "location_precision": ev.location_precision,
+            "district": ev.district,
+            "subdistrict": ev.subdistrict,
+            "public_latitude": pub_lat,
+            "public_longitude": pub_lon,
+            "published_at": ev.published_at.isoformat() if ev.published_at else None,
+            "observed_at": ev.observed_at.isoformat() if ev.observed_at else None,
+            "retrieved_at": ev.retrieved_at.isoformat() if ev.retrieved_at else None,
+            "media_references": [
+                {
+                    "id": m.id,
+                    "media_type": m.media_type,
+                    "source_media_url": m.source_media_url,
+                    "license_or_permission_status": m.license_or_permission_status
+                }
+                for m in media_items
+            ],
+            "provenance": {
+                "source_agency": ev.source_name,
+                "dataset_name": "ข้อมูลหลักฐานอ้างอิงจากแหล่งภายนอก (External Evidence)",
+                "category": "OFFICIAL_OBSERVED" if ev.source_platform == "OFFICIAL_PUBLIC" else "DERIVED",
+                "category_th": "ข้อมูลจากแหล่งภายนอก",
+                "disclaimer": "ข้อมูลนี้รวบรวมจากแหล่งสาธารณะภายนอกเพื่อประกอบการเฝ้าระวัง ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้กระทำผิด"
+            }
+        })
+    return results
+
+

@@ -268,6 +268,7 @@ app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(admin_reports_router, prefix=settings.API_V1_STR)
 app.include_router(admin_reports_router, prefix="/api")
 app.include_router(realtime_router, prefix=settings.API_V1_STR)
+app.include_router(realtime_router, prefix="/api")
 
 # Master Architecture Section 5: Dedicated Public & Internal Routers
 app.include_router(public_router, prefix="/api")

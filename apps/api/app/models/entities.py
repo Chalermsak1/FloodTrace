@@ -255,14 +255,19 @@ class WaterLevelObservation(Base):
     """
     Historical time-series telemetry observation for water level stations (Master Spec Section 18 & 22).
     Never overwrites historical records. Tracks 24H, 7D, 30D trends.
+    Explicit Timing Model (Section 3): observed_at, ingested_at, processed_at, published_at
     """
     __tablename__ = "water_level_observations"
 
     id = Column(String, primary_key=True, index=True) # UUID or composite
     station_id = Column(String, index=True, nullable=False)
     water_level_msl = Column(Float, nullable=True) # MEASURED_FACT (meters MSL)
-    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True)
-    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True) # Canonical observed_at
+    observed_at = Column(DateTime(timezone=True), index=True, nullable=True)
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)) # Canonical ingested_at
+    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    published_at = Column(DateTime(timezone=True), nullable=True)
     source_name = Column(String, default="ThaiWater", nullable=False)
     organization = Column(String, default="HII / RID", nullable=False)
     dataset = Column(String, default="waterlevel_load", nullable=False)
@@ -278,6 +283,7 @@ class RainfallObservation(Base):
     """
     Historical time-series telemetry observation for rainfall stations (Master Spec Section 18 & 22).
     Never overwrites historical records. Tracks 24H, 7D, 30D trends.
+    Explicit Timing Model (Section 3): observed_at, ingested_at, processed_at, published_at
     """
     __tablename__ = "rainfall_observations"
 
@@ -285,8 +291,12 @@ class RainfallObservation(Base):
     station_id = Column(String, index=True, nullable=False)
     rain_24h_mm = Column(Float, nullable=True) # MEASURED_FACT (mm)
     rain_1h_mm = Column(Float, nullable=True)
-    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True)
-    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    source_timestamp = Column(DateTime(timezone=True), index=True, nullable=True) # Canonical observed_at
+    observed_at = Column(DateTime(timezone=True), index=True, nullable=True)
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)) # Canonical ingested_at
+    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    published_at = Column(DateTime(timezone=True), nullable=True)
     source_name = Column(String, default="ThaiWater", nullable=False)
     organization = Column(String, default="HII / TMD", nullable=False)
     dataset = Column(String, default="rain_24h", nullable=False)
@@ -393,6 +403,299 @@ class StaffUser(Base):
     department = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class MonitoringEvent(Base):
+    """
+    Monitoring Event (Master Spec Section 13).
+    Represents an event or situation that may warrant monitoring or verification.
+    It does NOT automatically mean confirmed pollution.
+    """
+    __tablename__ = "monitoring_events"
+
+    id = Column(String, primary_key=True, index=True) # e.g. "MEV-20261008-001"
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    event_type = Column(String, index=True, nullable=False)
+    # Event types: ABNORMAL_WATER_COLOR, FOAM, ODOR_REPORT, FISH_KILL, OIL_LIKE_SURFACE, WASTE_OR_DEBRIS, FLOODING, UNUSUAL_WATER_CONDITION, OTHER_ENVIRONMENTAL_ANOMALY
+    status = Column(String, default="ACTIVE", index=True) # ACTIVE, UNDER_VERIFICATION, ESCALATED, RESOLVED, CLOSED
+    monitoring_priority = Column(String, default="MODERATE", index=True) # LOW, MODERATE, HIGH, VERY_HIGH
+    district = Column(String, nullable=True, index=True)
+    subdistrict = Column(String, nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_precision = Column(String, default="UNKNOWN") # EXACT, NEARBY, DISTRICT, PROVINCE, UNKNOWN
+    waterway_name = Column(String, nullable=True)
+    start_time = Column(DateTime(timezone=True), nullable=True)
+    end_time = Column(DateTime(timezone=True), nullable=True)
+    source_summary = Column(Text, nullable=True)
+    publication_status = Column(String, default="PUBLIC_SAFE", index=True)
+    
+    # Explainable priority & structured findings
+    priority_factors = Column(JSON, default=list) # List of explainable contributing factors
+    what_was_reported = Column(Text, nullable=True)
+    what_was_observed = Column(Text, nullable=True)
+    what_system_shows = Column(Text, nullable=True)
+    what_is_unknown = Column(Text, nullable=True)
+    what_should_be_verified = Column(Text, nullable=True)
+    
+    # Metadata & Provenance
+    created_by = Column(String, nullable=False) # Staff username
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    closed_at = Column(DateTime(timezone=True), nullable=True)
+    provenance = Column(JSON, nullable=False)
+
+
+class ExternalEvidence(Base):
+    """
+    External Evidence (Master Spec Section 4.1 & 22).
+    Provenance-preserving model for manual/operator-submitted public external information.
+    Separated strictly from CitizenReport.
+    """
+    __tablename__ = "external_evidence"
+
+    id = Column(String, primary_key=True, index=True) # e.g. "EVD-20261008-XXXX"
+    source_platform = Column(String, nullable=False, index=True) # ONLINE_NEWS, FACEBOOK, X_TWITTER, LOCAL_COMMUNITY, OFFICIAL_PUBLIC, PUBLIC_DOCUMENT, OTHER
+    source_name = Column(String, nullable=False) # Name of publisher / outlet / page
+    source_url = Column(Text, nullable=False) # Canonical source URL
+    
+    # Provenance Timestamps (Strictly separated per Section 6 & 8)
+    published_at = Column(DateTime(timezone=True), nullable=True, index=True) # Time published by source
+    observed_at = Column(DateTime(timezone=True), nullable=True, index=True)  # Time event was observed
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)) # Time operator logged it
+    
+    title_or_summary = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    text_excerpt = Column(Text, nullable=True)
+    
+    # Taxonomies (Section 7 & 8)
+    event_type = Column(String, nullable=False, index=True) # ABNORMAL_WATER_COLOR, FOAM, ODOR_REPORT, FISH_KILL, OIL_LIKE_SURFACE, WASTE_OR_DEBRIS, FLOODING, UNUSUAL_WATER_CONDITION, OTHER_ENVIRONMENTAL_ANOMALY
+    evidence_type = Column(String, nullable=False, index=True) # PHOTO, VIDEO, NEWS_ARTICLE, SOCIAL_POST, OFFICIAL_POST, PUBLIC_DOCUMENT, OTHER
+    
+    # Verification & Publication States (Section 9 & 10)
+    verification_status = Column(String, default="UNVERIFIED", index=True) # UNVERIFIED, CORROBORATED, OFFICIAL_VERIFIED, LAB_CONFIRMED, DISPUTED, REJECTED, STALE
+    publication_status = Column(String, default="INTERNAL_ONLY", index=True) # PUBLIC, PUBLIC_SAFE, INTERNAL_ONLY, WITHHELD, HIDDEN, REJECTED
+    
+    # Geospatial location (Section 5 & 7)
+    location_text = Column(String, nullable=True) # Stated textual location
+    latitude = Column(Float, nullable=True) # Null if UNKNOWN or not exact
+    longitude = Column(Float, nullable=True)
+    location_precision = Column(String, default="UNKNOWN", index=True) # EXACT, NEARBY, DISTRICT, PROVINCE, UNKNOWN
+    district = Column(String, nullable=True, index=True)
+    subdistrict = Column(String, nullable=True)
+    
+    # Provenance Hash & Deduplication Integrity (Sections 6, 7 & 14)
+    content_hash = Column(String, nullable=False, index=True) # SHA256 of canonical fields
+    parent_evidence_id = Column(String, nullable=True, index=True) # References original source if reposted/copied
+    source_group_id = Column(String, nullable=True, index=True) # Clusters reposts/mirrors to prevent priority inflation
+    is_duplicate = Column(Boolean, default=False, index=True)
+    duplicate_reason = Column(String, nullable=True)
+    ai_confidence = Column(Float, nullable=True)
+    
+    # Reviewer & Operator Context
+    submitted_by = Column(String, nullable=False) # Staff username
+    submitter_notes = Column(Text, nullable=True)
+    reviewed_by = Column(String, nullable=True) # Staff username
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    reviewer_notes = Column(Text, nullable=True)
+    official_source_evidence = Column(Text, nullable=True) # Required for OFFICIAL_VERIFIED
+    
+    # Link to Monitoring Event
+    monitoring_event_id = Column(String, nullable=True, index=True)
+    
+    # Lifecycle
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    provenance = Column(JSON, nullable=False)
+
+
+class ExternalEvidenceMedia(Base):
+    """
+    External Evidence Media Reference (Master Spec Section 4.2 & 23).
+    Stores references and metadata to avoid unauthorized permanent storage of third-party copyright media.
+    """
+    __tablename__ = "external_evidence_media"
+
+    id = Column(String, primary_key=True, index=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    media_type = Column(String, nullable=False) # PHOTO, VIDEO, DOCUMENT
+    source_media_url = Column(Text, nullable=False)
+    sha256 = Column(String, nullable=True, index=True)
+    captured_at = Column(DateTime(timezone=True), nullable=True)
+    storage_reference = Column(String, nullable=True) # Optional internal storage path if licensed
+    storage_policy = Column(String, default="REFERENCE_ONLY", nullable=True)
+    license_or_permission_status = Column(String, default="VIEW_AT_SOURCE_ONLY") # VIEW_AT_SOURCE_ONLY, FAIR_USE_THUMBNAIL, PERMISSION_GRANTED, UNKNOWN
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class EvidenceEventLink(Base):
+    """
+    M:N or 1:N Linkage between External Evidence and Monitoring Events (Master Spec Section 4 & 13).
+    Also models event_evidence in ERD.
+    """
+    __tablename__ = "evidence_event_links"
+
+    id = Column(String, primary_key=True, index=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    event_id = Column(String, index=True, nullable=False)
+    link_type = Column(String, default="PRIMARY_OBSERVATION") # PRIMARY_OBSERVATION, CORROBORATING_SIGNAL, HISTORICAL_CONTEXT, BACKGROUND
+    relation_type = Column(String, default="PRIMARY_EVIDENCE") # PRIMARY_EVIDENCE, SUPPORTING_EVIDENCE, RELATED_REPORT, CONTRADICTING_EVIDENCE
+    independence_group = Column(String, nullable=True, index=True)
+    relevance_score = Column(Float, default=1.0) # 0.0 to 1.0
+    linked_by = Column(String, nullable=False) # Staff username
+    linked_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    notes = Column(Text, nullable=True)
+
+
+class ExternalEvidenceAuditLog(Base):
+    """
+    Append-only immutable audit log of all external evidence operations (Master Spec Section 11 & 37).
+    """
+    __tablename__ = "external_evidence_audit_logs"
+
+    audit_id = Column(String, primary_key=True, index=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    actor_id = Column(String, nullable=False) # Staff username or id
+    actor_role = Column(String, nullable=False) # ADMIN, REVIEWER, OPERATOR, READ_ONLY
+    action = Column(String, index=True, nullable=False) # CREATED, REVIEWED, VERIFICATION_UPDATED, PUBLICATION_UPDATED, LINKED_TO_EVENT, UNLINKED, EDITED, REJECTED, MARKED_STALE
+    previous_status = Column(String, nullable=True)
+    new_status = Column(String, nullable=True)
+    reason = Column(Text, nullable=True)
+    details = Column(JSON, default=dict)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class ExternalEvidenceAnalysis(Base):
+    """
+    Optional future AI / algorithmic analysis model (Master Spec Section 4.3 & 34).
+    Must remain strictly separate from human-verified information.
+    """
+    __tablename__ = "external_evidence_analyses"
+
+    id = Column(String, primary_key=True, index=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    analysis_version = Column(String, nullable=False)
+    detected_event_type = Column(String, nullable=True)
+    detected_location = Column(String, nullable=True)
+    detected_time = Column(DateTime(timezone=True), nullable=True)
+    confidence = Column(Float, nullable=True)
+    detected_entities = Column(JSON, default=dict)
+    raw_result = Column(JSON, default=dict)
+    analysis_metadata = Column(JSON, default=dict)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class EventStatusHistory(Base):
+    """
+    Audit log of monitoring event status transitions (ERD 2.1).
+    """
+    __tablename__ = "event_status_history"
+
+    id = Column(String, primary_key=True, index=True)
+    event_id = Column(String, index=True, nullable=False)
+    status = Column(String, nullable=False)
+    changed_by = Column(String, nullable=False)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class EvidenceLocation(Base):
+    """
+    Detailed location records for multi-point or polygon evidence (ERD 2.1).
+    """
+    __tablename__ = "evidence_locations"
+
+    id = Column(String, primary_key=True, index=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    location_type = Column(String, nullable=False) # POINT, DISTRICT, AREA
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    address_text = Column(Text, nullable=True)
+    confidence = Column(Float, default=1.0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class ExternalInformation(Base):
+    """
+    Event-Centric Multi-Source Information Entity (Sections 3, 23, 25, 44).
+    Represents normalized public information (Official Data, Official Announcements,
+    News Media, Public Social, and Citizen Observations) correlated with Monitoring Events.
+    Preserves strict separation between:
+    - Information vs. Raw Evidence
+    - Authority Level vs. Verification Status vs. Event Relevance
+    - Temporal Alignment vs. Causal Inference
+    """
+    __tablename__ = "external_information"
+
+    id = Column(String, primary_key=True, index=True) # e.g. "INF-20261008-0001"
+    source_id = Column(String, index=True, nullable=False) # References SourceRegistry source_id
+    source_name = Column(String, nullable=False)
+    source_type = Column(String, index=True, nullable=False) # OFFICIAL_DATA, OFFICIAL_ANNOUNCEMENT, GOVERNMENT_WEBSITE, NEWS_MEDIA, PUBLIC_SOCIAL, CITIZEN_OBSERVATION, OTHER_PUBLIC_SOURCE
+    authority_level = Column(String, index=True, nullable=False) # OFFICIAL, PRIMARY, SECONDARY, PUBLIC, UNVERIFIED
+    source_platform = Column(String, nullable=False)
+    source_domain = Column(String, nullable=True)
+    source_url = Column(Text, nullable=False)
+    canonical_url = Column(Text, nullable=True)
+
+    title = Column(String, nullable=False)
+    summary = Column(Text, nullable=True)
+    factual_details = Column(Text, nullable=True)
+
+    # Provenance Timestamps (Strictly separated per Section 31)
+    published_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    observed_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    retrieved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Geospatial location & precision
+    district = Column(String, nullable=True, index=True)
+    subdistrict = Column(String, nullable=True)
+    location_text = Column(String, nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_precision = Column(String, default="UNKNOWN", index=True) # EXACT, NEARBY, DISTRICT, PROVINCE, UNKNOWN
+
+    # Source Image extraction (Sections 16, 17, 18)
+    source_image_url = Column(Text, nullable=True)
+    image_source_type = Column(String, default="NONE") # OG_IMAGE, TWITTER_IMAGE, SOURCE_IMAGE, PDF_PREVIEW, NONE, FALLBACK
+    source_image_fetched_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Deduplication & Hash (Section 24)
+    content_hash = Column(String, nullable=False, index=True)
+    source_group_id = Column(String, nullable=True, index=True)
+    is_duplicate = Column(Boolean, default=False, index=True)
+    duplicate_reason = Column(String, nullable=True)
+
+    # Verification & Relevance (Sections 9, 10, 11, 15)
+    verification_status = Column(String, default="UNVERIFIED", index=True) # OFFICIAL_VERIFIED, CORROBORATED, UNVERIFIED, DISPUTED, REJECTED, WITHHELD
+    spatial_relevance = Column(String, default="UNKNOWN", index=True) # EXACT, NEARBY, DISTRICT, PROVINCE, UNKNOWN
+    temporal_relevance = Column(String, default="UNKNOWN", index=True) # TEMPORAL_ALIGNMENT, OUTSIDE_WINDOW, UNKNOWN
+    event_relevance = Column(String, default="UNRELATED", index=True) # HIGH, MEDIUM, LOW, UNRELATED, CONTRADICTING
+    correlation_reasons = Column(JSON, default=list) # List of explainable correlation reasons
+
+    # AI separation (Section 12, 62)
+    ai_confidence = Column(Float, nullable=True)
+
+    # Publication & Privacy status (Section 26, 27)
+    publication_status = Column(String, default="PUBLIC_SAFE", index=True) # PUBLIC, PUBLIC_SAFE, INTERNAL_ONLY, WITHHELD, REJECTED
+
+    # Link to Monitoring Event (Section 8, 22)
+    monitoring_event_id = Column(String, nullable=True, index=True)
+
+    # Operational source health & Demo isolation (Sections 8, 26)
+    source_status = Column(String, default="AVAILABLE", index=True) # AVAILABLE, UNAVAILABLE, TIMEOUT, DNS_ERROR, BLOCKED, RATE_LIMITED, NOT_CONFIGURED, PENDING_REVIEW, DEMO
+    is_demo = Column(Boolean, default=False, index=True) # Strict quarantine: demo fixtures NEVER appear in public feed
+
+    # Conflict / Contradiction handling (Section 39)
+    contradiction_note = Column(Text, nullable=True)
+
+    # Timestamps & Provenance
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    provenance = Column(JSON, nullable=False)
+
+
+
 
 
 

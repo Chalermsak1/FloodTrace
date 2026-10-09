@@ -59,14 +59,23 @@ class Settings(BaseSettings):
     ADMIN_API_KEY: str = os.getenv("ADMIN_API_KEY", "dev-admin-secret-key-change-in-prod")
     PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "")
     CLOUDFLARE_TUNNEL_TOKEN: str | None = os.getenv("CLOUDFLARE_TUNNEL_TOKEN", None)
-    RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+    RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "1200"))
     SUBMIT_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("SUBMIT_RATE_LIMIT_PER_MINUTE", "60"))
     MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(5 * 1024 * 1024))) # 5 MB max
     DATA_RETENTION_DAYS: int = int(os.getenv("DATA_RETENTION_DAYS", "365"))
     COORDINATE_GENERALIZE_DECIMALS: int = int(os.getenv("COORDINATE_GENERALIZE_DECIMALS", "2")) # ~1.1km blur
     
-    # Scheduler lifecycle control
+    # Scheduler lifecycle & Near-Real-Time Source Cadence (Section 4, 28, 43)
     ENABLE_SCHEDULER: bool = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1")
+    THAIWATER_POLL_INTERVAL: int = int(os.getenv("THAIWATER_POLL_INTERVAL", "180"))  # 3 minutes default polling for 15-min upstream
+    RID_POLL_INTERVAL: int = int(os.getenv("RID_POLL_INTERVAL", "3600"))              # 1 hour for reservoir/dam reports
+    OPENMETEO_POLL_INTERVAL: int = int(os.getenv("OPENMETEO_POLL_INTERVAL", "3600"))  # 1 hour for forecast model updates
+    SOURCE_TIMEOUT_SECONDS: float = float(os.getenv("SOURCE_TIMEOUT_SECONDS", "20.0"))
+    SOURCE_MAX_RETRIES: int = int(os.getenv("SOURCE_MAX_RETRIES", "3"))
+    SOURCE_BACKOFF_BASE: float = float(os.getenv("SOURCE_BACKOFF_BASE", "2.0"))
+    FRESHNESS_WARNING_SECONDS: int = int(os.getenv("FRESHNESS_WARNING_SECONDS", "1800"))  # 30 min default
+    FRESHNESS_STALE_SECONDS: int = int(os.getenv("FRESHNESS_STALE_SECONDS", "3600"))      # 60 min default
+    SSE_HEARTBEAT_SECONDS: float = float(os.getenv("SSE_HEARTBEAT_SECONDS", "15.0"))
     
     # CORS Origins (Configurable via comma-separated string or default)
     @property

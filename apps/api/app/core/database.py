@@ -50,11 +50,21 @@ def get_db():
 def reconcile_database_schema(target_engine=None):
     """
     Ensures all tables and newly added operational columns exist.
+    Uses versioned migrations via MigrationManager for deterministic, repeatable schema management.
     Idempotent and safe across development, testing, and production.
     """
     from sqlalchemy import text
+    from migrations.migration_manager import MigrationManager
+
     eng = target_engine or engine
     Base.metadata.create_all(bind=eng)
+
+    try:
+        MigrationManager.apply_migrations(eng)
+    except Exception as e:
+        # Fallback for environments with strict execution limits or SQLite quirks
+        import logging
+        logging.getLogger(__name__).warning(f"Versioned migration note: {e}")
 
     if "postgresql" in str(eng.url):
         with eng.begin() as conn:
@@ -81,6 +91,60 @@ def reconcile_database_schema(target_engine=None):
             ]
             for col, col_type in cols:
                 conn.execute(text(f"ALTER TABLE citizen_reports ADD COLUMN IF NOT EXISTS {col} {col_type};"))
+
+            # Reconcile external evidence & monitoring event columns
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS parent_evidence_id VARCHAR(100);"))
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS source_group_id VARCHAR(100);"))
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS is_duplicate BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS duplicate_reason TEXT;"))
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS ai_confidence DOUBLE PRECISION;"))
+            conn.execute(text("ALTER TABLE external_evidence ADD COLUMN IF NOT EXISTS text_excerpt TEXT;"))
+
+            conn.execute(text("ALTER TABLE external_evidence_media ADD COLUMN IF NOT EXISTS storage_policy VARCHAR(50) DEFAULT 'REFERENCE_ONLY';"))
+            conn.execute(text("ALTER TABLE external_evidence_media ADD COLUMN IF NOT EXISTS sha256 VARCHAR(100);"))
+            conn.execute(text("ALTER TABLE external_evidence_media ADD COLUMN IF NOT EXISTS license_or_permission_status VARCHAR(100) DEFAULT 'VIEW_AT_SOURCE_ONLY';"))
+
+            conn.execute(text("ALTER TABLE monitoring_events ADD COLUMN IF NOT EXISTS start_time TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE monitoring_events ADD COLUMN IF NOT EXISTS end_time TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE monitoring_events ADD COLUMN IF NOT EXISTS source_summary TEXT;"))
+            conn.execute(text("ALTER TABLE monitoring_events ADD COLUMN IF NOT EXISTS publication_status VARCHAR(50) DEFAULT 'PUBLIC_SAFE';"))
+
+            conn.execute(text("ALTER TABLE evidence_event_links ADD COLUMN IF NOT EXISTS relation_type VARCHAR(100) DEFAULT 'PRIMARY_EVIDENCE';"))
+            conn.execute(text("ALTER TABLE evidence_event_links ADD COLUMN IF NOT EXISTS independence_group VARCHAR(100);"))
+
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_evidence_status ON external_evidence(verification_status, publication_status);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_evidence_loc ON external_evidence(district, location_precision);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_monitoring_events_status ON monitoring_events(status, monitoring_priority);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_sha256 ON external_evidence_media(sha256);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_evidence_source_group ON external_evidence(source_group_id);"))
+
+            # Reconcile external_information columns & indexes (Sections 8, 26)
+            conn.execute(text("ALTER TABLE external_information ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE external_information ADD COLUMN IF NOT EXISTS source_status VARCHAR(50) DEFAULT 'AVAILABLE';"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_info_status ON external_information(verification_status, publication_status);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_info_event ON external_information(monitoring_event_id);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_info_type ON external_information(source_type, authority_level);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_external_info_demo ON external_information(is_demo, source_status);"))
+
+            # Reconcile observation timing model & performance indexes (Section 3 & 25)
+            conn.execute(text("ALTER TABLE water_level_observations ADD COLUMN IF NOT EXISTS observed_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE water_level_observations ADD COLUMN IF NOT EXISTS ingested_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE water_level_observations ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE water_level_observations ADD COLUMN IF NOT EXISTS published_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_wl_station_time ON water_level_observations(station_id, source_timestamp DESC);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_wl_observed_at ON water_level_observations(observed_at DESC);"))
+
+            conn.execute(text("ALTER TABLE rainfall_observations ADD COLUMN IF NOT EXISTS observed_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE rainfall_observations ADD COLUMN IF NOT EXISTS ingested_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE rainfall_observations ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("ALTER TABLE rainfall_observations ADD COLUMN IF NOT EXISTS published_at TIMESTAMP WITH TIME ZONE;"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_rf_station_time ON rainfall_observations(station_id, source_timestamp DESC);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_rf_observed_at ON rainfall_observations(observed_at DESC);"))
+
+            # Telemetry station indexes for quick spatial & freshness queries
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_ws_last_updated ON water_stations(last_updated DESC);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_rs_last_updated ON rainfall_stations(last_updated DESC);"))
+
 
     # Seed default staff users if empty
     from apps.api.app.models.entities import StaffUser

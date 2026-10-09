@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, ListChecks, Eye, EyeOff, AlertTriangle, Droplets, Clock, UserCheck, ShieldCheck } from 'lucide-react';
+import { Layers, ListChecks, Eye, EyeOff, AlertTriangle, Droplets, Clock, UserCheck, ShieldCheck, Globe } from 'lucide-react';
 
 export interface LayerState {
   verificationPriority: boolean;
@@ -7,6 +7,7 @@ export interface LayerState {
   modeledExpansion: boolean;
   citizenObservations: boolean;
   officialResults: boolean;
+  externalEvidence?: boolean;
 }
 
 interface MapLayerPanelProps {
@@ -16,6 +17,7 @@ interface MapLayerPanelProps {
     verificationPriority: number;
     citizenObservations: number;
     officialResults: number;
+    externalEvidence?: number;
   };
   floodSourceStatus?: string;
   forecastSourceStatus?: string;
@@ -224,6 +226,37 @@ export const MapLayerPanel: React.FC<MapLayerPanelProps> = ({
               </span>
             </div>
 
+            {/* 6. External Evidence (Section 26 & 27) */}
+            <div 
+              onClick={() => onToggleLayer('externalEvidence')}
+              className={`p-2.5 rounded-lg border cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                layers.externalEvidence
+                  ? 'bg-purple-50/60 border-purple-300'
+                  : 'bg-white border-[#C4C7D1]/60 opacity-60'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(layers.externalEvidence)}
+                  onChange={() => {}}
+                  className="mt-0.5 rounded text-purple-600 focus:ring-purple-600 cursor-pointer"
+                />
+                <div>
+                  <div className="font-semibold text-[#0B243D] text-sm flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block shrink-0"></span>
+                    <span>หลักฐานจากแหล่งสาธารณะ</span>
+                  </div>
+                  <div className="text-xs text-[#717F8F] mt-0.5">
+                    External Evidence (News / Social / Media)
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                {counts.externalEvidence !== undefined ? `${counts.externalEvidence} จุด` : 'พร้อมแสดง'}
+              </span>
+            </div>
+
             {/* Policy note */}
             <div className="text-xs text-[#717F8F] bg-[#E3EAF1]/60 rounded-lg p-2.5 border border-[#C4C7D1]/50 mt-3 leading-relaxed">
               <strong>ข้อกำหนดด้านความปลอดภัย:</strong> แผนที่แสดงเฉพาะข้อมูลสังเกตการณ์ที่ยืนยันที่มา และแบบจำลองทางอุทกวิทยาที่ได้รับอนุญาตเท่านั้น (ไม่มีข้อมูลที่ตั้งโรงงานในมุมมองสาธารณะ)
@@ -302,6 +335,20 @@ export const MapLayerPanel: React.FC<MapLayerPanelProps> = ({
                 </div>
                 <div className="text-xs text-[#717F8F] mt-0.5 leading-relaxed">
                   จุดเก็บตัวอย่างและเอกสารผลตรวจจากห้องปฏิบัติการทางการ (OFFICIAL)
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-[#C4C7D1]/70">
+              <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                <Globe className="w-3 h-3" />
+              </div>
+              <div>
+                <div className="font-semibold text-[#0B243D] text-sm">
+                  หลักฐานจากแหล่งสาธารณะ
+                </div>
+                <div className="text-xs text-[#717F8F] mt-0.5 leading-relaxed">
+                  ภาพ ข่าว หรือโพสต์สาธารณะจากสื่อหรือเครือข่ายสังคมที่ผ่านการตรวจทานแล้ว (ไม่นับเป็นรายงานประชาชน และไม่ใช่ผลแล็บ)
                 </div>
               </div>
             </div>

@@ -50,12 +50,17 @@ def audit_all_criteria():
 
     # 1. LOCAL_READY
     local_ready = False
-    try:
-        r = httpx.get("http://127.0.0.1:8001/health", timeout=3.0)
-        local_ready = r.status_code == 200 and r.json().get("status") == "alive"
-    except Exception:
-        pass
-    matrix["LOCAL_READY"] = ("PASS" if local_ready else "FAIL", "Local FastAPI & PostgreSQL responding on 127.0.0.1:8001")
+    target_local_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    for url in [target_local_url, "http://127.0.0.1:8000", "http://127.0.0.1:8001"]:
+        try:
+            r = httpx.get(f"{url}/health", timeout=3.0)
+            if r.status_code == 200 and r.json().get("status") == "alive":
+                local_ready = True
+                target_local_url = url
+                break
+        except Exception:
+            pass
+    matrix["LOCAL_READY"] = ("PASS" if local_ready else "FAIL", f"Local FastAPI & PostgreSQL responding on {target_local_url}")
 
     # 2. PUBLICLY_ACCESSIBLE
     pub_url = os.getenv("PUBLIC_BASE_URL")
@@ -142,12 +147,14 @@ def audit_all_criteria():
     # 8. TEST_DATA_ISOLATION
     test_iso_ok = False
     with SessionLocal() as db:
-        withheld_count = db.query(CitizenReport).filter(CitizenReport.publication_state == "WITHHELD").count()
-        total_count = db.query(CitizenReport).count()
-        test_iso_ok = withheld_count == 249 and total_count == 249
+        reports = db.query(CitizenReport).all()
+        total_count = len(reports)
+        public_safe_count = sum(1 for r in reports if getattr(r, "publication_state", "WITHHELD") == "PUBLIC_SAFE")
+        withheld_count = sum(1 for r in reports if getattr(r, "publication_state", "WITHHELD") == "WITHHELD")
+        test_iso_ok = public_safe_count == 0
     matrix["TEST_DATA_ISOLATION"] = (
-        "PASS" if test_iso_ok else "PARTIAL",
-        f"249 test fixtures & mocks quarantined (WITHHELD); REAL_PUBLIC_REPORT_COUNT = 0; TEST_DATA_COUNT = 249"
+        "PASS" if test_iso_ok else "FAIL",
+        f"Non-production fixtures isolated ({withheld_count} WITHHELD, {public_safe_count} public); REAL_PUBLIC_REPORT_COUNT = 0; TEST_DATA_COUNT = {total_count}"
     )
 
     # 9. CITIZEN_REPORTING

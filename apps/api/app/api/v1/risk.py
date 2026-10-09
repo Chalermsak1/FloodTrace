@@ -424,7 +424,7 @@ async def get_evidence_packet(
     - WHAT IS UNKNOWN (INSUFFICIENT_DATA)
     - WHAT SHOULD BE VERIFIED (VERIFICATION_RECOMMENDED)
     """
-    from apps.api.app.models.entities import CitizenReport
+    from apps.api.app.models.entities import CitizenReport, ExternalEvidence
 
     facs = db.query(IndustrialFacility).filter(
         IndustrialFacility.district.ilike(f"%{district}%")
@@ -437,6 +437,12 @@ async def get_evidence_packet(
         CitizenReport.review_status != "TEST_DEMO",
         CitizenReport.reporter_role != "TEST/DEMO",
         CitizenReport.publication_state != "WITHHELD"
+    ).all()
+
+    ext_evidences = db.query(ExternalEvidence).filter(
+        ExternalEvidence.district.ilike(f"%{district}%"),
+        ExternalEvidence.publication_status == "PUBLIC",
+        ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])
     ).all()
 
     forecast = await fetch_openmeteo_forecast("prachin_mueang")
@@ -486,7 +492,7 @@ async def get_evidence_packet(
             ]
         },
         "what_was_observed": {
-            "summary": "Observations from satellites and crowdsourced community reporting",
+            "summary": "Observations from satellites, crowdsourced community reporting, and verified external sources",
             "flood_observations": [
                 {
                     "source": "GISTDA Disaster Monitoring Platform / Satellite Radar",
@@ -500,6 +506,16 @@ async def get_evidence_packet(
                     "status": "UNVERIFIED",
                     "notes": "Citizen notices pending certified on-site regulatory inspection"
                 }
+            ],
+            "external_evidence": [
+                {
+                    "source": e.source_name,
+                    "platform": e.source_platform,
+                    "event_type": e.event_type,
+                    "status": e.verification_status,
+                    "notes": e.title_or_summary
+                }
+                for e in ext_evidences
             ]
         },
         "what_the_model_suggests": {

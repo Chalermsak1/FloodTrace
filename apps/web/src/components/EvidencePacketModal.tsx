@@ -326,7 +326,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                   <span className="text-xs text-slate-500 font-mono">Master Prompt Sec. 29</span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  FloodTrace compiles verified evidence dossiers for referral to authorized regulatory bodies:
+                  FloodTrace compiles evidence dossiers for referral to authorized regulatory bodies:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
                   <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">

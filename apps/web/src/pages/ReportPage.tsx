@@ -219,68 +219,95 @@ export const ReportPage: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-6">
       
       {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-5">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-3 border border-emerald-200">
-            <Eye className="w-4 h-4" />
-            ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)
+            <Eye className="w-4 h-4 shrink-0" />
+            <span className="truncate">ระบบรายงานเหตุการณ์ภาคประชาชน (Community Observation Flow)</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
             รายงานและติดตามข้อสังเกตสภาพน้ำ
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
+          <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1.5 leading-relaxed max-w-2xl">
             ร่วมเฝ้าระวังพื้นที่จังหวัดปราจีนบุรีโดยการรายงานข้อเท็จจริงที่พบเห็น ข้อมูลพิกัดละเอียดจะถูกจัดเก็บอย่างปลอดภัยและปัดเศษเพื่อปกป้องความเป็นส่วนตัว
           </p>
         </div>
 
         {/* Mode Switch Tabs */}
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl max-w-md border border-slate-200/80">
+        <div className="flex bg-slate-100 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl max-w-md border border-slate-200/80 gap-1">
           <button
             type="button"
             onClick={() => setActiveMode('create')}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] ${
               activeMode === 'create'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Eye className="w-4 h-4" />
-            แจ้งข้อสังเกตใหม่
+            <Eye className="w-4 h-4 shrink-0" />
+            <span>แจ้งข้อสังเกตใหม่</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveMode('track')}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] ${
               activeMode === 'track'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Search className="w-4 h-4" />
-            ติดตามสถานะรายงาน
+            <Search className="w-4 h-4 shrink-0" />
+            <span>ติดตามสถานะ</span>
           </button>
         </div>
 
         {/* 3-Step Wizard Indicator (Only when creating report and not submitted) */}
         {activeMode === 'create' && draftStatus !== 'SUBMITTED' && (
-          <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 text-sm sm:text-base font-semibold">
-            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-              step === 1 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 pt-3 sm:pt-4 border-t border-slate-100 text-xs sm:text-sm">
+            <div className={`p-2 sm:p-3 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center leading-tight ${
+              step === 1 ? 'bg-[#0C57C7] text-white border-[#0C57C7] font-bold shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200/60 font-medium'
             }`}>
-              1. เลือกสิ่งที่พบ
+              1. สิ่งที่พบ
             </div>
-            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-              step === 2 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+            <div className={`p-2 sm:p-3 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center leading-tight ${
+              step === 2 ? 'bg-[#0C57C7] text-white border-[#0C57C7] font-bold shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200/60 font-medium'
             }`}>
               2. ระบุตำแหน่ง
             </div>
-            <div className={`p-3 rounded-xl border text-center transition-all min-h-[48px] flex items-center justify-center ${
-              step === 3 ? 'bg-[#0C57C7] text-white border-[#0C57C7]' : 'bg-slate-50 text-slate-600 border-slate-200/60'
+            <div className={`p-2 sm:p-3 rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center leading-tight ${
+              step === 3 ? 'bg-[#0C57C7] text-white border-[#0C57C7] font-bold shadow-xs' : 'bg-slate-50 text-slate-600 border-slate-200/60 font-medium'
             }`}>
-              3. ตรวจสอบและส่ง
+              3. ตรวจสอบ/ส่ง
             </div>
           </div>
         )}
+      </div>
+
+      {/* Emergency Notice Callout (Public Safety Guardrail) */}
+      <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 text-amber-950">
+        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="text-xs sm:text-sm space-y-1">
+          <span className="font-bold block text-amber-900">
+            หากเป็นเหตุน้ำท่วมวิกฤติ หรือต้องการความช่วยเหลือฉุกเฉินทันที
+          </span>
+          <p className="text-amber-800 leading-relaxed text-xs">
+            ระบบ FloodTrace เป็นแพลตฟอร์มเฝ้าระวังและรวบรวมข้อมูลสนับสนุนการตัดสินใจ หากมีผู้ประสบภัยติดค้างหรือเกิดเหตุด่วน กรุณาติดต่อสายด่วนกู้ภัยและหน่วยงานโดยตรง:
+          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1.5">
+            <a href="tel:1784" className="px-3 py-1.5 rounded-xl bg-amber-200/70 hover:bg-amber-300 font-bold text-amber-950 text-xs transition-colors inline-flex items-center gap-1">
+              <span>📞 ปภ. กู้ภัยน้ำท่วม 1784</span>
+            </a>
+            <a href="tel:1650" className="px-3 py-1.5 rounded-xl bg-amber-200/70 hover:bg-amber-300 font-bold text-amber-950 text-xs transition-colors inline-flex items-center gap-1">
+              <span>📞 สายด่วนมลพิษ PCD 1650</span>
+            </a>
+            <a href="tel:1460" className="px-3 py-1.5 rounded-xl bg-amber-200/70 hover:bg-amber-300 font-bold text-amber-950 text-xs transition-colors inline-flex items-center gap-1">
+              <span>📞 ชลประทาน (ระดับน้ำ) 1460</span>
+            </a>
+            <a href="tel:1567" className="px-3 py-1.5 rounded-xl bg-amber-200/70 hover:bg-amber-300 font-bold text-amber-950 text-xs transition-colors inline-flex items-center gap-1">
+              <span>📞 ศูนย์ดำรงธรรม 1567</span>
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* TRACKING MODE VIEW */}
@@ -436,7 +463,7 @@ export const ReportPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200/80 shadow-xs space-y-5 sm:space-y-6">
           
           {errorMessage && (
             <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-2xl flex items-center gap-2.5">
@@ -450,34 +477,34 @@ export const ReportPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 1: เลือกสิ่งที่ท่านพบเห็นในพื้นที่</h2>
-                <p className="text-sm text-slate-500 mt-1">เลือกหมวดหมู่ข้อสังเกตตรงตามสภาพความเป็นจริง</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">เลือกหมวดหมู่ข้อสังเกตตรงตามสภาพความเป็นจริง</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {REPORT_CATEGORIES.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`p-4 rounded-2xl text-left border transition-all min-h-[72px] flex flex-col justify-center ${
+                    className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-left border transition-all min-h-[64px] sm:min-h-[72px] flex flex-col justify-center ${
                       category === cat.id
                         ? 'border-[#0C57C7] bg-blue-50/60 shadow-xs'
                         : 'border-slate-200/80 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <span className="text-base font-bold text-slate-900">{cat.label}</span>
-                    <span className="text-sm text-slate-600 mt-1 leading-normal">{cat.desc}</span>
+                    <span className="text-sm sm:text-base font-bold text-slate-900">{cat.label}</span>
+                    <span className="text-xs sm:text-sm text-slate-600 mt-1 leading-normal">{cat.desc}</span>
                   </button>
                 ))}
               </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-3 sm:pt-4 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
+                  className="w-full sm:w-auto px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-sm sm:text-base font-semibold min-h-[48px] flex items-center justify-center gap-2 shadow-xs"
                 >
-                  ถัดไป: ระบุตำแหน่ง <ChevronRight className="w-4 h-4" />
+                  <span>ถัดไป: ระบุตำแหน่ง</span> <ChevronRight className="w-4 h-4 shrink-0" />
                 </button>
               </div>
             </div>
@@ -488,18 +515,18 @@ export const ReportPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 2: ระบุตำแหน่งที่พบเหตุการณ์</h2>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   ระบบจะปัดเศษพิกัดระดับตำบลก่อนแสดงผลสู่สาธารณะเพื่อปกป้องความเป็นส่วนตัวของท่าน
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-base font-semibold text-slate-800 mb-1.5">อำเภอ *</label>
+                  <label className="block text-sm sm:text-base font-semibold text-slate-800 mb-1.5">อำเภอ *</label>
                   <select
                     value={district}
                     onChange={(e) => handleDistrictChange(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
+                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm sm:text-base font-semibold text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                   >
                     {Object.keys(DISTRICT_COORDS).map(d => (
                       <option key={d} value={d}>อ.{d}</option>
@@ -508,19 +535,19 @@ export const ReportPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-base font-semibold text-slate-800 mb-1.5">ตำบล / บริเวณที่พบ</label>
+                  <label className="block text-sm sm:text-base font-semibold text-slate-800 mb-1.5">ตำบล / บริเวณที่พบ</label>
                   <input
                     type="text"
                     value={subdistrict}
                     onChange={(e) => setSubdistrict(e.target.value)}
                     placeholder="เช่น ต.กบินทร์, ริมแม่น้ำพระปรง"
-                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
+                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm sm:text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-base font-semibold text-slate-800 mb-1.5">
+                <label className="block text-sm sm:text-base font-semibold text-slate-800 mb-1.5">
                   ความลึกน้ำโดยประมาณ (ซม.) ถ้ามี
                 </label>
                 <input
@@ -528,29 +555,29 @@ export const ReportPage: React.FC = () => {
                   value={waterDepth}
                   onChange={(e) => setWaterDepth(e.target.value)}
                   placeholder="เช่น 30"
-                  className="w-full sm:w-1/2 px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
+                  className="w-full sm:w-1/2 px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm sm:text-base text-slate-900 min-h-[48px] focus:bg-white focus:border-[#0C57C7] outline-none"
                 />
               </div>
 
-              <div className="p-3.5 bg-sky-50 border border-sky-200/60 rounded-xl text-sm text-sky-900 flex items-start gap-2.5">
+              <div className="p-3 sm:p-3.5 bg-sky-50 border border-sky-200/60 rounded-xl text-xs sm:text-sm text-sky-900 flex items-start gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-[#0C57C7] mt-0.5 shrink-0" />
                 <span className="leading-relaxed">พิกัดอ้างอิง: ละติจูด {latitude.toFixed(3)}, ลองจิจูด {longitude.toFixed(3)} (แปลงเป็นจุดกว้างระดับอนุภูมิภาคอัตโนมัติ)</span>
               </div>
 
-              <div className="pt-4 flex justify-between">
+              <div className="pt-3 sm:pt-4 flex gap-2.5 justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
+                  className="flex-1 sm:flex-initial px-5 sm:px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-sm sm:text-base font-semibold min-h-[48px] flex items-center justify-center"
                 >
                   ย้อนกลับ
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs"
+                  className="flex-1 sm:flex-initial px-5 sm:px-6 py-3 bg-[#0C57C7] hover:bg-[#103D76] text-white rounded-xl text-sm sm:text-base font-semibold min-h-[48px] flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs"
                 >
-                  ถัดไป: ตรวจสอบและส่ง <ChevronRight className="w-4 h-4" />
+                  <span>ถัดไป</span> <ChevronRight className="w-4 h-4 shrink-0" />
                 </button>
               </div>
             </div>
@@ -561,15 +588,15 @@ export const ReportPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900">ขั้นตอนที่ 3: ตรวจสอบข้อมูลและยืนยันการส่ง</h2>
-                <p className="text-sm text-slate-500 mt-1">แนบภาพถ่าย (ลบข้อมูล EXIF/GPS อัตโนมัติ) และบันทึกคำอธิบายข้อเท็จจริง</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">แนบภาพถ่าย (ลบข้อมูล EXIF/GPS อัตโนมัติ) และบันทึกคำอธิบายข้อเท็จจริง</p>
               </div>
 
               {/* Photo Upload Box */}
               <div>
-                <label className="block text-base font-semibold text-slate-800 mb-1.5">
+                <label className="block text-sm sm:text-base font-semibold text-slate-800 mb-1.5">
                   ภาพถ่ายประกอบเหตุการณ์ (ถ้ามี)
                 </label>
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center hover:bg-slate-50 transition-colors">
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 sm:p-5 text-center hover:bg-slate-50 transition-colors">
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -578,11 +605,11 @@ export const ReportPage: React.FC = () => {
                     id="report-photo-input"
                   />
                   <label htmlFor="report-photo-input" className="cursor-pointer block">
-                    <Camera className="w-9 h-9 text-slate-400 mx-auto mb-2" />
-                    <span className="text-base font-semibold text-[#0C57C7] block">
+                    <Camera className="w-8 h-8 sm:w-9 sm:h-9 text-slate-400 mx-auto mb-2" />
+                    <span className="text-sm sm:text-base font-semibold text-[#0C57C7] block truncate">
                       {selectedFile ? selectedFile.name : 'คลิกเพื่อเลือกภาพถ่ายจากอุปกรณ์'}
                     </span>
-                    <span className="text-xs sm:text-sm text-slate-500 mt-1 block">
+                    <span className="text-xs text-slate-500 mt-1 block">
                       รองรับ JPG, PNG, WebP (สูงสุด 5MB, ระบบจะตัดข้อมูลระบุพิกัดกล้องออกทั้งหมด)
                     </span>
                   </label>
@@ -591,7 +618,7 @@ export const ReportPage: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-base font-semibold text-slate-800 mb-1.5">
+                <label className="block text-sm sm:text-base font-semibold text-slate-800 mb-1.5">
                   คำอธิบายข้อสังเกตเพิ่มเติม (ข้อเท็จจริงเท่านั้น)
                 </label>
                 <textarea
@@ -599,44 +626,44 @@ export const ReportPage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="ระบุสิ่งที่พบเห็น เช่น ลักษณะการไหล สภาพของสีน้ำ กลิ่น หรือผลกระทบต่อสิ่งแวดล้อม (ห้ามใส่ข้อความกล่าวหาบุคคลหรือโรงงาน)"
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base text-slate-900 focus:bg-white focus:border-[#0C57C7] outline-none min-h-[96px] leading-relaxed"
+                  className="w-full p-3 sm:p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm sm:text-base text-slate-900 focus:bg-white focus:border-[#0C57C7] outline-none min-h-[96px] leading-relaxed"
                 />
               </div>
 
               {/* Summary Review */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-sm space-y-1.5 text-slate-700">
+              <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-xs sm:text-sm space-y-1.5 text-slate-700">
                 <div><strong>สิ่งที่พบ:</strong> {category}</div>
                 <div><strong>พื้นที่:</strong> ต.{subdistrict || 'ไม่ระบุ'} อ.{district} จ.ปราจีนบุรี</div>
                 {waterDepth && <div><strong>ความลึกน้ำ:</strong> {waterDepth} ซม.</div>}
               </div>
 
               {/* Declaration Checkbox */}
-              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl">
-                <label className="flex items-start gap-3 cursor-pointer">
+              <div className="p-3.5 sm:p-4 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                <label className="flex items-start gap-2.5 sm:gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={declaration}
                     onChange={(e) => setDeclaration(e.target.checked)}
-                    className="w-5 h-5 text-[#0C57C7] rounded-md focus:ring-0 mt-0.5 shrink-0"
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#0C57C7] rounded-md focus:ring-0 mt-0.5 shrink-0"
                   />
-                  <span className="text-sm sm:text-base text-amber-950 font-medium leading-relaxed">
+                  <span className="text-xs sm:text-sm md:text-base text-amber-950 font-medium leading-relaxed">
                     ฉันยืนยันว่าข้อมูลนี้เป็นสิ่งที่ฉันพบเห็นหรือมีหลักฐานประกอบ และไม่ได้ส่งข้อมูลเพื่อกล่าวหาบุคคลหรือองค์กรโดยไม่มีหลักฐาน
                   </span>
                 </label>
               </div>
 
-              <div className="pt-4 flex justify-between">
+              <div className="pt-3 sm:pt-4 flex gap-2.5 justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-base font-semibold min-h-[48px]"
+                  className="flex-1 sm:flex-initial px-4 sm:px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-sm sm:text-base font-semibold min-h-[48px] flex items-center justify-center"
                 >
                   ย้อนกลับ
                 </button>
                 <button
                   type="submit"
                   disabled={draftStatus === 'SUBMITTING'}
-                  className="px-7 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-base font-semibold min-h-[48px] flex items-center gap-2 shadow-xs transition-colors"
+                  className="flex-1 sm:flex-initial px-5 sm:px-7 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-sm sm:text-base font-semibold min-h-[48px] flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
                   {draftStatus === 'SUBMITTING' ? 'กำลังส่งข้อมูล...' : 'ส่งรายงานข้อสังเกต'}
                 </button>
