@@ -14,20 +14,36 @@ Configuration rationale:
 - statement_timeout=10000ms: Automatically cancels runaway queries after 10 seconds, preventing lock contention.
 """
 
-connect_args = {}
-if "postgresql" in settings.DATABASE_URL:
-    connect_args["options"] = f"-c statement_timeout={settings.DB_STATEMENT_TIMEOUT_MS}"
+db_url = settings.DATABASE_URL.strip()
 
-# SQLite fallback compatibility for isolated unit test fixtures
-if "sqlite" in settings.DATABASE_URL:
+# SQLite fallback compatibility for isolated unit test fixtures and cloud deployments
+if "sqlite" in db_url:
+    import os
+    if "data" in db_url:
+        os.makedirs("data", exist_ok=True)
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         connect_args={"check_same_thread": False},
         pool_pre_ping=True
     )
 else:
+    # Heroku / Render legacy postgres:// prefix fix
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+    # Driver adapter: if psycopg (v3) is not installed but psycopg2 is, adapt url
+    if db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+        try:
+            import psycopg  # noqa: F401
+        except ImportError:
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    connect_args = {}
+    if "postgresql" in db_url:
+        connect_args["options"] = f"-c statement_timeout={settings.DB_STATEMENT_TIMEOUT_MS}"
+
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         pool_size=settings.DB_POOL_SIZE,
         max_overflow=settings.DB_MAX_OVERFLOW,
         pool_timeout=settings.DB_POOL_TIMEOUT,

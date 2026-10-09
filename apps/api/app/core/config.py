@@ -1,14 +1,35 @@
 import os
+from typing import Any
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+def _get_default_database_url() -> str:
+    raw = (os.getenv("DATABASE_URL") or "").strip()
+    is_cloud = bool(
+        os.getenv("RENDER") or 
+        os.getenv("ENVIRONMENT", "").lower() in ("staging", "production", "cloud")
+    )
+    if not raw or (is_cloud and ("chalermsak:@" in raw or "localhost" in raw or "127.0.0.1" in raw)):
+        return "sqlite:///data/floodtrace.db"
+    return raw
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "FloodTrace Prachin Buri"
     API_V1_STR: str = "/api/v1"
     
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
-        "postgresql://chalermsak:@localhost:5432/floodtrace_db"
-    )
+    DATABASE_URL: str = _get_default_database_url()
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def resolve_database_url(cls, v: Any) -> str:
+        val = str(v or "").strip()
+        is_cloud = bool(
+            os.getenv("RENDER") or 
+            os.getenv("ENVIRONMENT", "").lower() in ("staging", "production", "cloud")
+        )
+        if not val or (is_cloud and ("chalermsak:@" in val or "localhost" in val or "127.0.0.1" in val)):
+            return "sqlite:///data/floodtrace.db"
+        return val
     # Database Connection Pool & Statement Limits (Section 9 & 10)
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "10"))
     DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "20"))
