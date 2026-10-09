@@ -107,7 +107,7 @@ export const AppLayout: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#F5F8FC] text-[#073967] overflow-x-hidden w-full">
       
       {/* 1. Legal & Purpose Top Information Bar (Section 4 & 50.3) */}
-      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className={`${isOverview ? 'hidden lg:block' : 'block'} bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70] overflow-hidden`}>
+      <aside aria-label="ข้อความชี้แจงแพลตฟอร์ม" className={`${isOverview ? 'hidden lg:block xl:hidden' : 'block'} bg-[#04274B] text-sky-100 text-xs sm:text-sm px-4 py-2 border-b border-[#063B70] overflow-hidden`}>
         <div className="max-w-[1500px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -132,7 +132,7 @@ export const AppLayout: React.FC = () => {
       </aside>
 
       {/* 2. Main Navigation Header (Section 5 & 50.6) */}
-      <header className={`sticky top-0 z-40 w-full bg-[#063B70]/95 backdrop-blur-md text-white shadow-sm border-b border-white/10 ${isOverview ? 'hidden lg:block' : 'block'}`}>
+      <header className={`sticky top-0 z-40 w-full bg-[#063B70]/95 backdrop-blur-md text-white shadow-sm border-b border-white/10 ${isOverview ? 'hidden lg:block xl:hidden' : 'block'}`}>
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3 sm:gap-5">
           
           {/* Brand Logo & Subtitle */}
@@ -410,12 +410,12 @@ export const AppLayout: React.FC = () => {
       </header>
 
       {/* 3. Page Content Outlet */}
-      <main className="flex-1 pb-safe lg:pb-8 w-full">
+      <main className={`flex-1 pb-safe w-full ${isOverview ? 'lg:pb-8 xl:pb-0' : 'lg:pb-8'}`}>
         <Outlet />
       </main>
 
       {/* 4. Footer */}
-      <footer className="w-full bg-[#063B70] text-white border-t border-[#0C65E8]/30 py-8 px-4 sm:px-6">
+      <footer className={`w-full bg-[#063B70] text-white border-t border-[#0C65E8]/30 py-8 px-4 sm:px-6 ${isOverview ? 'xl:hidden' : ''}`}>
         <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           
           {/* Left: Brand & Mission */}

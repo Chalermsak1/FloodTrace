@@ -32,6 +32,7 @@ import { NewsCard } from '../components/news/NewsCard';
 import { InformationDetailModal, ExternalInformationDetail } from '../components/news/InformationDetailModal';
 import { SituationHeroSection } from '../components/sections/SituationHeroSection';
 import { MobileHomepageView } from '../components/mobile/MobileHomepageView';
+import { DesktopMonitoringDashboard } from '../components/desktop/DesktopMonitoringDashboard';
 
 const PRACHIN_DISTRICTS = [
   'กบินทร์บุรี',
@@ -286,10 +287,28 @@ export const OverviewPage: React.FC = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* DESKTOP HOMEPAGE VIEW: STRICT DESKTOP PROTECTION             */}
-      {/* (Active on desktop viewports: >= 1024px, completely intact)  */}
+      {/* DESKTOP HOMEPAGE VIEW: MODERN MONITORING DASHBOARD (>= 1200px)*/}
+      {/* Strict Reference Design: Blue/white, 3-column workspace       */}
       {/* ============================================================ */}
-      <div className="hidden lg:flex lg:flex-col w-full">
+      <div className="hidden xl:flex w-full min-h-screen">
+        <DesktopMonitoringDashboard
+          overviewData={overviewData}
+          waterStations={waterStations}
+          rainfallStations={rainfallStations}
+          officialUpdates={officialUpdates}
+          externalEvidence={externalEvidence}
+          evidenceLoading={evidenceLoading}
+          evidenceError={evidenceError}
+          sseStatus={sseStatus}
+          lastRefreshedAt={lastRefreshedAt}
+          onSelectEvidence={(item) => setSelectedInfoModal(item)}
+        />
+      </div>
+
+      {/* ============================================================ */}
+      {/* TABLET VIEW (1024px - 1199px): Responsive Adaptation         */}
+      {/* ============================================================ */}
+      <div className="hidden lg:flex xl:hidden lg:flex-col w-full">
         {/* SITUATION COMMAND VIEW HERO SECTION (Section 2 & 3) */}
         <SituationHeroSection
         overviewData={overviewData}
