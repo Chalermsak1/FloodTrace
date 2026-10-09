@@ -26,6 +26,7 @@ from apps.api.app.core.security import (
 )
 from apps.api.app.models.entities import CitizenReport, WaterStation, RainfallStation, WaterLevelObservation, RainfallObservation
 from apps.api.app.services.source_metadata_service import SourceMetadataService
+from apps.api.app.services.hydrology_service import HydrologicalIntelligenceService
 
 
 public_router = APIRouter(prefix="/public", tags=["FloodTrace Public Information Platform"])
@@ -139,6 +140,12 @@ class PublicTelemetryStationDTO(BaseModel):
     expected_interval_seconds: Optional[int] = 900
     data_category: str = "MEASURED_FACT"
     value_nature: str = "OBSERVED"
+    matched_waterway_id: Optional[str] = None
+    matched_waterway_name: Optional[str] = None
+    match_confidence: Optional[str] = "UNMATCHED"
+    match_basis: Optional[str] = None
+    distance_to_waterway_km: Optional[float] = None
+    river_segment_id: Optional[str] = None
     provenance: PublicProvenanceDTO
 
 class PublicRainfallStationDTO(BaseModel):
@@ -883,43 +890,12 @@ PRACHIN_WATERWAYS_NETWORK = [
 ]
 
 @public_router.get("/waterways", response_model=Dict[str, Any])
-def get_public_waterways():
+def get_public_waterways(db: Session = Depends(get_db)):
     """
-    Returns public river network (DWR/RID) GeoJSON lines with hierarchy (major, secondary, tributary).
+    Returns public river network GeoJSON lines with real hydrological status evaluation.
+    Derived ONLY from verified HIGH_CONFIDENCE stations to avoid false visual interpolation.
     """
-    features = []
-    for w in PRACHIN_WATERWAYS_NETWORK:
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "waterway_id": w["id"],
-                "name": w["name"],
-                "type": w["type"],
-                "hierarchy_rank": w["hierarchy_rank"],
-                "order": w["order"],
-                "line_width": w["line_width"],
-                "color": w["color"],
-                "description": w["desc"],
-                "badge": "OFFICIAL"
-            },
-            "geometry": {
-                "type": "LineString",
-                "coordinates": w["path"]
-            }
-        })
-    return {
-        "type": "FeatureCollection",
-        "description": "โครงข่ายแม่น้ำและคลองสายหลักลุ่มน้ำปราจีนบุรี (Public Waterways Network)",
-        "features": features,
-        "provenance": {
-            "source_agency": "กรมทรัพยากรน้ำ (DWR) และ กรมชลประทาน (RID)",
-            "dataset_name": "โครงข่ายทางน้ำลุ่มน้ำปราจีนบุรี (Basin 03 - Prachin Buri)",
-            "category": "OFFICIAL",
-            "category_th": "ข้อมูลจากหน่วยงาน",
-            "source_url": "https://webgis.dwr.go.th/",
-            "floodtrace_updated_at": datetime.now(timezone.utc).isoformat()
-        }
-    }
+    return HydrologicalIntelligenceService.get_waterways_geojson(db)
 
 # ============================================================
 # Section 11: GET /api/public/stations
@@ -928,7 +904,8 @@ def get_public_waterways():
 @public_router.get("/stations", response_model=List[PublicTelemetryStationDTO])
 def get_public_telemetry_stations(db: Session = Depends(get_db)):
     """
-    Returns verified public river gauge and telemetry stations with explicit timing and freshness model.
+    Returns verified public river gauge and telemetry stations with explicit timing and freshness model,
+    as well as defensible station-to-waterway matching confidence states.
     Zero private/industrial coordinates.
     """
     stations = db.query(WaterStation).all()
@@ -937,6 +914,7 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
         prov = s.provenance or {}
         obs_raw = prov.get("original_timestamp") or (s.last_updated.isoformat() if s.last_updated else None)
         fresh = compute_source_freshness(obs_raw, nominal_interval_seconds=900)
+        match_info = HydrologicalIntelligenceService.match_station_to_waterway(s)
         results.append(PublicTelemetryStationDTO(
             station_id=s.id,
             name_th=s.name_th,
@@ -956,6 +934,12 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
             expected_interval_seconds=900,
             data_category="MEASURED_FACT",
             value_nature="OBSERVED",
+            matched_waterway_id=match_info.get("matched_waterway_id"),
+            matched_waterway_name=match_info.get("matched_waterway_name"),
+            match_confidence=match_info.get("match_confidence", "UNMATCHED"),
+            match_basis=match_info.get("match_basis"),
+            distance_to_waterway_km=match_info.get("distance_to_waterway_km"),
+            river_segment_id=match_info.get("river_segment_id"),
             provenance=PublicProvenanceDTO(
                 source_agency=prov.get("source_agency", "สสน. / กรมชลประทาน (ThaiWater / RID)"),
                 dataset_name="ข้อมูลตรวจวัดระดับน้ำโทรมาตร (Telemetry Gauging)",
@@ -966,6 +950,28 @@ def get_public_telemetry_stations(db: Session = Depends(get_db)):
             )
         ))
     return results
+
+@public_router.get("/area-intelligence", response_model=Dict[str, Any])
+def get_area_intelligence(
+    district: Optional[str] = Query(None, description="ชื่ออำเภอใน จ.ปราจีนบุรี เช่น กบินทร์บุรี, เมืองปราจีนบุรี"),
+    subdistrict: Optional[str] = Query(None, description="ชื่อตำบล"),
+    reach_id: Optional[str] = Query(None, description="รหัสช่วงลำน้ำ เช่น seg_prachin_kabin"),
+    station_id: Optional[str] = Query(None, description="รหัสสถานีโทรมาตร เช่น Kgt.3"),
+    db: Session = Depends(get_db)
+):
+    """
+    Unified Hydrological Area Intelligence API.
+    Aggregates real monitoring measurements, verified news with source images, 
+    external evidence, citizen reports, and chronological timeline.
+    """
+    return HydrologicalIntelligenceService.get_area_intelligence(
+        db,
+        district=district,
+        subdistrict=subdistrict,
+        reach_id=reach_id,
+        station_id=station_id
+    )
+
 
 @public_router.get("/rainfall-stations", response_model=List[PublicRainfallStationDTO])
 def get_public_rainfall_stations(db: Session = Depends(get_db)):

@@ -712,6 +712,44 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
               </Link>
             </div>
 
+            {/* Longdo-inspired Hydrological Status Summary Bar */}
+            {waterways?.status_summary && (
+              <div className="pt-14 px-4 py-2.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between text-xs font-sans">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span>วิกฤต {waterways.status_summary.critical_count} จุด</span>
+                  </div>
+                  <span className="text-slate-300">•</span>
+                  <div className="flex items-center gap-1.5 text-amber-700 font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>เฝ้าระวัง {waterways.status_summary.watch_count} จุด</span>
+                  </div>
+                  <span className="text-slate-300">•</span>
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>ปกติ {waterways.status_summary.normal_count} จุด</span>
+                  </div>
+                  <span className="text-slate-300">•</span>
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                    <span>ไม่มีจุดวัด {waterways.status_summary.unmonitored_count} จุด</span>
+                  </div>
+                  <span className="text-3xs text-slate-400 font-normal">
+                    (จากโครงข่ายลำน้ำ {waterways.status_summary.total_segments} ช่วง)
+                  </span>
+                </div>
+
+                {/* Status proportion bar */}
+                <div className="hidden xl:flex items-center gap-0.5 w-44 h-2 rounded-full overflow-hidden bg-slate-200 shrink-0">
+                  <div style={{ width: `${(waterways.status_summary.critical_count / waterways.status_summary.total_segments) * 100}%` }} className="h-full bg-red-500" title="วิกฤต" />
+                  <div style={{ width: `${(waterways.status_summary.watch_count / waterways.status_summary.total_segments) * 100}%` }} className="h-full bg-amber-500" title="เฝ้าระวัง" />
+                  <div style={{ width: `${(waterways.status_summary.normal_count / waterways.status_summary.total_segments) * 100}%` }} className="h-full bg-emerald-500" title="ปกติ" />
+                  <div style={{ width: `${(waterways.status_summary.unmonitored_count / waterways.status_summary.total_segments) * 100}%` }} className="h-full bg-sky-500" title="ไม่มีจุดวัด" />
+                </div>
+              </div>
+            )}
+
             {/* Map Viewport */}
             <div className="w-full h-[400px]">
               <MapLibreMapView
@@ -739,7 +777,7 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                 }}
                 basemap="satellite"
                 targetCoords={targetCoords}
-                suppressMapPopup={true}
+                suppressMapPopup={false}
               />
             </div>
           </div>

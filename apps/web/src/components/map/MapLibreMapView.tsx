@@ -317,6 +317,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean>(true);
   const [initError, setInitError] = useState<string | null>(null);
+  const [showLegendExpanded, setShowLegendExpanded] = useState<boolean>(true);
 
   // Administrative Labels GeoJSON
   const adminLabelsGeoJSON = useRef({
@@ -492,9 +493,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             'line-cap': 'round'
           },
           paint: {
-            'line-color': '#38bdf8',
-            'line-width': 7.5,
-            'line-opacity': 0.45,
+            'line-color': ['coalesce', ['get', 'color'], '#38bdf8'],
+            'line-width': ['+', ['coalesce', ['get', 'line_width'], 3.2], 5.0],
+            'line-opacity': 0.55,
             'line-blur': 2.5
           }
         },
@@ -748,6 +749,89 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       map.getCanvas().style.cursor = '';
     });
 
+    // Interaction: Click Waterways Core / River Segment
+    map.on('click', 'waterways-core', (e) => {
+      if (!e.features || !e.features[0]) return;
+      const feat = e.features[0];
+      const props = feat.properties as any;
+      if (onSelectCell) onSelectCell({ ...props, is_waterway: true, segment_id: props.segment_id, district: props.district });
+      if (props.district) onSelectDistrict(props.district);
+
+      if (popupRef.current) popupRef.current.remove();
+      if (suppressMapPopup) return;
+
+      const statusBadgeBg = props.color || '#0284c7';
+      const statusLabel = props.status_label_th || 'ไม่มีจุดตรวจวัดในส่วนนี้';
+      const waterLevelText = props.water_level_msl != null ? `${Number(props.water_level_msl).toFixed(2)} ม.รทก.` : 'ไม่มีข้อมูลระดับน้ำ';
+      const critLevelText = props.critical_level_msl != null ? `${Number(props.critical_level_msl).toFixed(2)} ม.รทก.` : '-';
+
+      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '340px' })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div class="p-3.5 font-sans space-y-2.5 text-slate-800">
+            <div class="border-b border-slate-100 pb-2">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h4 class="text-sm font-bold text-[#063B70] leading-snug">${props.name || props.river_name}</h4>
+                  <span class="text-3xs text-slate-500">${props.type || 'ลำน้ำ'} • อ.${props.district || 'กบินทร์บุรี'}</span>
+                </div>
+                <span class="text-3xs font-bold px-2 py-0.5 rounded-full text-white shrink-0 shadow-xs" style="background-color: ${statusBadgeBg}">
+                  ${statusLabel}
+                </span>
+              </div>
+            </div>
+
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-snug">
+              <div class="text-3xs font-semibold text-slate-500 mb-0.5">การประเมินสภาวะลำน้ำ:</div>
+              <div>${props.status_explanation || 'ไม่มีข้อมูลสถานะ'}</div>
+            </div>
+
+            ${props.matched_station_name ? `
+              <div class="space-y-1.5 p-2 rounded-xl bg-blue-50/60 border border-blue-100 text-xs">
+                <div class="flex items-center justify-between text-3xs font-medium text-blue-900">
+                  <span>สถานีตรวจวัดอ้างอิง:</span>
+                  <span class="font-bold text-blue-950">${props.matched_station_name} (${props.matched_station_id})</span>
+                </div>
+                <div class="flex items-center justify-between text-3xs text-slate-600">
+                  <span>ความเชื่อมั่นการเชื่อมโยง:</span>
+                  <span class="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    ✓ ${props.match_confidence === 'HIGH_CONFIDENCE' ? 'เชื่อมโยงโดยตรง' : props.match_confidence}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-xs pt-1 border-t border-blue-100/60">
+                  <span class="text-slate-600">ระดับน้ำโทรมาตร:</span>
+                  <span class="font-bold text-blue-950">${waterLevelText}</span>
+                </div>
+                ${props.critical_level_msl ? `
+                <div class="flex items-center justify-between text-3xs text-slate-500">
+                  <span>ระดับวิกฤตตลิ่ง:</span>
+                  <span class="font-semibold text-red-600">${critLevelText}</span>
+                </div>` : ''}
+              </div>
+            ` : `
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-3xs text-slate-500">
+                <span>ℹ️ ช่วงลำน้ำนี้ยังไม่มีสถานีโทรมาตรเชื่อมโยงโดยตรง จึงแสดงเส้นทางน้ำตามภูมิศาสตร์เพื่อการติดตาม</span>
+              </div>
+            `}
+
+            <button onclick="window.__floodtrace_select_reach && window.__floodtrace_select_reach('${props.segment_id}')" class="mt-2 w-full py-2 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-semibold rounded-xl text-center shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>สำรวจข่าวสาร & ข้อมูลลำน้ำนี้</span>
+              <span>→</span>
+            </button>
+          </div>
+        `)
+        .addTo(map);
+
+      popupRef.current = popup;
+    });
+
+    map.on('mouseenter', 'waterways-core', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'waterways-core', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
     return () => {
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
@@ -764,6 +848,30 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
       setWebglSupported(false);
     }
   }, []);
+
+  // Window helper bindings for popup buttons
+  useEffect(() => {
+    (window as any).__floodtrace_select_reach = (segId: string) => {
+      if (waterways?.features) {
+        const feat = waterways.features.find((f: any) => f.properties?.segment_id === segId);
+        if (feat && onSelectCell) {
+          onSelectCell({ ...feat.properties, is_waterway: true });
+        }
+      }
+    };
+    (window as any).__floodtrace_select_station = (stId: string) => {
+      if (stations) {
+        const st = stations.find((s: any) => (s.station_id || s.id) === stId);
+        if (st && onSelectCell) {
+          onSelectCell({ ...st, is_station: true });
+        }
+      }
+    };
+    return () => {
+      delete (window as any).__floodtrace_select_reach;
+      delete (window as any).__floodtrace_select_station;
+    };
+  }, [waterways, stations, onSelectCell]);
 
   // Real-time updates: Update GeoJSON data in existing sources
   useEffect(() => {
@@ -914,7 +1022,17 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         stations.forEach(st => {
           if (!st.latitude || !st.longitude) return;
 
-          const bgColor = '#D97706';
+          let bgColor = '#10b981'; // Green normal
+          if (st.status === 'NO_DATA' || st.water_level_msl == null) {
+            bgColor = '#94a3b8'; // Slate
+          } else if (st.critical_level_msl != null && st.water_level_msl >= st.critical_level_msl) {
+            bgColor = '#ef4444'; // Red (Critical)
+          } else if (st.critical_level_msl != null && st.water_level_msl >= (st.critical_level_msl * 0.90)) {
+            bgColor = '#f59e0b'; // Amber (Watch)
+          } else if (st.warning_level_msl != null && st.water_level_msl >= st.warning_level_msl) {
+            bgColor = '#f59e0b'; // Amber (Watch)
+          }
+
           const icon = MARKER_ICONS.waterDroplet;
 
           const el = createCircularMarkerEl(bgColor, icon, undefined, `สถานีระดับน้ำ: ${st.name_th || st.station_id}`);
@@ -933,7 +1051,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                 <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                   <div class="flex items-center justify-between gap-1.5 border-b border-amber-100 pb-1.5 pr-4">
                     <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap flex items-center gap-1">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${bgColor}"></span>
                       สถานีวัดระดับน้ำ
                     </span>
                     ${getFreshnessBadgeHtml(st.freshness_status, st.observation_age_seconds)}
@@ -946,7 +1064,35 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                     <span class="text-2xs text-amber-900 font-medium">ระดับน้ำปัจจุบัน</span>
                     <span class="text-base font-bold text-amber-950">${st.water_level_msl != null ? st.water_level_msl.toFixed(2) : '-'} <span class="text-2xs font-semibold text-amber-700">ม.รทก.</span></span>
                   </div>
+
+                  <!-- Hydrological Matching Confidence -->
+                  <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-3xs">
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-500 font-medium">ลำน้ำที่เชื่อมโยง:</span>
+                      <span class="font-bold text-slate-800">${st.matched_waterway_name || 'นอกโครงข่ายหลัก'}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-500 font-medium">ความเชื่อมั่น:</span>
+                      ${st.match_confidence === 'HIGH_CONFIDENCE' 
+                        ? '<span class="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✓ HIGH CONFIDENCE</span>'
+                        : st.match_confidence === 'REQUIRES_REVIEW'
+                        ? '<span class="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">⚠️ REQUIRES REVIEW</span>'
+                        : '<span class="font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">UNMATCHED</span>'
+                      }
+                    </div>
+                    ${st.distance_to_waterway_km != null ? `
+                    <div class="flex items-center justify-between text-slate-400">
+                      <span>ระยะห่างจากลำน้ำ:</span>
+                      <span>${st.distance_to_waterway_km} กม.</span>
+                    </div>` : ''}
+                  </div>
+
                   <div class="text-3xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
+                    ${st.critical_level_msl ? `
+                    <div class="flex items-center justify-between">
+                      <span>ระดับวิกฤต/ตลิ่ง</span>
+                      <span class="font-medium text-red-600">${st.critical_level_msl.toFixed(2)} ม.รทก.</span>
+                    </div>` : ''}
                     ${st.warning_level_msl ? `
                     <div class="flex items-center justify-between">
                       <span>ระดับเฝ้าระวัง</span>
@@ -957,14 +1103,15 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                       <span class="font-medium text-slate-800">${formatThaiTime(st.observed_at || st.source_timestamp || st.last_updated)}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                      <span>ดึงข้อมูล</span>
-                      <span class="font-medium text-slate-600">${formatThaiTime(st.ingested_at || st.retrieved_at)}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
                       <span>แหล่งข้อมูล</span>
                       <span class="font-medium text-slate-700 truncate max-w-[140px]">${cleanAgencyName(st.provenance?.source_agency || 'กรมชลประทาน')}</span>
                     </div>
                   </div>
+
+                  <button onclick="window.__floodtrace_select_station && window.__floodtrace_select_station('${st.station_id || st.id}')" class="mt-2 w-full py-1.5 bg-[#0C65E8] hover:bg-[#063B70] text-white text-xs font-semibold rounded-xl text-center shadow-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                    <span>สำรวจข้อมูลและข่าวสารพื้นที่นี้</span>
+                    <span>→</span>
+                  </button>
                 </div>
               `)
               .addTo(map);
@@ -1406,6 +1553,80 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
+
+      {/* Hydrological Intelligence Floating Legend (Longdo Water Inspired) */}
+      <div className="absolute bottom-6 right-3 z-20 max-w-[280px] sm:max-w-[310px] bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-slate-200/90 text-xs font-sans select-none transition-all">
+        <div 
+          className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 cursor-pointer"
+          onClick={() => setShowLegendExpanded(!showLegendExpanded)}
+        >
+          <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <span>เกณฑ์เตือนภัย & โครงข่ายน้ำ</span>
+          </div>
+          <button 
+            type="button" 
+            className="text-slate-400 hover:text-slate-700 text-3xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            {showLegendExpanded ? 'ย่อ' : 'ขยาย'}
+          </button>
+        </div>
+
+        {showLegendExpanded && (
+          <div className="space-y-2">
+            {/* Water Status Colors */}
+            <div className="space-y-1">
+              <div className="text-3xs font-semibold uppercase text-slate-400 tracking-wider">สภาวะลำน้ำ / สถานี:</div>
+              <div className="grid grid-cols-2 gap-1 text-3xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0"></span>
+                  <span className="text-slate-700 font-medium">วิกฤต (ล้นตลิ่ง)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0"></span>
+                  <span className="text-slate-700 font-medium">เฝ้าระวัง (น้ำสูง)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0"></span>
+                  <span className="text-slate-700 font-medium">ปกติ (ในเกณฑ์)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0284c7] shrink-0"></span>
+                  <span className="text-slate-700 font-medium">ไม่มีจุดวัด</span>
+                </div>
+                <div className="flex items-center gap-1.5 col-span-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] shrink-0"></span>
+                  <span className="text-slate-700 font-medium">ไม่มีข้อมูล / สัญญาณขาดหาย</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Station Matching Confidence */}
+            <div className="pt-1.5 border-t border-slate-100 space-y-1">
+              <div className="text-3xs font-semibold uppercase text-slate-400 tracking-wider">การเชื่อมโยงสถานีโทรมาตร:</div>
+              <div className="space-y-0.5 text-3xs text-slate-600">
+                <div className="flex items-center gap-1">
+                  <span className="text-emerald-700 font-bold">● HIGH:</span>
+                  <span>เชื่อมโยงตรง (&lt; 1 กม.) ทาสีลำน้ำ</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-amber-700 font-bold">● REVIEW:</span>
+                  <span>ห่าง 1-8 กม. แสดงเฉพาะจุด ไม่ทาสีลำน้ำ</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500 font-bold">● UNMATCHED:</span>
+                  <span>นอกโครงข่าย ไม่ประมาณค่าสภาพน้ำ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Source attribution footnote */}
+            <div className="pt-1 border-t border-slate-100 text-[10px] text-slate-400 leading-tight">
+              ข้อมูล: กรมชลประทาน (RID) และ สสน. (ThaiWater)
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
