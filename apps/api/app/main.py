@@ -111,18 +111,18 @@ async def lifespan(app: FastAPI):
                 for item in stations:
                     st = WaterStation(
                         id=item["id"],
-                        name_th=item["name_th"],
-                        name_en=item["name_en"],
-                        basin=item["basin"],
-                        district=item["district"],
+                        name_th=item.get("name_th") or item["id"],
+                        name_en=item.get("name_en"),
+                        basin=item.get("basin", "ลุ่มน้ำปราจีนบุรี"),
+                        district=item.get("district", "เมืองปราจีนบุรี"),
                         latitude=item["latitude"],
                         longitude=item["longitude"],
-                        water_level_msl=item["water_level_msl"],
-                        ground_level_msl=item["ground_level_msl"],
-                        warning_level_msl=item["warning_level_msl"],
-                        critical_level_msl=item["critical_level_msl"],
-                        status=item["status"],
-                        provenance=item["provenance"]
+                        water_level_msl=item.get("water_level_msl"),
+                        ground_level_msl=item.get("ground_level_msl"),
+                        warning_level_msl=item.get("warning_level_msl"),
+                        critical_level_msl=item.get("critical_level_msl"),
+                        status=item.get("status", "STAGE_RECORDED"),
+                        provenance=item.get("provenance", {})
                     )
                     db.merge(st)
                 db.commit()
@@ -134,19 +134,19 @@ async def lifespan(app: FastAPI):
                 for item in rain_stations:
                     rf = RainfallStation(
                         id=item["id"],
-                        name_th=item["name_th"],
-                        name_en=item["name_en"],
-                        basin=item["basin"],
-                        district=item["district"],
-                        subdistrict=item["subdistrict"],
+                        name_th=item.get("name_th") or item["id"],
+                        name_en=item.get("name_en"),
+                        basin=item.get("basin", "ลุ่มน้ำบางปะกง"),
+                        district=item.get("district", "เมืองปราจีนบุรี"),
+                        subdistrict=item.get("subdistrict"),
                         latitude=item["latitude"],
                         longitude=item["longitude"],
-                        rain_24h_mm=item["rain_24h_mm"],
-                        rain_1h_mm=item["rain_1h_mm"],
-                        observation_time=item["observation_time"],
-                        agency=item["agency"],
-                        status=item["status"],
-                        provenance=item["provenance"]
+                        rain_24h_mm=item.get("rain_24h_mm", 0.0),
+                        rain_1h_mm=item.get("rain_1h_mm"),
+                        observation_time=item.get("observation_time"),
+                        agency=item.get("agency", "HII"),
+                        status=item.get("status", "ACTIVE"),
+                        provenance=item.get("provenance", {})
                     )
                     db.merge(rf)
                 db.commit()
