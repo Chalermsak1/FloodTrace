@@ -1900,6 +1900,14 @@ def get_public_external_evidence(
     By default filters out duplicate items (is_duplicate=False) and supports event/source grouping.
     Sorted by semantic event time (observed_at, fallback published_at, then retrieved_at).
     """
+    # Ensure verified real snapshot is populated if database is empty
+    if db.query(ExternalEvidence).count() == 0:
+        try:
+            from apps.api.app.core.snapshots import seed_external_evidence_snapshot
+            seed_external_evidence_snapshot(db)
+        except Exception:
+            pass
+
     query = db.query(ExternalEvidence).filter(
         ExternalEvidence.publication_status.in_(["PUBLIC", "PUBLIC_SAFE"]),
         ExternalEvidence.verification_status.notin_(["REJECTED", "TEST_DEMO"])

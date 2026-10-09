@@ -173,14 +173,27 @@ async def lifespan(app: FastAPI):
                 db.commit()
                 logger.info(f"Seeded {len(reservoirs)} RID reservoirs.")
 
-            if db.query(ExternalEvidence).count() == 0:
-                logger.info("Syncing verified external evidence records...")
+            from apps.api.app.core.snapshots import (
+                seed_external_evidence_snapshot,
+                seed_external_information_snapshot
+            )
+            from apps.api.app.models.entities import ExternalInformation
+
+            if db.query(ExternalEvidence).count() < 30:
+                logger.info("Syncing verified external evidence records from snapshot...")
                 try:
-                    from scripts.seed_public_pilot_and_observations import seed_external_evidence
-                    seed_external_evidence()
-                    logger.info("Seeded 13 verified external evidence records.")
+                    ev_count = seed_external_evidence_snapshot(db)
+                    logger.info(f"Seeded {ev_count} verified external evidence records.")
                 except Exception as e:
-                    logger.warning(f"Error seeding external evidence: {e}")
+                    logger.warning(f"Error seeding external evidence snapshot: {e}")
+
+            if db.query(ExternalInformation).count() < 50:
+                logger.info("Syncing curated external information / news items from snapshot...")
+                try:
+                    info_count = seed_external_information_snapshot(db)
+                    logger.info(f"Seeded {info_count} curated external information items.")
+                except Exception as e:
+                    logger.warning(f"Error seeding external information snapshot: {e}")
         else:
             logger.info("Production Mode Active: External uncredentialed datasets are strictly blocked from database.")
     except Exception as e:

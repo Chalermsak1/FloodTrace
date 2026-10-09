@@ -293,6 +293,9 @@ def download_and_cache_image(image_url: Optional[str], dest_basename: str, is_ci
     pub_path = os.path.join(target_public_dir, dest_filename)
     dist_path = os.path.join(target_dist_dir, dest_filename)
 
+    if os.path.isfile(pub_path) and os.path.getsize(pub_path) > 1000:
+        return f"/assets/{subpath}/{dest_filename}"
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Referer": image_url

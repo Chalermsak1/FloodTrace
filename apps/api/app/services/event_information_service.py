@@ -606,13 +606,20 @@ class EventInformationService:
         ).delete(synchronize_session=False)
         db.commit()
 
+        try:
+            from apps.api.app.core.snapshots import seed_external_information_snapshot
+            if db.query(ExternalInformation).count() < 50:
+                seed_external_information_snapshot(db)
+        except Exception as e:
+            logger.warning(f"Snapshot information sync notice: {e}")
+
         # Check if verified real sources already seeded
         count_real = db.query(ExternalInformation).filter(
             ExternalInformation.source_id.in_(["gistda_disaster", "thaipbs_news", "rid_reservoir", "thaiwater_telemetry"]),
             ExternalInformation.is_demo == False,
             ExternalInformation.source_status == "AVAILABLE"
         ).count()
-        if count_real >= 4:
+        if count_real >= 4 and db.query(ExternalInformation).count() >= 50:
             return
 
         # Ensure sample MonitoringEvent exists for Kabin Buri
