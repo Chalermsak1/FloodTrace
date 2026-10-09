@@ -601,7 +601,8 @@ class EventInformationService:
                 ExternalInformation.source_url.like("%narubodindra-update%"),
                 ExternalInformation.source_url.like("%prachinburi-oct2026%"),
                 ExternalInformation.source_url.like("%prachin-flood-20261008%"),
-                ExternalInformation.source_url.like("%kabin-community-report-20261008%")
+                ExternalInformation.source_url.like("%kabin-community-report-20261008%"),
+                ExternalInformation.source_url.like("%558067%")
             )
         ).delete(synchronize_session=False)
         db.commit()
@@ -667,25 +668,6 @@ class EventInformationService:
                 "published_at": (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(),
                 "district": "กบินทร์บุรี",
                 "verification_status": "OFFICIAL_VERIFIED",
-                "publication_status": "PUBLIC_SAFE",
-                "source_status": "AVAILABLE",
-                "is_demo": False
-            },
-            {
-                "source_id": "thaipbs_news",
-                "source_name": "ไทยพีบีเอส (Thai PBS News)",
-                "source_type": SourceType.NEWS_MEDIA.value,
-                "authority_level": AuthorityLevel.SECONDARY.value,
-                "source_platform": "NEWS_MEDIA",
-                "source_url": "https://www.thaipbs.or.th/news/content/558067",
-                "canonical_url": "https://www.thaipbs.or.th/news/content/558067",
-                "title": "สภาพอากาศสุดขั้ว นักวิชาการชี้ ฝนตกหนัก-ฝนแช่ เกิดจากโลกร้อน",
-                "summary": "นักวิชาการ ชี้ ช่วงนี้ฝนตกหนักและรุนแรงในลักษณะสภาพอากาศสุดขั้วเกิดจากภาวะโลกร้อนหรือโลกเดือด ส่งผลกระทบต่อปริมาณฝนสะสมและระดับน้ำในลุ่มน้ำ",
-                "source_image_url": "https://thaipbs-media-fuzzylop.thaipbs.or.th/imgpx1/unsafe/rt:fill/el:1/s:1200:630/q:90/aHR0cHM6Ly9vbmVjbXMudGhhaXBicy5vci50aC9tZWRpYS9xdHloSlJqQ0p1QllnT1hGVmxvYUxlQWVYTEY0QnM4SXRFb1NLdzlZUHBzRHlxVUhjR0lEeHozLmpwZw==.jpg",
-                "image_source_type": "OG_IMAGE",
-                "published_at": (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat(),
-                "district": "กบินทร์บุรี",
-                "verification_status": "CORROBORATED",
                 "publication_status": "PUBLIC_SAFE",
                 "source_status": "AVAILABLE",
                 "is_demo": False
