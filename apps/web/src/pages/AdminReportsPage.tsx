@@ -463,7 +463,8 @@ export const AdminReportsPage: React.FC = () => {
       setSseConnected(false);
       return;
     }
-    const sse = new EventSource(`/api/v1/admin/events?token=${encodeURIComponent(staffKey)}`);
+    const sseBase = window.location.hostname.includes('onrender.com') ? 'https://floodtrace-api.onrender.com' : '';
+    const sse = new EventSource(`${sseBase}/api/v1/admin/events?token=${encodeURIComponent(staffKey)}`);
     sse.onopen = () => setSseConnected(true);
     sse.onerror = () => setSseConnected(false);
 

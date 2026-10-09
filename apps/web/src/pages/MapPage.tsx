@@ -272,7 +272,10 @@ export const MapPage: React.FC = () => {
       }
 
       setConnectionStatus('reconnecting');
-      const eventSource = new EventSource('/api/v1/realtime/events');
+      const sseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://floodtrace-api.onrender.com/api/v1/realtime/events'
+        : '/api/v1/realtime/events';
+      const eventSource = new EventSource(sseUrl);
       sseRef.current = eventSource;
 
       eventSource.addEventListener('open', () => {

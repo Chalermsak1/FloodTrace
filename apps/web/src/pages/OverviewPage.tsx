@@ -150,7 +150,10 @@ export const OverviewPage: React.FC = () => {
     const connectSSE = () => {
       if (sse) sse.close();
       setSseStatus('reconnecting');
-      sse = new EventSource('/api/v1/realtime/events');
+      const sseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://floodtrace-api.onrender.com/api/v1/realtime/events'
+        : '/api/v1/realtime/events';
+      sse = new EventSource(sseUrl);
 
       sse.addEventListener('open', () => {
         setSseStatus('connected');
@@ -178,9 +181,15 @@ export const OverviewPage: React.FC = () => {
 
     connectSSE();
 
+    // Periodic heartbeat sync every 30s to guarantee fresh telemetry
+    const pollInterval = setInterval(() => {
+      loadAllData();
+    }, 30000);
+
     return () => {
       if (sse) sse.close();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      clearInterval(pollInterval);
     };
   }, []);
 
