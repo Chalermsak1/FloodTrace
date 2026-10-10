@@ -40,7 +40,8 @@ import {
 } from 'recharts';
 import { MapLibreMapView, DISTRICT_CENTROIDS, AUTHENTIC_TAMBONS } from '../map/MapLibreMapView';
 import { ExternalInformationDetail } from '../news/InformationDetailModal';
-import { getEvidencePhotoUrl, formatBangkokTime } from '../sections/SituationHeroSection';
+import { getEvidencePhotoUrl } from '../../utils/evidencePhoto';
+import { formatBangkokTime } from '../sections/SituationHeroSection';
 
 export interface DesktopMonitoringDashboardProps {
   overviewData: any;
@@ -134,6 +135,7 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                          waterStations[0];
       setSelectedItem({
         type: 'station',
+        photo_url: '/assets/evidence/water_kabin.jpg',
         ...keyStation
       });
     }
@@ -293,345 +295,11 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
-      
-      {/* ============================================================ */}
-      {/* 1. TOP HEADER BAR                                             */}
-      {/* ============================================================ */}
-      <header className="w-full h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-        {/* Left spacing for aligned sidebar branding */}
-        <div className="w-60 shrink-0 hidden xl:flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
-            <Waves className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight text-slate-900 leading-none block">FloodTrace</span>
-            <span className="text-[10px] text-slate-400 font-medium">Real-time Flood Intelligence</span>
-          </div>
-        </div>
-
-        {/* Center Search Input */}
-        <div className="relative flex-1 max-w-xl mx-4">
-          <div className="relative flex items-center">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 pointer-events-none" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setShowSearchResults(true);
-              }}
-              onFocus={() => setShowSearchResults(true)}
-              placeholder="ค้นหาพื้นที่, สถานที่, ข่าวสาร หรือพิกัด..."
-              className="w-full bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-sm text-slate-800 placeholder-slate-400 rounded-full pl-10 pr-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all shadow-inner"
-            />
-          </div>
-
-          {/* Autocomplete Dropdown */}
-          {showSearchResults && searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn">
-              <div className="px-3.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                ผลการค้นหาใน จ.ปราจีนบุรี
-              </div>
-              {searchResults.map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSelectSearch(item)}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 flex items-center justify-between transition-colors"
-                >
-                  <span className="font-semibold text-slate-700">{item.label}</span>
-                  <span className="text-xs text-blue-600 font-medium">เลือกพื้นที่</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Action Icons (Notifications & User Profile) */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Notification Bell */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors relative"
-              aria-label="การแจ้งเตือน"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 space-y-2 animate-fadeIn text-sm">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <span className="font-bold text-slate-800">การแจ้งเตือนล่าสุด</span>
-                  <Link to="/official-updates" className="text-xs text-blue-600 hover:underline font-semibold">ดูทั้งหมด</Link>
-                </div>
-                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100">
-                  <div className="text-xs font-semibold text-blue-900">ประกาศเฝ้าระวังระดับน้ำลุ่มน้ำปราจีนบุรี</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">กรมชลประทานและ สสน. ติดตามสถานการณ์น้ำต่อเนื่อง</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* User Profile Pill */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
-            >
-              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
-                👤
-              </div>
-              <span className="text-xs font-semibold">ผู้ใช้ทั่วไป</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-
-            {showProfileMenu && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-sm animate-fadeIn">
-                <Link
-                  to="/report"
-                  onClick={() => setShowProfileMenu(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-blue-50 text-slate-700 font-medium"
-                >
-                  <span>ส่งรายงานเหตุการณ์</span>
-                </Link>
-                <Link
-                  to="/data-methodology"
-                  onClick={() => setShowProfileMenu(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-blue-50 text-slate-700 font-medium"
-                >
-                  <span>วิธีวิทยาและข้อจำกัด</span>
-                </Link>
-                <div className="border-t border-slate-100 my-1" />
-                <Link
-                  to="/admin/reports"
-                  onClick={() => setShowProfileMenu(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-500 text-xs"
-                >
-                  <span>เข้าสู่ระบบเจ้าหน้าที่ (Staff)</span>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
+    <div className="w-full min-h-[calc(100vh-4rem)] bg-[#F8FAFC] text-slate-800 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* ============================================================ */}
       {/* 2. MAIN WORKSPACE (Sidebar + Central Canvas + Right Panel)    */}
       {/* ============================================================ */}
       <div className="flex-1 w-full flex overflow-hidden">
-        
-        {/* ========================================================== */}
-        {/* LEFT SIDEBAR (Width: 260px)                                */}
-        {/* ========================================================== */}
-        <aside className="w-[260px] shrink-0 bg-white border-r border-slate-200/80 p-4 flex flex-col justify-between overflow-y-auto">
-          <div className="space-y-6">
-            
-            {/* Primary Navigation Menu */}
-            <nav className="space-y-1">
-              <Link
-                to="/overview"
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-blue-50 text-blue-600 shadow-xs"
-              >
-                <LayoutDashboard className="w-4 h-4 text-blue-600" />
-                <span>หน้าหลัก</span>
-              </Link>
-              <Link
-                to="/map"
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors"
-              >
-                <Map className="w-4 h-4 text-slate-400" />
-                <span>แผนที่</span>
-              </Link>
-              <Link
-                to="/official-updates"
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors"
-              >
-                <Newspaper className="w-4 h-4 text-slate-400" />
-                <span>ข่าวสาร</span>
-              </Link>
-              <Link
-                to="/cases"
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors"
-              >
-                <FileText className="w-4 h-4 text-slate-400" />
-                <span>รายงานเหตุการณ์</span>
-              </Link>
-              <Link
-                to="/forecast"
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors"
-              >
-                <TrendingUp className="w-4 h-4 text-slate-400" />
-                <span>ข้อมูลเชิงลึก</span>
-              </Link>
-
-              {/* More Menu Dropdown */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <MoreHorizontal className="w-4 h-4 text-slate-400" />
-                    <span>เมนูเพิ่มเติม</span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </button>
-
-                {showMoreMenu && (
-                  <div className="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1 text-xs">
-                    <Link to="/about" className="block py-1.5 text-slate-600 hover:text-blue-600">เกี่ยวกับระบบ</Link>
-                    <Link to="/knowledge" className="block py-1.5 text-slate-600 hover:text-blue-600">คู่มือและคำแนะนำ</Link>
-                    <Link to="/data-methodology" className="block py-1.5 text-slate-600 hover:text-blue-600">วิธีวิทยาและข้อจำกัด</Link>
-                  </div>
-                )}
-              </div>
-            </nav>
-
-            {/* Divider */}
-            <div className="border-t border-slate-100" />
-
-            {/* Data Filters Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800 tracking-tight">ตัวกรองข้อมูล</span>
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="text-xs text-blue-600 hover:underline font-semibold"
-                >
-                  รีเซ็ต
-                </button>
-              </div>
-
-              {/* Data Categories Checkboxes */}
-              <div className="space-y-2.5 text-xs">
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">ประเภทข้อมูล</span>
-
-                <label className="flex items-center justify-between cursor-pointer group select-none">
-                  <div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 font-medium">
-                    <div className="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                      <Droplets className="w-3 h-3" />
-                    </div>
-                    <span>น้ำท่วม / ระดับน้ำ</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={layerWater}
-                    onChange={(e) => setLayerWater(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer group select-none">
-                  <div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 font-medium">
-                    <div className="w-5 h-5 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                      <CloudRain className="w-3 h-3" />
-                    </div>
-                    <span>ปริมาณฝน</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={layerRain}
-                    onChange={(e) => setLayerRain(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer group select-none">
-                  <div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 font-medium">
-                    <div className="w-5 h-5 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                      <Radio className="w-3 h-3" />
-                    </div>
-                    <span>สถานีตรวจวัด</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={layerStations}
-                    onChange={(e) => setLayerStations(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer group select-none">
-                  <div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 font-medium">
-                    <div className="w-5 h-5 rounded-md bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
-                      <Users className="w-3 h-3" />
-                    </div>
-                    <span>รายงานประชาชน</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={layerCitizen}
-                    onChange={(e) => setLayerCitizen(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer group select-none">
-                  <div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 font-medium">
-                    <div className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                      <FileText className="w-3 h-3" />
-                    </div>
-                    <span>หลักฐานภายนอก</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={layerEvidence}
-                    onChange={(e) => setLayerEvidence(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-                  />
-                </label>
-              </div>
-
-              {/* Time Range Filter */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-slate-400 block">ช่วงเวลา</span>
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="24h">24 ชั่วโมงที่ผ่านมา</option>
-                  <option value="7d">7 วันที่ผ่านมา</option>
-                  <option value="30d">30 วันที่ผ่านมา</option>
-                </select>
-              </div>
-
-              {/* District Area Filter */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-slate-400 block">พื้นที่</span>
-                <select
-                  value={selectedDistrict}
-                  onChange={(e) => setSelectedDistrict(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {PRACHIN_DISTRICTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d === 'ทั้งหมด' ? 'ทั้งหมด (7 อำเภอ)' : `อ.${d}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Community Quote Card */}
-          <div className="mt-6 rounded-2xl p-4 bg-gradient-to-b from-sky-50 to-blue-100/70 border border-blue-100 text-center relative overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-2 shadow-xs">
-              <Waves className="w-4 h-4" />
-            </div>
-            <p className="text-xs text-slate-700 font-medium leading-relaxed">
-              &ldquo;ร่วมเป็นส่วนหนึ่งในการติดตามและเฝ้าระวัง เพื่อความปลอดภัยของชุมชน&rdquo;
-            </p>
-          </div>
-        </aside>
 
         {/* ========================================================== */}
         {/* CENTER MAIN DASHBOARD CANVAS                               */}
@@ -650,23 +318,23 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/30" />
 
             {/* Left Content */}
-            <div className="relative z-10 max-w-xl text-white space-y-1">
-              <h1 className="text-xl font-bold tracking-tight text-white leading-snug">
+            <div className="relative z-10 max-w-xl text-white space-y-1.5">
+              <h1 className="text-2xl font-bold tracking-tight text-white leading-snug">
                 ติดตามสถานการณ์น้ำท่วม และข้อมูลสิ่งแวดล้อมในพื้นที่ลุ่มน้ำปราจีนบุรี
               </h1>
-              <p className="text-xs text-slate-200 font-normal">
+              <p className="text-sm text-slate-100 font-normal">
                 ข้อมูลจากหลายแหล่ง ทั้งภาครัฐ เอกชน และประชาชน เพื่อให้คุณรับรู้ได้เร็วกว่า
               </p>
             </div>
 
             {/* Right Location & Freshness Badge */}
-            <div className="relative z-10 shrink-0 hidden md:flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/20 rounded-xl px-3.5 py-2 text-white text-xs">
+            <div className="relative z-10 shrink-0 hidden md:flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/20 rounded-xl px-4 py-2 text-white text-sm">
               <div className="flex items-center gap-1.5 font-semibold">
-                <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                <MapPin className="w-4 h-4 text-blue-400" />
                 <span>ลุ่มน้ำปราจีนบุรี</span>
               </div>
               <span className="text-white/40">•</span>
-              <div className="text-[11px] text-slate-300">
+              <div className="text-xs text-slate-200 font-medium">
                 {lastRefreshedAt ? `อัปเดตล่าสุด ${lastRefreshedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.` : 'กำลังเชื่อมต่อ'}
               </div>
             </div>
@@ -691,7 +359,7 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                     key={pill.id}
                     type="button"
                     onClick={() => handleQuickPill(pill.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                       activeQuickPill === pill.id
                         ? 'bg-blue-600 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -705,17 +373,17 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
               {/* Fullscreen Map Button */}
               <Link
                 to="/map"
-                className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-blue-600 shadow-sm border border-slate-200/80 pointer-events-auto transition-colors"
+                className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-blue-600 shadow-sm border border-slate-200/80 pointer-events-auto transition-colors"
               >
-                <Maximize2 className="w-3.5 h-3.5" />
+                <Maximize2 className="w-4 h-4" />
                 <span>ขยายแผนที่เต็มจอ</span>
               </Link>
             </div>
 
             {/* Longdo-inspired Hydrological Status Summary Bar */}
             {waterways?.status_summary && (
-              <div className="pt-14 px-4 py-2.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between text-xs font-sans">
-                <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="pt-14 px-4 py-3 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between text-sm font-sans">
+                <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-1.5 font-bold text-slate-900">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
                     <span>วิกฤต {waterways.status_summary.critical_count} จุด</span>
@@ -726,16 +394,16 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                     <span>เฝ้าระวัง {waterways.status_summary.watch_count} จุด</span>
                   </div>
                   <span className="text-slate-300">•</span>
-                  <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <span>ปกติ {waterways.status_summary.normal_count} จุด</span>
                   </div>
                   <span className="text-slate-300">•</span>
-                  <div className="flex items-center gap-1.5 text-slate-500">
+                  <div className="flex items-center gap-1.5 text-slate-600 font-medium">
                     <span className="w-2 h-2 rounded-full bg-sky-500"></span>
                     <span>ไม่มีจุดวัด {waterways.status_summary.unmonitored_count} จุด</span>
                   </div>
-                  <span className="text-3xs text-slate-400 font-normal">
+                  <span className="text-xs text-slate-400 font-normal">
                     (จากโครงข่ายลำน้ำ {waterways.status_summary.total_segments} ช่วง)
                   </span>
                 </div>
@@ -786,18 +454,18 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
           <div className="grid grid-cols-3 gap-4">
             
             {/* Card 1: Water Level */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
+            <div className="bg-white rounded-2xl p-4.5 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                   <Waves className="w-6 h-6" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-medium block">ระดับน้ำ (ล่าสุด)</span>
+                  <span className="text-sm text-slate-600 font-semibold block">ระดับน้ำ (ล่าสุด)</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-slate-900">{keyWaterLevel}</span>
-                    <span className="text-xs text-slate-500">ม.</span>
+                    <span className="text-3xl font-extrabold text-slate-900">{keyWaterLevel}</span>
+                    <span className="text-sm font-semibold text-slate-500">ม.</span>
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  <span className="text-xs text-slate-500 mt-0.5 block font-medium">
                     สถานี {waterStations?.length || 25} แห่ง
                   </span>
                 </div>
@@ -806,18 +474,18 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
             </div>
 
             {/* Card 2: Rainfall */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-sky-300 transition-colors">
+            <div className="bg-white rounded-2xl p-4.5 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-sky-300 transition-colors">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
                   <CloudRain className="w-6 h-6" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-medium block">ปริมาณฝน (ล่าสุด)</span>
+                  <span className="text-sm text-slate-600 font-semibold block">ปริมาณฝน (ล่าสุด)</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-slate-900">{keyRainfall}</span>
-                    <span className="text-xs text-slate-500">มม.</span>
+                    <span className="text-3xl font-extrabold text-slate-900">{keyRainfall}</span>
+                    <span className="text-sm font-semibold text-slate-500">มม.</span>
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  <span className="text-xs text-slate-500 mt-0.5 block font-medium">
                     สถานี {rainfallStations?.length || 76} แห่ง
                   </span>
                 </div>
@@ -826,17 +494,17 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
             </div>
 
             {/* Card 3: Water Quality */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-emerald-300 transition-colors">
+            <div className="bg-white rounded-2xl p-4.5 border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-emerald-300 transition-colors">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <Leaf className="w-6 h-6" />
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 font-medium block">คุณภาพน้ำ</span>
+                  <span className="text-sm text-slate-600 font-semibold block">คุณภาพน้ำ</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-slate-900">ปกติ</span>
+                    <span className="text-3xl font-extrabold text-slate-900">ปกติ</span>
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  <span className="text-xs text-slate-500 mt-0.5 block font-medium">
                     จุดตรวจ 4 แห่ง
                   </span>
                 </div>
@@ -850,16 +518,16 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
           <div className="grid grid-cols-12 gap-5">
             
             {/* Left Section (7 Cols): ข่าวสารล่าสุด */}
-            <section className="col-span-7 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <section className="col-span-7 bg-white rounded-2xl p-4.5 border border-slate-200/80 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <div className="flex items-center gap-2">
-                    <Newspaper className="w-4 h-4 text-blue-600" />
-                    <h2 className="text-sm font-bold text-slate-900">ข่าวสารล่าสุด</h2>
+                    <Newspaper className="w-4.5 h-4.5 text-blue-600" />
+                    <h2 className="text-base font-bold text-slate-900">ข่าวสารล่าสุด</h2>
                   </div>
-                  <Link to="/official-updates?tab=news" className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-0.5">
+                  <Link to="/official-updates?tab=news" className="text-sm text-blue-600 hover:underline font-semibold flex items-center gap-0.5">
                     <span>ดูทั้งหมด</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
 
@@ -881,21 +549,21 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                             alt={news.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
-                              // Fallback image
-                              (e.target as HTMLImageElement).src = '/assets/hero_landscape.jpg';
+                              // Fallback news photo
+                              (e.target as HTMLImageElement).src = '/assets/news/news_001.jpg';
                             }}
                           />
-                          <span className={`absolute bottom-1.5 left-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs ${badge.bg}`}>
+                          <span className={`absolute bottom-1.5 left-1.5 text-xs font-bold px-2 py-0.5 rounded shadow-xs ${badge.bg}`}>
                             {badge.label}
                           </span>
                         </div>
 
                         {/* Title & Metadata */}
-                        <div className="p-2 flex-1 flex flex-col justify-between">
-                          <h3 className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug">
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
+                          <h3 className="text-sm font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug">
                             {news.title}
                           </h3>
-                          <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">
+                          <div className="text-xs text-slate-400 mt-1.5 line-clamp-1 font-medium">
                             {news.published_at ? new Date(news.published_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : 'ล่าสุด'}
                           </div>
                         </div>
@@ -906,17 +574,20 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
               </div>
             </section>
 
-            {/* Right Section (5 Cols): สถานการณ์และหลักฐานล่าสุด */}
-            <section className="col-span-5 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            {/* Right Section (5 Cols): สถานการณ์และหลักฐานล่าสุด (External Evidence with Purple Accent) */}
+            <section className="col-span-5 bg-white rounded-2xl p-4.5 border border-purple-100/80 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <div>
-                    <h2 className="text-sm font-bold text-slate-900 leading-tight">สถานการณ์และหลักฐานล่าสุด</h2>
-                    <span className="text-[11px] text-slate-400 block">ข้อมูลอ้างอิงจากแหล่งสาธารณะภายนอก (External Evidence)</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                      <h2 className="text-base font-bold text-slate-900 leading-tight">สถานการณ์และหลักฐานล่าสุด</h2>
+                    </div>
+                    <span className="text-xs text-purple-600 font-medium block mt-0.5">หลักฐานจากแหล่งสาธารณะภายนอก (External Evidence)</span>
                   </div>
-                  <Link to="/cases" className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-0.5">
+                  <Link to="/cases" className="text-sm text-purple-600 hover:text-purple-800 hover:underline font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap ml-2">
                     <span>ดูทั้งหมด</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
 
@@ -928,44 +599,52 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                     return (
                       <div
                         key={ev.id || idx}
-                        onClick={() => onSelectEvidence(ev)}
-                        className="group cursor-pointer flex flex-col rounded-xl overflow-hidden border border-slate-100 hover:border-blue-200 hover:shadow-xs transition-all bg-white"
+                        onClick={() => onSelectEvidence({
+                          ...ev,
+                          source_name: ev.source_name || ev.source_platform || 'แหล่งสาธารณะ',
+                          source_type: ev.evidence_type || 'EXTERNAL_EVIDENCE',
+                          authority_level: ev.verification_status === 'OFFICIAL_VERIFIED' ? 'OFFICIAL' : 'SECONDARY',
+                          title: ev.title_or_summary || ev.title || 'รายงานสังเกตการณ์',
+                          summary: ev.description || ev.text_excerpt,
+                          source_image_url: photo
+                        })}
+                        className="group cursor-pointer flex flex-col rounded-xl overflow-hidden border border-purple-100 hover:border-purple-300 hover:shadow-xs transition-all bg-white"
                       >
                         {/* Evidence Thumbnail with Platform tag */}
-                        <div className="w-full h-24 relative overflow-hidden bg-slate-100">
+                        <div className="w-full h-24 relative overflow-hidden bg-purple-50">
                           <img
                             src={photo}
                             alt={ev.title_or_summary}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/assets/hero_landscape.jpg';
+                              (e.target as HTMLImageElement).src = '/assets/evidence/evd_008_boat_rescue.jpg';
                             }}
                           />
-                          <span className="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 text-white backdrop-blur-xs">
+                          <span className="absolute top-1.5 left-1.5 text-xs font-bold px-2 py-0.5 rounded bg-purple-950/80 text-purple-200 backdrop-blur-xs border border-purple-500/30">
                             {ev.source_platform || 'Facebook'}
                           </span>
                         </div>
 
                         {/* Text & Verification status */}
-                        <div className="p-2 flex-1 flex flex-col justify-between">
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
                           <div>
-                            <h3 className="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                            <h3 className="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-purple-700 transition-colors">
                               {ev.title_or_summary || 'รายงานสังเกตการณ์'}
                             </h3>
-                            <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                            <div className="text-xs text-slate-500 mt-0.5 line-clamp-1 font-medium">
                               {ev.district ? `อ.${ev.district}` : 'จ.ปราจีนบุรี'}
                             </div>
                           </div>
 
-                          <div className="mt-1.5 flex items-center justify-between">
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               isVerified
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-purple-50 text-purple-700 border border-purple-200'
                             }`}>
-                              {isVerified ? 'ยืนยันแล้ว' : 'อยู่ระหว่างตรวจสอบ'}
+                              {isVerified ? 'ยืนยันแล้ว' : 'หลักฐานภายนอก'}
                             </span>
-                            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-600" />
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-purple-600" />
                           </div>
                         </div>
                       </div>
@@ -988,28 +667,31 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
             {/* 1. Header with Station / Item Photo */}
             <div className="w-full h-32 rounded-2xl overflow-hidden relative border border-slate-200/60 shadow-xs">
               <img
-                src={selectedItem?.photo_url || '/assets/hero_landscape.jpg'}
+                src={selectedItem?.photo_url || selectedItem?.source_image_url || '/assets/evidence/water_kabin.jpg'}
                 alt="Selected Item"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/evidence/water_kabin.jpg';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute top-2.5 left-2.5">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-xs">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-600 text-white shadow-xs">
                   {selectedItem?.type === 'station' ? 'สถานีตรวจวัด' : 'จุดสังเกตการณ์'}
                 </span>
               </div>
               <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between text-white">
                 <div>
-                  <h3 className="text-sm font-bold leading-tight">
+                  <h3 className="text-base font-bold leading-tight">
                     {selectedItem?.name_th || 'สถานีตรวจวัด บ้านหนองปรือ'}
                   </h3>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-xs text-slate-200 font-medium">
                     {selectedItem?.district ? `อ.${selectedItem.district} จ.ปราจีนบุรี` : 'จ.ปราจีนบุรี'}
                   </p>
                 </div>
                 <Link
                   to={`/map?district=${encodeURIComponent(selectedItem?.district || 'กบินทร์บุรี')}`}
-                  className="text-xs text-sky-300 hover:text-white flex items-center gap-0.5 shrink-0 font-medium"
+                  className="text-xs text-sky-200 hover:text-white flex items-center gap-0.5 shrink-0 font-medium"
                 >
                   <span>ดูรายละเอียด</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -1028,10 +710,10 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                   key={tab.id}
                   type="button"
                   onClick={() => setInspectorTab(tab.id as any)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                     inspectorTab === tab.id
                       ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {tab.label}
@@ -1043,17 +725,17 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
             {inspectorTab === 'WATER' && (
               <div className="space-y-4">
                 <div>
-                  <span className="text-xs text-slate-400 font-medium block">ระดับน้ำล่าสุด</span>
+                  <span className="text-sm text-slate-500 font-semibold block">ระดับน้ำล่าสุด</span>
                   <div className="flex items-center gap-2.5 mt-0.5">
                     <span className="text-3xl font-extrabold text-slate-900">
                       {selectedItem?.water_level_msl != null ? selectedItem.water_level_msl.toFixed(2) : '2.38'}
                     </span>
                     <span className="text-sm font-semibold text-slate-500">ม.</span>
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       ปกติ
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                  <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
                     <span>จากระดับตลิ่ง {selectedItem?.critical_level_msl ? `${selectedItem.critical_level_msl.toFixed(2)} ม.` : '6.00 ม.'}</span>
                     <span>{selectedItem?.observed_at_bkk || '10 ต.ค. 2568 14:20 น.'}</span>
                   </div>
@@ -1069,10 +751,10 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
                           <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '11px' }}
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '12px' }}
                       />
                       <Area type="monotone" dataKey="level" stroke="#0284C7" strokeWidth={2.5} fillOpacity={1} fill="url(#waterAreaGrad)" />
                     </AreaChart>
@@ -1081,23 +763,23 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
 
                 {/* Additional Metadata Table */}
                 <div className="space-y-2 border-t border-slate-100 pt-3">
-                  <span className="text-xs font-bold text-slate-800 block">ข้อมูลเพิ่มเติม</span>
+                  <span className="text-sm font-bold text-slate-800 block">ข้อมูลเพิ่มเติม</span>
                   
-                  <div className="space-y-1.5 text-xs text-slate-600">
+                  <div className="space-y-2 text-sm text-slate-600">
                     <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                      <span className="text-slate-400">รหัสสถานี</span>
+                      <span className="text-slate-500">รหัสสถานี</span>
                       <span className="font-semibold text-slate-800">{selectedItem?.station_id || selectedItem?.id || 'STN-001'}</span>
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                      <span className="text-slate-400">แม่น้ำ</span>
+                      <span className="text-slate-500">แม่น้ำ</span>
                       <span className="font-semibold text-slate-800">{selectedItem?.basin || 'แม่น้ำปราจีนบุรี'}</span>
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                      <span className="text-slate-400">ความจุน้ำ</span>
+                      <span className="text-slate-500">ความจุน้ำ</span>
                       <span className="font-semibold text-slate-800">{selectedItem?.critical_level_msl ? `${selectedItem.critical_level_msl.toFixed(2)} ม.` : '6.00 ม.'}</span>
                     </div>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-slate-400">สถานะ</span>
+                      <span className="text-slate-500">สถานะ</span>
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         ออนไลน์
@@ -1110,20 +792,20 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
 
             {/* Rainfall Tab */}
             {inspectorTab === 'RAIN' && (
-              <div className="space-y-3 text-xs">
+              <div className="space-y-3 text-sm">
                 <div>
-                  <span className="text-xs text-slate-400 font-medium block">ปริมาณฝนสะสม (24 ชม.)</span>
+                  <span className="text-sm text-slate-500 font-semibold block">ปริมาณฝนสะสม (24 ชม.)</span>
                   <div className="text-3xl font-extrabold text-slate-900 mt-0.5">
                     {keyRainfall} <span className="text-sm font-semibold text-slate-500">มม.</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 text-slate-600 border-t border-slate-100 pt-3">
+                <div className="space-y-2 text-slate-600 border-t border-slate-100 pt-3">
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">สถานะฝน</span>
+                    <span className="text-slate-500">สถานะฝน</span>
                     <span className="font-semibold text-slate-800">ฝนตกเล็กน้อยถึงปานกลาง</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">หน่วยงานตรวจวัด</span>
+                    <span className="text-slate-500">หน่วยงานตรวจวัด</span>
                     <span className="font-semibold text-slate-800">สสน. (ThaiWater)</span>
                   </div>
                 </div>
@@ -1132,25 +814,25 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
 
             {/* Station Specs Tab */}
             {inspectorTab === 'STATION' && (
-              <div className="space-y-2 text-xs text-slate-600">
-                <span className="text-xs font-bold text-slate-800 block">ข้อมูลจำเพาะสถานี</span>
-                <div className="space-y-1.5">
+              <div className="space-y-2 text-sm text-slate-600">
+                <span className="text-sm font-bold text-slate-800 block">ข้อมูลจำเพาะสถานี</span>
+                <div className="space-y-2">
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">ระดับตลิ่ง</span>
+                    <span className="text-slate-500">ระดับตลิ่ง</span>
                     <span className="font-semibold text-slate-800">{selectedItem?.critical_level_msl ? `${selectedItem.critical_level_msl} ม. รทก.` : '6.00 ม. รทก.'}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">ระดับเตือนภัย</span>
+                    <span className="text-slate-500">ระดับเตือนภัย</span>
                     <span className="font-semibold text-slate-800">{selectedItem?.warning_level_msl ? `${selectedItem.warning_level_msl} ม. รทก.` : '5.50 ม. รทก.'}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50">
-                    <span className="text-slate-400">พิกัดสถานี</span>
+                    <span className="text-slate-500">พิกัดสถานี</span>
                     <span className="font-semibold text-slate-800">
                       {selectedItem?.latitude ? `${selectedItem.latitude.toFixed(3)}, ${selectedItem.longitude.toFixed(3)}` : '13.985, 101.718'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-slate-400">การเข้าถึงข้อมูล</span>
+                    <span className="text-slate-500">การเข้าถึงข้อมูล</span>
                     <span className="font-semibold text-blue-600">สาธารณะ (Open Data)</span>
                   </div>
                 </div>
@@ -1163,7 +845,7 @@ export const DesktopMonitoringDashboard: React.FC<DesktopMonitoringDashboardProp
           <div className="pt-4 border-t border-slate-100">
             <Link
               to={`/map?district=${encodeURIComponent(selectedItem?.district || 'กบินทร์บุรี')}`}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
             >
               <span>สำรวจสถานการณ์ในพื้นที่นี้</span>
               <ArrowUpRight className="w-3.5 h-3.5" />

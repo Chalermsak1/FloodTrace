@@ -10,6 +10,7 @@ import {
   Layers,
   Info
 } from 'lucide-react';
+import { Badge, PageHeader, Card } from '../components/ui';
 
 export const DataMethodologyPage: React.FC = () => {
   const [provenanceData, setProvenanceData] = useState<any>(null);
@@ -29,33 +30,30 @@ export const DataMethodologyPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       
-      {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-[#0C57C7] text-xs font-semibold mb-3 border border-sky-100">
-          <Database className="w-3.5 h-3.5" />
-          ความโปร่งใสและระเบียบวิธีวิจัย (Transparency & Methodology)
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-          ข้อมูลและวิธีการ (Data & Methodology)
-        </h1>
-        <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-3xl leading-relaxed">
-          อธิบายที่มาของชุดข้อมูล สัญญาอนุญาตการใช้งาน ระเบียบวิธีวิเคราะห์การเชื่อมต่อทางน้ำ และข้อจำกัดทางเทคนิคของระบบ FloodTrace อย่างโปร่งใสและตรงไปตรงมา
-        </p>
-      </div>
+      {/* Unified PageHeader */}
+      <PageHeader
+        title="ข้อมูลและวิธีการ (Data & Methodology)"
+        subtitle="อธิบายที่มาของชุดข้อมูล สัญญาอนุญาตการใช้งาน ระเบียบวิธีวิเคราะห์การเชื่อมต่อทางน้ำ และข้อจำกัดทางเทคนิคของระบบ FloodTrace อย่างโปร่งใสและตรงไปตรงมา"
+        badge={
+          <Badge variant="unmonitored" icon={<Database className="w-3.5 h-3.5" />}>
+            Transparency & Methodology
+          </Badge>
+        }
+      />
 
       {/* SECTION A — DATA CATALOG (Sections 31, 32, 33, 35, 36) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0C57C7] flex items-center justify-center font-bold text-base">
+          <div className="w-10 h-10 rounded-2xl bg-sky-50 text-[#0284C7] flex items-center justify-center font-bold text-base shadow-2xs">
             A
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold text-[#0A2540]">
               ส่วนที่ 1: คลังแหล่งข้อมูลและสัญญาอนุญาต (Data Sources & Provenance)
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               จำแนกแหล่งข้อมูลตามสถานะการเข้าถึงจริง ความถี่ในการอัปเดต และข้อกำหนดการใช้งาน
             </p>
           </div>
@@ -86,7 +84,7 @@ export const DataMethodologyPage: React.FC = () => {
                       {ds.status_th}
                     </span>
                   </div>
-                  <div className="text-xs text-[#0C65E8] font-semibold mb-1">{ds.agency}</div>
+                  <div className="text-xs text-[#0284C7] font-semibold mb-1">{ds.agency}</div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {ds.provenance}
                   </p>
@@ -125,7 +123,7 @@ export const DataMethodologyPage: React.FC = () => {
                       {ds.status_th}
                     </span>
                   </div>
-                  <div className="text-xs text-[#0C65E8] font-semibold mb-1">{ds.agency}</div>
+                  <div className="text-xs text-[#0284C7] font-semibold mb-1">{ds.agency}</div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {ds.provenance}
                   </p>

@@ -20,6 +20,7 @@ import {
   Layers,
   Newspaper
 } from 'lucide-react';
+import { getEvidencePhotoUrl } from '../../utils/evidencePhoto';
 
 export interface ExternalInformationDetail {
   id: string;
@@ -117,6 +118,17 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
   const [imageLoaded, setImageLoaded] = React.useState<boolean>(false);
   const [imageFailed, setImageFailed] = React.useState<boolean>(false);
   const [copied, setCopied] = React.useState<boolean>(false);
+
+  const displayImageUrl = React.useMemo(() => {
+    if (!item) return null;
+    if (item.source_image_url && 
+        !item.source_image_url.includes('lookaside.fbsbx.com') && 
+        !item.source_image_url.includes('facebook.com') && 
+        !item.source_image_url.includes('fbcdn.net')) {
+      return item.source_image_url;
+    }
+    return getEvidencePhotoUrl(item);
+  }, [item]);
 
   React.useEffect(() => {
     setImageLoaded(false);
@@ -243,7 +255,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 text-sm text-slate-700 overscroll-contain">
           
           {/* Source Image if present */}
-          {item.source_image_url && !imageFailed ? (
+          {displayImageUrl && !imageFailed ? (
             <div className="space-y-2">
               <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
                 {!imageLoaded && (
@@ -252,18 +264,25 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                   </div>
                 )}
                 <img 
-                  src={item.source_image_url} 
+                  src={displayImageUrl} 
                   alt={item.title} 
                   loading="lazy"
                   onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageFailed(true)}
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.includes('evd_008_boat_rescue.jpg')) {
+                      target.src = '/assets/evidence/evd_008_boat_rescue.jpg';
+                    } else {
+                      setImageFailed(true);
+                    }
+                  }}
                   className={`w-full h-full object-cover transition-opacity duration-300 ${
                     imageLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
                 />
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
                   <span className="px-2 py-0.5 rounded text-3xs font-medium bg-slate-900/80 text-white backdrop-blur-xs">
-                    ภาพจากแหล่งต้นทาง ({item.source_domain || item.source_name})
+                    ภาพประกอบเหตุการณ์จริง ({item.source_domain || item.source_name || 'สื่อสาธารณะ'})
                   </span>
                   {item.image_source_type && (
                     <span className="px-1.5 py-0.5 rounded text-3xs font-mono font-bold bg-[#0C65E8]/90 text-white">
@@ -273,7 +292,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                 </div>
               </div>
             </div>
-          ) : item.source_image_url && imageFailed ? (
+          ) : displayImageUrl && imageFailed ? (
             /* Graceful Fallback if image fails to load */
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-500 flex items-center justify-center shrink-0">

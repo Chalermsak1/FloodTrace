@@ -288,7 +288,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     {f.type === 'warning' ? (
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     ) : (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#0C65E8] shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#0284C7] shrink-0 mt-0.5" />
                     )}
                     <div className="min-w-0 flex-1">
                       <span className="font-semibold block">{f.title}</span>
@@ -742,9 +742,9 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`px-2.5 py-1 text-2xs font-semibold rounded-lg shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    className={`px-2.5 py-1 text-2xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 ${
                       activeTab === tab.key 
-                        ? 'bg-[#0C65E8] text-white shadow-2xs' 
+                        ? 'bg-[#0284C7] text-white shadow-2xs' 
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -772,7 +772,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
       {/* Positioned on map workspace with full multi-tab intelligence   */}
       {/* ============================================================== */}
       <div 
-        className="hidden md:block fixed top-20 right-4 z-30 w-[380px] lg:w-[420px] max-h-[calc(100vh-6.5rem)] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
+        className="hidden md:block fixed top-20 right-4 z-30 w-[380px] lg:w-[420px] max-h-[calc(100vh-6.5rem)] bg-white/95 backdrop-blur-md rounded-2xl shadow-modal border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
       >
         {/* Header */}
         <div className="p-3.5 pb-2 border-b border-slate-100 shrink-0">
@@ -785,7 +785,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                 >
                   {priorityBadge}
                 </span>
-                <h3 className="text-base font-bold text-[#063B70] truncate leading-tight">
+                <h3 className="text-base font-bold text-[#0A2540] truncate leading-tight">
                   {areaTitle}
                 </h3>
               </div>
@@ -793,7 +793,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             </div>
             <button 
               onClick={onClose} 
-              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               title="ปิดหน้าต่างนี้"
             >
               <X className="w-4 h-4" />
@@ -806,9 +806,9 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-2.5 py-1 text-2xs font-semibold rounded-lg shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 ${
+                className={`px-2.5 py-1 text-2xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
                   activeTab === tab.key 
-                    ? 'bg-[#0C65E8] text-white shadow-2xs' 
+                    ? 'bg-[#0284C7] text-white shadow-2xs' 
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >

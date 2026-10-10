@@ -7,11 +7,17 @@ import {
   HeartHandshake, 
   Eye, 
   ChevronRight, 
-  X,
   PhoneCall,
   CheckCircle2,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
+import { 
+  Badge, 
+  Button, 
+  Modal,
+  PageHeader
+} from '../components/ui';
 
 interface TopicItem {
   id: string;
@@ -104,7 +110,7 @@ const TOPICS: TopicItem[] = [
     icon: Eye,
     badge: 'ข้อสังเกตชุมชน',
     content: {
-      summary: 'สายตาและประสาทสัมผัสของคนในชุมชนคือแนวป้องกันแรก การสังเกตและส่งรายงานผ่าน Ruwaigon ช่วยให้หน่วยงานสุ่มเก็บตัวอย่างได้ตรงจุด',
+      summary: 'สายตาและประสาทสัมผัสของคนในชุมชนคือแนวป้องกันแรก การสังเกตและส่งรายงานผ่าน FloodTrace ช่วยให้หน่วยงานสุ่มเก็บตัวอย่างได้ตรงจุด',
       points: [
         'สีน้ำ: น้ำมีสีเข้มผิดปกติ เช่น สีดำคล้ำ สีส้มสนิม หรือสีขุ่นเข้มผิดธรรมชาติ',
         'กลิ่น: ได้กลิ่นฉุนคล้ายสารเคมี กลิ่นน้ำมัน หรือกลิ่นเหม็นเน่ารุนแรง',
@@ -147,11 +153,11 @@ const TOPICS: TopicItem[] = [
   {
     id: 'faq',
     title: 'คำถามที่พบบ่อย (FAQ)',
-    shortDesc: 'รวมข้อสงสัยทั่วไปเกี่ยวกับระดับสีเฝ้าระวัง การรายงาน และการใช้งานระบบ Ruwaigon',
+    shortDesc: 'รวมข้อสงสัยทั่วไปเกี่ยวกับระดับสีเฝ้าระวัง การรายงาน และการใช้งานระบบ FloodTrace',
     icon: HelpCircle,
     badge: 'ถาม-ตอบ',
     content: {
-      summary: 'คำถามที่ประชาชนสอบถามบ่อยที่สุดเกี่ยวกับแพลตฟอร์ม Ruwaigon และการแปลความหมายข้อมูล',
+      summary: 'คำถามที่ประชาชนสอบถามบ่อยที่สุดเกี่ยวกับแพลตฟอร์ม FloodTrace และการแปลความหมายข้อมูล',
       points: [
         'ถาม: แถบสีแดงบนแผนที่แปลว่ามีสารพิษแน่นอนแล้วใช่หรือไม่? -> ตอบ: ไม่ใช่ สีแดงหมายถึง "พื้นที่เฝ้าระวังสูง" ที่มีปัจจัยเชื่อมโยงทางน้ำและมีข้อสังเกตที่ควรได้รับการตรวจสอบก่อน ไม่ใช่ผลยืนยันการปนเปื้อน',
         'ถาม: ทำไมสีเขียวถึงไม่ใช้คำว่า "ปลอดภัย"? -> ตอบ: สภาพแวดล้อมทางน้ำเปลี่ยนแปลงรวดเร็ว จึงใช้คำว่า "ระดับเฝ้าระวังต่ำ" เพื่อสะท้อนข้อเท็จจริงตามหลักวิชาการ',
@@ -172,35 +178,28 @@ export const KnowledgePage: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<TopicItem | null>(null);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       
       {/* Page Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-3 border border-blue-100">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ศูนย์ข้อมูลความรู้และสุขอนามัยชุมชน</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
-            ความรู้และคำแนะนำ
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-2 leading-relaxed">
-            คู่มือการดูแลสุขภาพตนเองและครอบครัว การสังเกตสภาวะแวดล้อม และแนวทางปฏิบัติตนอย่างปลอดภัยในพื้นที่เฝ้าระวัง
-          </p>
-        </div>
-
-        {/* Emergency Hotline Button */}
-        <div className="shrink-0 flex flex-col items-start sm:items-end gap-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-          <span className="text-sm text-slate-600 font-medium">พบเหตุมลพิษฉุกเฉิน แจ้งสายด่วน:</span>
+      <PageHeader
+        title="ความรู้และคำแนะนำ"
+        subtitle="คู่มือการดูแลสุขภาพตนเองและครอบครัว การสังเกตสภาวะแวดล้อม และแนวทางปฏิบัติตนอย่างปลอดภัยในพื้นที่เฝ้าระวัง"
+        icon={<BookOpen className="w-5 h-5 text-blue-600" />}
+        badge={
+          <Badge variant="neutral" size="sm">
+            ศูนย์ข้อมูลความรู้และสุขอนามัยชุมชน
+          </Badge>
+        }
+        actions={
           <a
             href="tel:1650"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors min-h-[44px]"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors min-h-[40px]"
           >
             <PhoneCall className="w-4 h-4" />
             <span>สายด่วนมลพิษ 1650</span>
           </a>
-        </div>
-      </div>
+        }
+      />
 
       {/* 6 Large Educational Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -210,28 +209,28 @@ export const KnowledgePage: React.FC = () => {
             <div
               key={topic.id}
               onClick={() => setSelectedTopic(topic)}
-              className="bg-white rounded-2xl p-6 border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer group flex flex-col justify-between"
+              className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-2xs hover:shadow-card hover:border-[#0284C7]/60 transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0C65E8] group-hover:bg-[#0C65E8] group-hover:text-white flex items-center justify-center transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0284C7] group-hover:bg-[#0284C7] group-hover:text-white flex items-center justify-center transition-colors shadow-2xs">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-[#0C65E8] transition-colors">
+                  <Badge variant="neutral" size="sm">
                     {topic.badge}
-                  </span>
+                  </Badge>
                 </div>
 
-                <h2 className="text-lg font-bold text-[#063B70] group-hover:text-[#0C65E8] transition-colors leading-snug">
+                <h2 className="text-lg font-bold text-[#0A2540] group-hover:text-[#0284C7] transition-colors leading-snug">
                   {topic.title}
                 </h2>
                 
-                <p className="text-sm text-slate-600 mt-2.5 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 mt-2.5 leading-relaxed line-clamp-3">
                   {topic.shortDesc}
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#0C65E8]">
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm font-semibold text-[#0284C7]">
                 <span>อ่านคำแนะนำฉบับเต็ม</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -240,95 +239,66 @@ export const KnowledgePage: React.FC = () => {
         })}
       </div>
 
-      {/* Detail Modal */}
+      {/* Detail Modal using UI Modal */}
       {selectedTopic && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[88vh] overflow-y-auto border border-slate-200 shadow-2xl space-y-5 text-slate-800">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0C65E8] flex items-center justify-center shrink-0">
-                  <selectedTopic.icon className="w-5 h-5" />
+        <Modal
+          isOpen={!!selectedTopic}
+          onClose={() => setSelectedTopic(null)}
+          title={selectedTopic.title}
+          subtitle={selectedTopic.content.summary}
+          badge={<Badge variant="unmonitored">{selectedTopic.badge}</Badge>}
+          footer={
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setSelectedTopic(null)}
+            >
+              ปิดหน้าต่าง
+            </Button>
+          }
+        >
+          <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+            <div>
+              <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-2">ประเด็นสำคัญที่ควรรู้:</h4>
+              <ul className="space-y-2">
+                {selectedTopic.content.points.map((pt, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <span className="text-[#0284C7] font-bold shrink-0">•</span>
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {selectedTopic.content.dos.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                  <div className="font-bold text-emerald-900 mb-1.5 flex items-center gap-1.5 text-xs sm:text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>สิ่งที่ควรปฏิบัติ</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-emerald-950">
+                    {selectedTopic.content.dos.map((d, idx) => (
+                      <li key={idx}>✓ {d}</li>
+                    ))}
+                  </ul>
                 </div>
-                <div>
-                  <span className="text-xs font-semibold text-[#0C65E8] uppercase tracking-wider">
-                    {selectedTopic.badge}
-                  </span>
-                  <h3 className="font-bold text-lg sm:text-xl text-[#063B70]">
-                    {selectedTopic.title}
-                  </h3>
+
+                <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200">
+                  <div className="font-bold text-rose-900 mb-1.5 flex items-center gap-1.5 text-xs sm:text-sm">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>สิ่งที่ไม่ควรทำ</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-rose-950">
+                    {selectedTopic.content.donts.map((d, idx) => (
+                      <li key={idx}>✗ {d}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTopic(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 min-w-[36px] min-h-[36px] flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed">
-              <p className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-800 font-medium">
-                {selectedTopic.content.summary}
-              </p>
-
-              <div>
-                <h4 className="font-bold text-base text-slate-900 mb-2">ประเด็นสำคัญที่ควรรู้:</h4>
-                <ul className="space-y-2">
-                  {selectedTopic.content.points.map((pt, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <span className="text-[#0C65E8] font-bold shrink-0">•</span>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {selectedTopic.content.dos.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-                    <div className="font-bold text-emerald-900 mb-1.5 flex items-center gap-1.5 text-sm sm:text-base">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>สิ่งที่ควรปฏิบัติ</span>
-                    </div>
-                    <ul className="space-y-1.5 text-sm text-emerald-950">
-                      {selectedTopic.content.dos.map((d, idx) => (
-                        <li key={idx}>✓ {d}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200">
-                    <div className="font-bold text-rose-900 mb-1.5 flex items-center gap-1.5 text-sm sm:text-base">
-                      <AlertTriangle className="w-4 h-4 text-rose-600" />
-                      <span>สิ่งที่ไม่ควรทำ</span>
-                    </div>
-                    <ul className="space-y-1.5 text-sm text-rose-950">
-                      {selectedTopic.content.donts.map((d, idx) => (
-                        <li key={idx}>✗ {d}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedTopic(null)}
-                className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
-              >
-                ปิดหน้าต่าง
-              </button>
-            </div>
-
+            )}
           </div>
-        </div>
+        </Modal>
       )}
 
     </div>

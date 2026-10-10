@@ -5,15 +5,13 @@ import {
   Clock, 
   ChevronRight, 
   Image as ImageIcon,
-  CheckCircle2,
-  ShieldCheck,
-  AlertCircle,
-  Plus,
-  X,
-  Compass,
-  Globe,
-  ExternalLink,
-  FileText
+  ShieldCheck, 
+  Plus, 
+  Globe, 
+  ExternalLink, 
+  FileText,
+  Search,
+  Filter
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
@@ -21,6 +19,16 @@ import {
   ExternalInformationDetail 
 } from '../components/news/InformationDetailModal';
 import { getEvidencePhotoUrl } from '../components/sections/SituationHeroSection';
+import { 
+  Badge, 
+  Button, 
+  Modal, 
+  Tabs, 
+  EmptyState, 
+  LoadingSkeleton,
+  PageHeader,
+  Card 
+} from '../components/ui';
 
 const FILTER_TABS = [
   { id: 'all', label: 'ทั้งหมด' },
@@ -57,7 +65,7 @@ const DISTRICT_OPTIONS = [
 ];
 
 export const CasesPage: React.FC = () => {
-  const [dataMode, setDataMode] = useState<'citizen' | 'external'>('citizen');
+  const [dataMode, setDataMode] = useState<string>('citizen');
   const [observations, setObservations] = useState<any[]>([]);
   const [externalEvidence, setExternalEvidence] = useState<any[]>([]);
   const [activeFilterTab, setActiveFilterTab] = useState<string>('all');
@@ -133,7 +141,7 @@ export const CasesPage: React.FC = () => {
     return true;
   });
 
-  // Filter logic for external evidence (Section 23 & 24)
+  // Filter logic for external evidence
   const filteredEvidence = React.useMemo(() => {
     const seen = new Set<string>();
     return externalEvidence.filter(item => {
@@ -173,77 +181,68 @@ export const CasesPage: React.FC = () => {
     });
   }, [externalEvidence, activeFilterTab, externalCategory, externalDistrict, externalSort]);
 
+  const modeTabs = [
+    {
+      id: 'citizen',
+      label: 'รายงานจากประชาชน',
+      icon: <Eye className="w-4 h-4" />,
+      badge: observations.length
+    },
+    {
+      id: 'external',
+      label: 'หลักฐานจากแหล่งสาธารณะ',
+      icon: <Globe className="w-4 h-4" />,
+      badge: externalEvidence.length
+    }
+  ];
+
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       
-      {/* Page Header (Section 20) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold mb-2 border border-amber-200">
-            <Eye className="w-3.5 h-3.5 text-amber-600" />
-            <span>รายงานข้อสังเกตจากชุมชน</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
-            รายงานจากประชาชน
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-2xl leading-relaxed">
-            ข้อมูลสังเกตการณ์เบื้องต้นจากชุมชนในจังหวัดปราจีนบุรี เพื่อสนับสนุนการจัดลำดับการเฝ้าระวังและการสุ่มเก็บตัวอย่างน้ำ
-          </p>
-        </div>
+      {/* Unified PageHeader */}
+      <PageHeader
+        title="รายงานและหลักฐานภาคสนาม"
+        subtitle="ข้อมูลสังเกตการณ์เบื้องต้นจากชุมชนและหลักฐานสาธารณะในจังหวัดปราจีนบุรี เพื่อสนับสนุนการจัดลำดับการเฝ้าระวังและการสุ่มเก็บตัวอย่างน้ำ"
+        badge={
+          <Badge variant="watch" icon={<Eye className="w-3.5 h-3.5" />}>
+            รายงานจากชุมชน & หลักฐาน
+          </Badge>
+        }
+        actions={
+          <Link to="/report">
+            <Button
+              variant="primary"
+              size="md"
+              iconLeft={<Plus className="w-4 h-4" />}
+              className="w-full sm:w-auto shrink-0 shadow-xs"
+            >
+              + ส่งรายงานเหตุการณ์ใหม่
+            </Button>
+          </Link>
+        }
+      />
 
-        {/* Primary CTA Button */}
-        <Link
-          to="/report"
-          className="px-5 py-3 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ รายงานเหตุการณ์ใหม่</span>
-        </Link>
+      {/* Data Mode Switcher */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <Tabs
+          tabs={modeTabs}
+          activeTab={dataMode}
+          onChange={(id) => setDataMode(id)}
+          variant="pills"
+        />
+
+        {dataMode === 'external' && (
+          <Badge variant="evidence" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
+            Truth & Provenance Verified
+          </Badge>
+        )}
       </div>
 
-      {/* Data Mode Switcher (Section 12: Citizen Report Separation - Responsive Stack) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          type="button"
-          onClick={() => setDataMode('citizen')}
-          className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 transition-all min-h-[44px] ${
-            dataMode === 'citizen'
-              ? 'bg-[#063B70] text-white shadow-sm'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Eye className="w-4 h-4" />
-            <span>รายงานจากประชาชน (Citizen Reports)</span>
-          </div>
-          <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-blue-100/30 text-current">
-            {observations.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setDataMode('external')}
-          className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 transition-all min-h-[44px] ${
-            dataMode === 'external'
-              ? 'bg-purple-800 text-white shadow-sm'
-              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4" />
-            <span>หลักฐานจากแหล่งสาธารณะ (External Evidence)</span>
-          </div>
-          <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-purple-100 text-purple-900">
-            {externalEvidence.length}
-          </span>
-        </button>
-      </div>
-
-      {/* Provenance Separation Notice (Section 0 & 12) */}
+      {/* Provenance Separation Notice */}
       {dataMode === 'external' && (
-        <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-sm text-purple-900 space-y-1">
-          <div className="font-bold flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-purple-700" />
+        <div className="bg-purple-50/70 border border-purple-200/80 rounded-2xl p-4 text-sm text-purple-900 space-y-1 shadow-2xs animate-in fade-in duration-150">
+          <div className="font-bold flex items-center gap-1.5 text-xs sm:text-sm">
+            <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0" />
             <span>หลักการพิสูจน์ข้อเท็จจริง (Truth & Provenance Principle):</span>
           </div>
           <p className="text-purple-800 text-xs sm:text-sm leading-relaxed">
@@ -253,20 +252,22 @@ export const CasesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Horizontal Filter Bar (Section 20) */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      {/* Horizontal Filter Bar */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
           {FILTER_TABS.map(tab => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveFilterTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap min-h-[40px] ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap min-h-[38px] cursor-pointer ${
                 activeFilterTab === tab.id
-                  ? (dataMode === 'external' ? 'bg-purple-800 text-white shadow-xs font-semibold' : 'bg-[#063B70] text-white shadow-xs font-semibold')
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  ? (dataMode === 'external' 
+                      ? 'bg-purple-700 text-white shadow-2xs' 
+                      : 'bg-[#0A2540] text-white shadow-2xs')
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70'
               }`}
             >
               {tab.label}
@@ -277,11 +278,11 @@ export const CasesPage: React.FC = () => {
         {/* Category Filter Selector (Citizen reports only) */}
         {dataMode === 'citizen' && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-600 shrink-0">หมวดหมู่:</span>
+            <span className="text-xs sm:text-sm font-medium text-slate-500 shrink-0">หมวดหมู่:</span>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[40px]"
+              className="bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0284C7] min-h-[38px] cursor-pointer"
             >
               {CATEGORIES.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -290,15 +291,15 @@ export const CasesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Filters for External Evidence: District, Category, Sort Order (Section 23 & 24) */}
+        {/* Filters for External Evidence */}
         {dataMode === 'external' && (
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-600 shrink-0">อำเภอ:</span>
+              <span className="text-xs font-medium text-slate-500 shrink-0">อำเภอ:</span>
               <select
                 value={externalDistrict}
                 onChange={(e) => setExternalDistrict(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[38px]"
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[36px] cursor-pointer"
               >
                 {DISTRICT_OPTIONS.map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -307,11 +308,11 @@ export const CasesPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-600 shrink-0">หมวดหมู่:</span>
+              <span className="text-xs font-medium text-slate-500 shrink-0">หมวดหมู่:</span>
               <select
                 value={externalCategory}
                 onChange={(e) => setExternalCategory(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[38px]"
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[36px] cursor-pointer"
               >
                 {EXTERNAL_CATEGORIES.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -320,11 +321,11 @@ export const CasesPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-600 shrink-0">เรียงตาม:</span>
+              <span className="text-xs font-medium text-slate-500 shrink-0">เรียงตาม:</span>
               <select
                 value={externalSort}
                 onChange={(e) => setExternalSort(e.target.value as 'desc' | 'asc')}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[38px]"
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-600 min-h-[36px] cursor-pointer"
               >
                 <option value="desc">ล่าสุดก่อน</option>
                 <option value="asc">เก่าสุดก่อน</option>
@@ -336,28 +337,35 @@ export const CasesPage: React.FC = () => {
       </div>
 
       {/* List Cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 text-base">
-            กำลังโหลดข้อมูล...
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <LoadingSkeleton count={4} className="h-44" />
           </div>
         ) : dataMode === 'citizen' ? (
           filteredReports.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 space-y-2">
-              <Eye className="w-8 h-8 text-slate-400 mx-auto" />
-              <p className="text-base font-bold text-slate-700">ไม่พบรายงานในหมวดหมู่นี้</p>
-              <p className="text-sm text-slate-500">ยังไม่มีรายงานที่ตรงกับตัวกรองที่เลือก</p>
-            </div>
+            <EmptyState
+              icon={<Eye className="w-8 h-8 text-slate-400" />}
+              title="ไม่พบรายงานในหมวดหมู่นี้"
+              description="ยังไม่มีรายงานข้อสังเกตที่ตรงกับตัวกรองที่เลือกในขณะนี้"
+              action={
+                <Link to="/report">
+                  <Button variant="outline" size="sm" iconLeft={<Plus className="w-4 h-4" />}>
+                    ส่งรายงานแรก
+                  </Button>
+                </Link>
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredReports.map((item, idx) => (
                 <div
                   key={item.id || idx}
                   onClick={() => setSelectedReport(item)}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-subtle hover:shadow-card hover:border-[#0C65E8] transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
+                  className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-card hover:border-[#0284C7]/60 transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 group-hover:bg-amber-100 transition-colors">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/80 group-hover:bg-amber-100 transition-colors">
                       {item.has_image ? (
                         <ImageIcon className="w-6 h-6 text-amber-700" />
                       ) : (
@@ -365,33 +373,33 @@ export const CasesPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <Badge variant="watch">
                           {item.category}
-                        </span>
+                        </Badge>
 
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          item.status === 'VERIFIED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-600 border border-slate-200'
-                        }`}>
+                        <Badge variant={item.status === 'VERIFIED' ? 'normal' : 'neutral'}>
                           {item.status_label || (item.status === 'VERIFIED' ? 'ตรวจสอบแล้ว' : 'กำลังตรวจสอบ')}
-                        </span>
+                        </Badge>
                       </div>
 
-                      <h3 className="font-bold text-base text-[#063B70] leading-snug line-clamp-1">
+                      <h3 className="font-bold text-base text-[#0A2540] leading-snug line-clamp-1 group-hover:text-[#0284C7] transition-colors">
                         {item.generalized_location || `บริเวณ อ.${item.district} จ.ปราจีนบุรี`}
                       </h3>
 
-                      <div className="flex items-center gap-1.5 text-sm text-slate-500 pt-1">
-                        <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span>{item.observation_time ? new Date(item.observation_time).toLocaleDateString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'เมื่อเร็วๆ นี้'}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 pt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {item.observation_time 
+                            ? new Date(item.observation_time).toLocaleDateString('th-TH', { hour: '2-digit', minute: '2-digit' }) 
+                            : 'เมื่อเร็วๆ นี้'}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-[#0C65E8]">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm font-semibold text-[#0284C7]">
                     <span>ดูรายละเอียดข้อสังเกต</span>
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -402,171 +410,150 @@ export const CasesPage: React.FC = () => {
         ) : (
           /* External Evidence List */
           filteredEvidence.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200 space-y-2">
-              <Globe className="w-8 h-8 text-purple-400 mx-auto" />
-              <p className="text-base font-bold text-slate-700">ไม่พบหลักฐานจากแหล่งสาธารณะ</p>
-              <p className="text-sm text-slate-500">ยังไม่มีข้อมูลจากสื่อหรือข่าวสารสาธารณะที่เปิดเผยในหมวดหมู่นี้</p>
-            </div>
+            <EmptyState
+              icon={<Globe className="w-8 h-8 text-purple-400" />}
+              title="ไม่พบหลักฐานจากแหล่งสาธารณะ"
+              description="ยังไม่มีข้อมูลจากสื่อหรือข่าวสารสาธารณะที่เปิดเผยในหมวดหมู่นี้"
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredEvidence.map((ev, idx) => {
-                const media = ev.media_references?.[0];
-                return (
-                  <div
-                    key={ev.id || idx}
-                    onClick={() => handleEvidenceClick(ev)}
-                    className="bg-white rounded-2xl p-5 border border-slate-200 shadow-subtle hover:shadow-card hover:border-purple-600 transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-purple-200 shadow-xs relative">
-                        <img 
-                          src={getEvidencePhotoUrl(ev)} 
-                          alt={ev.title_or_summary} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            if (!target.src.includes('evd_013_bangtaen_road.jpg')) {
-                              target.src = '/assets/evidence/evd_013_bangtaen_road.jpg';
-                            }
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                            {ev.source_platform}
-                          </span>
-
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            ev.verification_status === 'CORROBORATED' || ev.verification_status === 'OFFICIAL_VERIFIED'
-                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                              : 'bg-amber-100 text-amber-800 border border-amber-200'
-                          }`}>
-                            {ev.verification_status === 'CORROBORATED' || ev.verification_status === 'OFFICIAL_VERIFIED'
-                              ? 'สอดคล้องกับพื้นที่'
-                              : 'อยู่ระหว่างตรวจสอบ'}
-                          </span>
-                        </div>
-
-                        <h3 className="font-bold text-base text-[#063B70] leading-snug line-clamp-1">
-                          {ev.title_or_summary}
-                        </h3>
-
-                        {ev.text_excerpt && (
-                          <p className="text-xs text-slate-600 line-clamp-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            "{ev.text_excerpt}"
-                          </p>
-                        )}
-
-                        <div className="text-xs text-slate-600">
-                          แหล่งที่มา: <span className="font-medium text-purple-900">{ev.source_name}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{ev.location_text || (ev.district ? `อ.${ev.district}` : 'จ.ปราจีนบุรี')} ({ev.location_precision})</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <span>{ev.observed_at ? `พบเมื่อ ${new Date(ev.observed_at).toLocaleString('th-TH')}` : `เผยแพร่เมื่อ ${new Date(ev.published_at).toLocaleString('th-TH')}`}</span>
-                        </div>
-
-                        <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-block text-3xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                            ข้อมูลอ้างอิงจากแหล่งสาธารณะภายนอก (External Evidence)
-                          </span>
-                          {ev.related_sources_count && ev.related_sources_count > 1 && (
-                            <span className="inline-block text-3xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                              {ev.related_sources_count} แหล่งข้อมูลอ้างอิง
-                            </span>
-                          )}
-                          {ev.related_news && ev.related_news.length > 0 && (
-                            <span className="inline-block text-3xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              ข่าวสนับสนุน ({ev.related_news.length})
-                            </span>
-                          )}
-                        </div>
-                      </div>
+              {filteredEvidence.map((ev, idx) => (
+                <div
+                  key={ev.id || idx}
+                  onClick={() => handleEvidenceClick(ev)}
+                  className="bg-white rounded-2xl p-5 border border-purple-100/90 shadow-2xs hover:shadow-card hover:border-purple-300 transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-purple-200/80 shadow-2xs relative">
+                      <img 
+                        src={getEvidencePhotoUrl(ev)} 
+                        alt={ev.title_or_summary} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.src.includes('evd_013_bangtaen_road.jpg')) {
+                            target.src = '/assets/evidence/evd_013_bangtaen_road.jpg';
+                          }
+                        }}
+                      />
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-sm font-semibold text-purple-700">
-                      <span>ดูรายละเอียดและหลักฐานต้นทาง</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <Badge variant="evidence">
+                          {ev.source_platform}
+                        </Badge>
+
+                        <Badge 
+                          variant={
+                            ev.verification_status === 'CORROBORATED' || ev.verification_status === 'OFFICIAL_VERIFIED'
+                              ? 'evidence'
+                              : 'watch'
+                          }
+                        >
+                          {ev.verification_status === 'CORROBORATED' || ev.verification_status === 'OFFICIAL_VERIFIED'
+                            ? 'สอดคล้องกับพื้นที่'
+                            : 'อยู่ระหว่างตรวจสอบ'}
+                        </Badge>
+                      </div>
+
+                      <h3 className="font-bold text-base text-[#0A2540] leading-snug line-clamp-1 group-hover:text-purple-700 transition-colors">
+                        {ev.title_or_summary}
+                      </h3>
+
+                      {ev.text_excerpt && (
+                        <p className="text-xs text-slate-600 line-clamp-2 italic bg-slate-50/80 p-2 rounded-xl border border-slate-100">
+                          "{ev.text_excerpt}"
+                        </p>
+                      )}
+
+                      <div className="text-xs text-slate-600">
+                        แหล่งที่มา: <span className="font-semibold text-purple-900">{ev.source_name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{ev.location_text || (ev.district ? `อ.${ev.district}` : 'จ.ปราจีนบุรี')} ({ev.location_precision})</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>
+                          {ev.observed_at 
+                            ? `พบเมื่อ ${new Date(ev.observed_at).toLocaleString('th-TH')}` 
+                            : `เผยแพร่เมื่อ ${new Date(ev.published_at).toLocaleString('th-TH')}`}
+                        </span>
+                      </div>
+
+                      <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-block text-2xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                          หลักฐานจากแหล่งสาธารณะ (External Evidence)
+                        </span>
+                        {ev.related_sources_count && ev.related_sources_count > 1 && (
+                          <span className="inline-block text-2xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                            {ev.related_sources_count} แหล่งอ้างอิง
+                          </span>
+                        )}
+                        {ev.related_news && ev.related_news.length > 0 && (
+                          <span className="inline-block text-2xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            ข่าวสนับสนุน ({ev.related_news.length})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="pt-2 border-t border-purple-100/70 flex items-center justify-between text-xs sm:text-sm font-semibold text-purple-700">
+                    <span>ดูรายละเอียดและหลักฐานต้นทาง</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              ))}
             </div>
           )
         )}
       </div>
 
-      {/* Citizen Report Detail Modal (Responsive Sheet on Mobile) */}
+      {/* Citizen Report Detail Modal using UI Modal */}
       {selectedReport && (
-        <div 
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn"
-          onClick={() => setSelectedReport(null)}
-          role="dialog"
-          aria-modal="true"
+        <Modal
+          isOpen={!!selectedReport}
+          onClose={() => setSelectedReport(null)}
+          title={selectedReport.category}
+          subtitle={`รายงานข้อสังเกตจากประชาชน — ${selectedReport.generalized_location || `อำเภอ${selectedReport.district}`}`}
+          badge={<Badge variant="watch">รายงานจากประชาชน</Badge>}
+          footer={
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setSelectedReport(null)}
+            >
+              ปิดหน้าต่าง
+            </Button>
+          }
         >
-          <div 
-            className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 text-slate-800 max-h-[90vh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-              <div>
-                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider block">
-                  รายงานข้อสังเกตจากประชาชน
-                </span>
-                <h3 className="font-bold text-lg text-[#063B70] mt-0.5">
-                  {selectedReport.category}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedReport(null)}
-                className="text-slate-400 hover:text-slate-600 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
-                aria-label="ปิดหน้าต่าง"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-sm sm:text-base text-slate-700 leading-relaxed">
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-                <div className="font-semibold text-slate-800 text-xs sm:text-sm">พื้นที่โดยประมาณ (Generalized Area):</div>
-                <div className="text-slate-700 font-medium">{selectedReport.generalized_location || `อำเภอ${selectedReport.district}`}</div>
-                <div className="text-2xs text-slate-500 pt-1">
-                  * พิกัดตำแหน่งถูกปัดเศษตามมาตรฐานความปลอดภัยข้อมูลเพื่อปกป้องความเป็นส่วนตัวของผู้รายงาน
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-                <div className="font-semibold text-slate-800 text-xs sm:text-sm">เวลาที่สังเกตเห็น:</div>
-                <div className="text-slate-700 font-medium">
-                  {selectedReport.observation_time ? new Date(selectedReport.observation_time).toLocaleString('th-TH') : 'ไม่ระบุเวลา'}
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs sm:text-sm text-amber-900 leading-relaxed">
-                <div className="font-semibold mb-1">คำชี้แจงมาตรฐาน:</div>
-                {selectedReport.classification_explanation || 'รายงานจากประชาชนเป็นข้อมูลสังเกตการณ์เบื้องต้น ยังไม่ถือเป็นผลยืนยันทางห้องปฏิบัติการ และไม่ได้ระบุผู้ก่อมลพิษ'}
+          <div className="space-y-3.5 text-sm sm:text-base text-slate-700 leading-relaxed">
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+              <div className="font-semibold text-slate-800 text-xs sm:text-sm">พื้นที่โดยประมาณ (Generalized Area):</div>
+              <div className="text-slate-900 font-bold">{selectedReport.generalized_location || `อำเภอ${selectedReport.district}`}</div>
+              <div className="text-2xs text-slate-500 pt-1">
+                * พิกัดตำแหน่งถูกปัดเศษตามมาตรฐานความปลอดภัยข้อมูลเพื่อปกป้องความเป็นส่วนตัวของผู้รายงาน
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedReport(null)}
-                className="w-full sm:w-auto px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
-              >
-                ปิดหน้าต่าง
-              </button>
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+              <div className="font-semibold text-slate-800 text-xs sm:text-sm">เวลาที่สังเกตเห็น:</div>
+              <div className="text-slate-800 font-medium">
+                {selectedReport.observation_time ? new Date(selectedReport.observation_time).toLocaleString('th-TH') : 'ไม่ระบุเวลา'}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs sm:text-sm text-amber-900 leading-relaxed">
+              <div className="font-bold mb-1">คำชี้แจงมาตรฐาน:</div>
+              {selectedReport.classification_explanation || 'รายงานจากประชาชนเป็นข้อมูลสังเกตการณ์เบื้องต้น ยังไม่ถือเป็นผลยืนยันทางห้องปฏิบัติการ และไม่ได้ระบุผู้ก่อมลพิษ'}
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* External Evidence Detail Modal */}

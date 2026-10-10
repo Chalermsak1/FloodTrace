@@ -36,12 +36,14 @@ export interface MapLibreMapViewProps {
   rainfallStations?: any[]; // Rain gauge stations
   observations: any[];    // Citizen community reports
   externalEvidence?: any[]; // Public external evidence (Section 26)
+  newsLocations?: any[];  // Curated news media records with reliable geographic info
   visibleLayers: {
-    // 4 Distinct Thematic Layers (Section 1)
+    // 4 Distinct Thematic Layers (Section 1) + News
     flooding?: boolean;
     environmental?: boolean;
     monitoringStations?: boolean;
     citizenReports?: boolean;
+    news?: boolean;
 
     // Overlays & Backwards Compatibility
     monitoringSurface?: boolean;
@@ -62,6 +64,10 @@ export interface MapLibreMapViewProps {
   basemap?: 'satellite' | 'streets';
   targetCoords?: [number, number] | null; // [lat, lng]
   suppressMapPopup?: boolean;
+  hideInternalLegend?: boolean;
+  defaultLegendExpanded?: boolean;
+  onMouseMoveCoords?: (coords: { lat: number; lng: number } | null) => void;
+  mapInstanceRef?: React.MutableRefObject<maplibregl.Map | null>;
 }
 
 // Authentic District Centroids in Prachin Buri [lat, lng]
@@ -172,13 +178,19 @@ const MARKER_ICONS = {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="white">
       <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
     </svg>`,
-  // External evidence / public media: newspaper/link
-  externalEvidence: `
+  // Curated News media: newspaper
+  newspaper: `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
       <path d="M18 14h-8"/>
       <path d="M15 18h-5"/>
       <path d="M10 6h8v4h-8V6Z"/>
+    </svg>`,
+  // External evidence field photo / observation: camera
+  cameraEvidence: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+      <circle cx="12" cy="13" r="3"/>
     </svg>`,
   // Flooding / waterlogging: water waves
   floodWaves: `
@@ -300,6 +312,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   rainfallStations = [],
   observations,
   externalEvidence = [],
+  newsLocations = [],
   visibleLayers,
   selectedDistrict,
   onSelectDistrict,
@@ -308,7 +321,11 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   surfaceOpacity = 0.50,
   basemap = 'satellite',
   targetCoords,
-  suppressMapPopup = false
+  suppressMapPopup = false,
+  hideInternalLegend = false,
+  defaultLegendExpanded,
+  onMouseMoveCoords,
+  mapInstanceRef
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -317,7 +334,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [webglSupported, setWebglSupported] = useState<boolean>(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const [showLegendExpanded, setShowLegendExpanded] = useState<boolean>(true);
+  const [showLegendExpanded, setShowLegendExpanded] = useState<boolean>(
+    defaultLegendExpanded ?? (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
+  );
+  const [isLegendClosed, setIsLegendClosed] = useState<boolean>(false);
 
   // Administrative Labels GeoJSON
   const adminLabelsGeoJSON = useRef({
@@ -594,6 +614,21 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     });
 
     mapRef.current = map;
+    if (mapInstanceRef) {
+      mapInstanceRef.current = map;
+    }
+
+    map.on('mousemove', (e) => {
+      if (onMouseMoveCoords) {
+        onMouseMoveCoords({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      }
+    });
+
+    map.on('mouseout', () => {
+      if (onMouseMoveCoords) {
+        onMouseMoveCoords(null);
+      }
+    });
 
     map.on('error', (e) => {
       console.warn('[MapLibre error/warning]:', e);
@@ -841,6 +876,9 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         } catch (_) {}
       }
       mapRef.current = null;
+      if (mapInstanceRef) {
+        mapInstanceRef.current = null;
+      }
     };
     } catch (err: any) {
       console.warn('[MapLibre initialization warning]:', err);
@@ -867,11 +905,20 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         }
       }
     };
+    (window as any).__floodtrace_select_district = (distName: string) => {
+      if (distName) {
+        onSelectDistrict(distName);
+        if (onSelectCell) {
+          onSelectCell({ district: distName, cell_name: `อำเภอ${distName}` });
+        }
+      }
+    };
     return () => {
       delete (window as any).__floodtrace_select_reach;
       delete (window as any).__floodtrace_select_station;
+      delete (window as any).__floodtrace_select_district;
     };
-  }, [waterways, stations, onSelectCell]);
+  }, [waterways, stations, onSelectCell, onSelectDistrict]);
 
   // Real-time updates: Update GeoJSON data in existing sources
   useEffect(() => {
@@ -1465,15 +1512,121 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         markersRef.current.push(marker);
       });
     }
+
+    // 5. CURATED NEWS MEDIA LOCATIONS LAYER (Navy: #1E3A8A, Icon: newspaper)
+    // Curated media reporting where reliable geographic information exists
+    const showNewsLayer = visibleLayers.news !== false;
+    if (showNewsLayer && newsLocations && newsLocations.length > 0) {
+      const newsWithGeo = newsLocations.filter(it => {
+        const hasCoords = (it.latitude != null && it.longitude != null) || (it.public_latitude != null && it.public_longitude != null);
+        const hasSpecificDistrict = it.district && it.district !== 'ปราจีนบุรี' && (DISTRICT_CENTROIDS as any)[it.district];
+        return hasCoords || hasSpecificDistrict;
+      });
+
+      newsWithGeo.forEach(item => {
+        let lat = item.latitude ?? item.public_latitude;
+        let lng = item.longitude ?? item.public_longitude;
+
+        if (lat == null || lng == null) {
+          if (item.district && (DISTRICT_CENTROIDS as any)[item.district]) {
+            lat = (DISTRICT_CENTROIDS as any)[item.district][0];
+            lng = (DISTRICT_CENTROIDS as any)[item.district][1];
+          }
+        }
+
+        if (lat == null || lng == null) return;
+
+        const isVerified = isGenuineVerified(item);
+        const bgColor = '#1E3A8A'; // Deep Navy Blue
+        const icon = MARKER_ICONS.newspaper;
+
+        const el = createCircularMarkerEl(
+          bgColor,
+          icon,
+          undefined,
+          `ข่าวสาร: ${item.title || item.source_name || 'รายงานข่าว'}`,
+          isVerified
+        );
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(map);
+
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (onSelectMarker) onSelectMarker({ ...item, _layerType: 'news', _verified: isVerified });
+
+          new maplibregl.Popup({ offset: 16, maxWidth: '340px', closeButton: true })
+            .setLngLat([lng, lat])
+            .setHTML(`
+              <div class="space-y-2 p-1 min-w-[250px] max-w-[300px] font-sans text-slate-800">
+                <div class="flex items-center justify-between gap-1.5 border-b border-indigo-100 pb-1.5 pr-4">
+                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200/60 whitespace-nowrap flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#1E3A8A]"></span>
+                    ข่าวสารสื่อมวลชน
+                  </span>
+                  <span class="text-3xs text-slate-500 font-medium">
+                    ${item.district ? 'อ.' + item.district : 'จ.ปราจีนบุรี'}
+                  </span>
+                </div>
+
+                ${item.source_image_url ? `
+                  <div class="w-full h-28 rounded-lg overflow-hidden bg-slate-100 border border-slate-100">
+                    <img src="${item.source_image_url}" alt="ภาพข่าว" class="w-full h-full object-cover" onerror="this.style.display='none'" />
+                  </div>
+                ` : ''}
+
+                <div>
+                  <div class="text-xs font-bold text-slate-900 leading-snug">${item.title || 'รายงานข่าวสาร'}</div>
+                  <div class="text-3xs text-indigo-800 mt-0.5 font-semibold flex items-center justify-between">
+                    <span>${item.source_name || 'สื่อมวลชน'}</span>
+                    <span class="text-slate-400 font-normal">${formatThaiTime(item.published_at || item.created_at)}</span>
+                  </div>
+                </div>
+
+                ${item.summary || item.factual_details ? `
+                  <p class="text-3xs text-slate-600 line-clamp-3 leading-relaxed bg-indigo-50/40 p-2 rounded-lg border border-indigo-100/70">
+                    ${item.summary || item.factual_details}
+                  </p>
+                ` : ''}
+
+                <div class="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
+                  <span class="text-3xs text-slate-500">
+                    ${item.location_precision === 'DISTRICT' || !item.latitude ? 'พิกัดระดับอำเภอ' : item.location_precision || 'พิกัดรายงาน'}
+                  </span>
+                  ${item.source_url && !item.source_url.includes('example.com') ? `
+                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-3xs text-blue-600 hover:text-blue-800 font-bold underline">
+                      <span>อ่านข่าวต้นทาง</span>
+                      <span>↗</span>
+                    </a>
+                  ` : ''}
+                </div>
+
+                ${item.district ? `
+                  <button onclick="window.__floodtrace_select_district && window.__floodtrace_select_district('${item.district}')" class="mt-2 w-full py-1.5 bg-[#1E3A8A] hover:bg-[#063B70] text-white text-xs font-semibold rounded-xl text-center shadow-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                    <span>สำรวจอุทกวิทยา & ข่าวใน อ.${item.district}</span>
+                    <span>→</span>
+                  </button>
+                ` : ''}
+              </div>
+            `)
+            .addTo(map);
+        });
+
+        markersRef.current.push(marker);
+      });
+    }
   }, [
     stations, 
     rainfallStations, 
     observations, 
-    externalEvidence, 
+    externalEvidence,
+    newsLocations,
     visibleLayers.flooding, 
     visibleLayers.environmental, 
     visibleLayers.monitoringStations, 
     visibleLayers.citizenReports, 
+    visibleLayers.news,
     visibleLayers.stations, 
     visibleLayers.rainfallStations, 
     visibleLayers.observations, 
@@ -1554,79 +1707,106 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Hydrological Intelligence Floating Legend (Longdo Water Inspired) */}
-      <div className="absolute bottom-6 right-3 z-20 max-w-[280px] sm:max-w-[310px] bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-slate-200/90 text-xs font-sans select-none transition-all">
-        <div 
-          className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 cursor-pointer"
-          onClick={() => setShowLegendExpanded(!showLegendExpanded)}
-        >
-          <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-            <span>เกณฑ์เตือนภัย & โครงข่ายน้ำ</span>
-          </div>
-          <button 
-            type="button" 
-            className="text-slate-400 hover:text-slate-700 text-3xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors"
+      {/* Hydrological Intelligence Floating Legend (Compact & Closable) */}
+      {!hideInternalLegend && (
+        isLegendClosed ? (
+          <button
+            type="button"
+            onClick={() => setIsLegendClosed(false)}
+            className="absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
+            title="เปิดเกณฑ์เตือนภัย & โครงข่ายน้ำ"
           >
-            {showLegendExpanded ? 'ย่อ' : 'ขยาย'}
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+            <span>เกณฑ์เตือนภัย</span>
           </button>
-        </div>
-
-        {showLegendExpanded && (
-          <div className="space-y-2">
-            {/* Water Status Colors */}
-            <div className="space-y-1">
-              <div className="text-3xs font-semibold uppercase text-slate-400 tracking-wider">สภาวะลำน้ำ / สถานี:</div>
-              <div className="grid grid-cols-2 gap-1 text-3xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0"></span>
-                  <span className="text-slate-700 font-medium">วิกฤต (ล้นตลิ่ง)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0"></span>
-                  <span className="text-slate-700 font-medium">เฝ้าระวัง (น้ำสูง)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0"></span>
-                  <span className="text-slate-700 font-medium">ปกติ (ในเกณฑ์)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0284c7] shrink-0"></span>
-                  <span className="text-slate-700 font-medium">ไม่มีจุดวัด</span>
-                </div>
-                <div className="flex items-center gap-1.5 col-span-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] shrink-0"></span>
-                  <span className="text-slate-700 font-medium">ไม่มีข้อมูล / สัญญาณขาดหาย</span>
-                </div>
+        ) : (
+          <div className={`absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 ${showLegendExpanded ? 'w-[230px] sm:w-[250px]' : 'w-auto'} bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-lg border border-slate-200/90 text-3xs font-sans select-none transition-all`}>
+            <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-100">
+              <div 
+                className="flex items-center gap-1.5 font-bold text-slate-900 text-3xs cursor-pointer select-none"
+                onClick={() => setShowLegendExpanded(!showLegendExpanded)}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                <span>เกณฑ์เตือนภัย & โครงข่ายน้ำ</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  type="button" 
+                  onClick={() => setShowLegendExpanded(!showLegendExpanded)}
+                  className="text-slate-500 hover:text-slate-800 text-[10px] font-semibold px-1 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  title={showLegendExpanded ? 'ย่อคำอธิบาย' : 'ขยายคำอธิบาย'}
+                >
+                  {showLegendExpanded ? 'ย่อ' : 'ขยาย'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLegendClosed(true)}
+                  className="text-slate-400 hover:text-slate-700 p-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="ปิด"
+                  aria-label="ปิดเกณฑ์เตือนภัย"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
               </div>
             </div>
 
-            {/* Station Matching Confidence */}
-            <div className="pt-1.5 border-t border-slate-100 space-y-1">
-              <div className="text-3xs font-semibold uppercase text-slate-400 tracking-wider">การเชื่อมโยงสถานีโทรมาตร:</div>
-              <div className="space-y-0.5 text-3xs text-slate-600">
-                <div className="flex items-center gap-1">
-                  <span className="text-emerald-700 font-bold">● HIGH:</span>
-                  <span>เชื่อมโยงตรง (&lt; 1 กม.) ทาสีลำน้ำ</span>
+            {showLegendExpanded && (
+              <div className="space-y-1.5 animate-in fade-in duration-100">
+                {/* Water Status Colors */}
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-semibold uppercase text-slate-400">สภาวะลำน้ำ / สถานี:</div>
+                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-[10px]">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0"></span>
+                      <span className="text-slate-700">วิกฤต (ล้นตลิ่ง)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0"></span>
+                      <span className="text-slate-700">เฝ้าระวัง (น้ำสูง)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0"></span>
+                      <span className="text-slate-700">ปกติ (ในเกณฑ์)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#0284c7] shrink-0"></span>
+                      <span className="text-slate-700">ไม่มีจุดวัด</span>
+                    </div>
+                    <div className="flex items-center gap-1 col-span-2">
+                      <span className="w-2 h-2 rounded-full bg-[#94a3b8] shrink-0"></span>
+                      <span className="text-slate-700">ไม่มีข้อมูล / สัญญาณขาดหาย</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-amber-700 font-bold">● REVIEW:</span>
-                  <span>ห่าง 1-8 กม. แสดงเฉพาะจุด ไม่ทาสีลำน้ำ</span>
+
+                {/* Station Matching Confidence */}
+                <div className="pt-1 border-t border-slate-100 space-y-0.5">
+                  <div className="text-[10px] font-semibold uppercase text-slate-400">การเชื่อมโยงสถานีโทรมาตร:</div>
+                  <div className="space-y-0.5 text-[10px] text-slate-600">
+                    <div className="flex items-center gap-1">
+                      <span className="text-emerald-700 font-bold shrink-0">● HIGH:</span>
+                      <span className="truncate">&lt; 1 กม. ทาสีลำน้ำ</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-amber-700 font-bold shrink-0">● REVIEW:</span>
+                      <span className="truncate">ห่าง 1-8 กม. แสดงเฉพาะจุด</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500 font-bold shrink-0">● UNMATCHED:</span>
+                      <span className="truncate">นอกโครงข่าย ไม่ประมาณค่าสภาพน้ำ</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500 font-bold">● UNMATCHED:</span>
-                  <span>นอกโครงข่าย ไม่ประมาณค่าสภาพน้ำ</span>
+
+                {/* Footnote */}
+                <div className="pt-0.5 border-t border-slate-100 text-[9px] text-slate-400 leading-tight">
+                  ข้อมูล: RID & สสน. (ThaiWater)
                 </div>
               </div>
-            </div>
-
-            {/* Source attribution footnote */}
-            <div className="pt-1 border-t border-slate-100 text-[10px] text-slate-400 leading-tight">
-              ข้อมูล: กรมชลประทาน (RID) และ สสน. (ThaiWater)
-            </div>
+            )}
           </div>
-        )}
-      </div>
+        )
+      )}
     </div>
   );
 };

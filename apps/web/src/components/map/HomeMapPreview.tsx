@@ -33,6 +33,10 @@ export const HomeMapPreview: React.FC = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<string>('กบินทร์บุรี');
   const [targetCoords, setTargetCoords] = useState<[number, number] | null>(null);
 
+  // Floating Map Legend State (Compact, Collapsible & Closable)
+  const [showLegend, setShowLegend] = useState<boolean>(true);
+  const [isLegendExpanded, setIsLegendExpanded] = useState<boolean>(true);
+
   // Focused layers for Home Page Situational Preview (Section 37)
   const [visibleLayers] = useState({
     monitoringSurface: true,
@@ -194,63 +198,105 @@ export const HomeMapPreview: React.FC = () => {
           </button>
         </div>
 
-        {/* Floating Split Map Legend (Section 13, 23, 50.9, 50.10) */}
-        <div className="absolute bottom-3 sm:bottom-4 left-2 right-2 sm:left-4 sm:right-auto z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl border border-slate-200/90 w-[calc(100%-1rem)] sm:w-auto sm:max-w-sm animate-fadeIn space-y-2">
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
-            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์ (Map Legends)</span>
-            <span className="text-2xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">จ.ปราจีนบุรี</span>
-          </div>
-
-          {/* LEGEND A */}
-          <div className="space-y-1">
-            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ระดับความสำคัญในการเฝ้าระวัง (Priority Surface)
-            </span>
-            <div className="grid grid-cols-5 gap-1 text-center">
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#DC2626] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">สูงมาก</span>
+        {/* Floating Split Map Legend (Compact, Collapsible & Closable) */}
+        {showLegend ? (
+          <div className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-xl border border-slate-200/90 w-[calc(100%-1rem)] sm:w-[260px] max-w-[270px] space-y-1.5 text-3xs animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+              <div 
+                className="flex items-center gap-1.5 cursor-pointer select-none"
+                onClick={() => setIsLegendExpanded(!isLegendExpanded)}
+              >
+                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span className="text-3xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์</span>
               </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#EA580C] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">สูง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#EAB308] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ปานกลาง</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ต่ำ</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#64748B] shadow-xs"></span>
-                <span className="text-2xs text-slate-700 font-medium">ไม่มีข้อมูล</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsLegendExpanded(!isLegendExpanded)}
+                  className="text-slate-500 hover:text-slate-800 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  title={isLegendExpanded ? 'ย่อคำอธิบาย' : 'ขยายคำอธิบาย'}
+                >
+                  {isLegendExpanded ? 'ย่อ' : 'ขยาย'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLegend(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                  aria-label="ปิดคำอธิบายสัญลักษณ์"
+                  title="ปิดคำอธิบายสัญลักษณ์"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* LEGEND B */}
-          <div className="space-y-1 pt-1.5 border-t border-slate-100">
-            <span className="text-2xs font-bold text-slate-500 uppercase tracking-wider block">
-              ข้อมูลบนแผนที่ (Map Markers)
-            </span>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0284C7] shrink-0"></span>
-                <span className="text-2xs">สถานีระดับน้ำ</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0D9488] shrink-0"></span>
-                <span className="text-2xs">รายงานประชาชน</span>
-              </div>
-            </div>
-          </div>
+            {isLegendExpanded && (
+              <div className="space-y-1.5 animate-in fade-in duration-100">
+                {/* LEGEND A: ระดับความสำคัญ */}
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    ระดับความสำคัญ (Priority Surface)
+                  </span>
+                  <div className="grid grid-cols-5 gap-0.5 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] shadow-xs"></span>
+                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูงมาก</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] shadow-xs"></span>
+                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูง</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#EAB308] shadow-xs"></span>
+                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ปานกลาง</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-xs"></span>
+                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ต่ำ</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#64748B] shadow-xs"></span>
+                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
+                    </div>
+                  </div>
+                </div>
 
-          <p className="text-2xs text-slate-500 leading-normal border-t border-slate-100 pt-1.5">
-            พื้นที่สีแสดงระดับ Monitoring Priority เชิงพื้นที่ ไม่ใช่การยืนยันการปนเปื้อนหรือระดับความเป็นพิษ
-          </p>
-        </div>
+                {/* LEGEND B: ข้อมูลบนแผนที่ */}
+                <div className="space-y-1 pt-1 border-t border-slate-100">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    ข้อมูลบนแผนที่ (Map Markers)
+                  </span>
+                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-slate-700 text-[10px]">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#0284C7] shrink-0 shadow-xs"></span>
+                      <span className="truncate">สถานีระดับน้ำ</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#0D9488] shrink-0 shadow-xs"></span>
+                      <span className="truncate">รายงานประชาชน</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-slate-400 leading-tight border-t border-slate-100 pt-1">
+                  พื้นที่สีแสดงระดับ Monitoring Priority เชิงพื้นที่ ไม่ใช่การยืนยันมลพิษหรือสารเคมีทางแล็บ
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          !selectedCell && (
+            <button
+              type="button"
+              onClick={() => setShowLegend(true)}
+              className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
+              title="เปิดคำอธิบายสัญลักษณ์ (Map Legend)"
+            >
+              <Info className="w-3 h-3 text-blue-600" />
+              <span>คำอธิบายสัญลักษณ์</span>
+            </button>
+          )
+        )}
 
         {/* Selected Cell Preview Card (If Clicked) - Merged Information from both cards */}
         {selectedCell && (() => {

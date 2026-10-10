@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { NewsCard } from '../components/news/NewsCard';
 import { InformationDetailModal, ExternalInformationDetail } from '../components/news/InformationDetailModal';
+import { Badge, Tabs, EmptyState, LoadingSkeleton, PageHeader, Card } from '../components/ui';
 
 const PRACHIN_DISTRICTS = [
   'ทั้งหมด',
@@ -89,37 +90,32 @@ export const OfficialUpdatesPage: React.FC = () => {
   );
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       
-      {/* Top Banner (Section 21) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-2 border border-blue-100">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ศูนย์รวมข้อมูลทางการ (Official Data)</span>
+      {/* Unified PageHeader */}
+      <PageHeader
+        title="ข่าวสารและข้อมูลทางการ"
+        subtitle="ผลตรวจคุณภาพน้ำผิวดิน ข้อมูลระดับน้ำโทรมาตร ปริมาณฝน และข่าวสารคัดสรรจากสำนักข่าวที่น่าเชื่อถือ"
+        badge={
+          <Badge variant="official" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
+            ข้อมูลทางการ & สื่อมวลชน
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/90 shadow-2xs">
+            <span className="text-xs font-medium text-slate-500 shrink-0">ขอบเขต:</span>
+            <select
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#0C65E8]"
+            >
+              {PRACHIN_DISTRICTS.map(d => (
+                <option key={d} value={d}>{d === 'ทั้งหมด' ? 'ทุกอำเภอ (ปราจีนบุรี)' : `อ.${d}`}</option>
+              ))}
+            </select>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
-            ข้อมูลจากหน่วยงาน
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-2xl leading-relaxed">
-            ผลตรวจคุณภาพน้ำ ข้อมูลระดับน้ำลุ่มน้ำปราจีนบุรี ปริมาณฝน และประกาศสถานการณ์จากหน่วยงานรัฐที่รับผิดชอบโดยตรง
-          </p>
-        </div>
-
-        {/* District Filter */}
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-slate-50 p-2 rounded-2xl border border-slate-200">
-          <span className="text-sm font-medium text-slate-600 shrink-0">พื้นที่:</span>
-          <select
-            value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[40px]"
-          >
-            {PRACHIN_DISTRICTS.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+        }
+      />
 
       {/* Tabs Bar (Section 21: คุณภาพน้ำ, ระดับน้ำ, ฝน, ประกาศและผลตรวจ) */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
@@ -157,9 +153,9 @@ export const OfficialUpdatesPage: React.FC = () => {
                 พารามิเตอร์ตามเกณฑ์มาตรฐานคุณภาพน้ำผิวดิน กรมควบคุมมลพิษ (PCD)
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <Badge variant="official">
               OFFICIAL ข้อมูลจากหน่วยงาน
-            </span>
+            </Badge>
           </div>
 
           {/* Standard Parameter Table */}
@@ -184,7 +180,7 @@ export const OfficialUpdatesPage: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-slate-900">7.2</td>
                   <td className="py-3.5 px-4 text-slate-500">5.5 - 9.0</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">ปกติ</span>
+                    <Badge variant="normal">ปกติ</Badge>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button
@@ -203,7 +199,7 @@ export const OfficialUpdatesPage: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-slate-900">5.1 mg/L</td>
                   <td className="py-3.5 px-4 text-slate-500">≥ 4.0 mg/L</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">ปกติ</span>
+                    <Badge variant="normal">ปกติ</Badge>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button
@@ -222,7 +218,7 @@ export const OfficialUpdatesPage: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-slate-900">1.8 mg/L</td>
                   <td className="py-3.5 px-4 text-slate-500">≤ 2.0 mg/L</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">ปกติ</span>
+                    <Badge variant="normal">ปกติ</Badge>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button
@@ -241,7 +237,7 @@ export const OfficialUpdatesPage: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-slate-900">&lt; 0.01 mg/L</td>
                   <td className="py-3.5 px-4 text-slate-500">เกณฑ์มาตรฐานผิวดิน</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">ปกติ</span>
+                    <Badge variant="normal">ปกติ</Badge>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button

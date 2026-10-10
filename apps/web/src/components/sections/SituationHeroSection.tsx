@@ -72,32 +72,8 @@ export const formatBangkokTime = (isoString?: string | null): string => {
   return d.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
 };
 
-// Authentic news photo resolver with guaranteed documentary image fallbacks
-export const getEvidencePhotoUrl = (ev: any): string => {
-  if (ev?.media_references?.[0]?.source_media_url) {
-    return ev.media_references[0].source_media_url;
-  }
-  const id = String(ev?.id || '');
-  if (id.includes('013')) return '/assets/evidence/evd_013_bangtaen_road.jpg';
-  if (id.includes('012')) return '/assets/evidence/evd_012_rasdorn_night.jpg';
-  if (id.includes('011')) return '/assets/evidence/evd_011_highway3076.jpg';
-  if (id.includes('010')) return '/assets/evidence/evd_010_bantham_flood.jpg';
-  if (id.includes('009')) return '/assets/evidence/evd_009_bangpluang_highwater.jpg';
-  if (id.includes('008')) return '/assets/evidence/evd_008_boat_rescue.jpg';
-  if (id.includes('007')) return '/assets/evidence/evd_007_foam_thatum.jpg';
-  if (id.includes('006')) return '/assets/evidence/evd_006_kabin_waist.jpg';
-  if (id.includes('005')) return '/assets/evidence/evd_005_kabin_bank.jpg';
-  if (id.includes('004')) return '/assets/evidence/evd_004_thatum_community.jpg';
-  if (id.includes('003')) return '/assets/evidence/evd_003_river_lowland.jpg';
-  if (id.includes('002')) return '/assets/evidence/evd_002_kabin_houses.jpg';
-  if (id.includes('001')) return '/assets/evidence/evd_001_kabin_market.jpg';
-
-  const dist = String(ev?.district || '');
-  if (dist.includes('กบินทร์')) return '/assets/evidence/evd_001_kabin_market.jpg';
-  if (dist.includes('ศรีมหาโพธิ')) return '/assets/evidence/evd_010_bantham_flood.jpg';
-  if (dist.includes('บ้านสร้าง')) return '/assets/evidence/evd_013_bangtaen_road.jpg';
-  return '/assets/evidence/evd_012_rasdorn_night.jpg';
-};
+import { getEvidencePhotoUrl, AUTHENTIC_FALLBACK_PHOTO } from '../../utils/evidencePhoto';
+export { getEvidencePhotoUrl, AUTHENTIC_FALLBACK_PHOTO };
 
 // Map verification status to truthful public-safe labels (Section 26)
 export const getVerificationBadge = (status?: string) => {
@@ -234,7 +210,8 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
           alt="ทัศนียภาพลุ่มน้ำปราจีนบุรี" 
           className="w-full h-full object-cover object-center scale-105 opacity-35 filter brightness-75 contrast-125 transition-transform duration-1000"
           loading="eager"
-          fetchPriority="high"
+          // @ts-ignore
+          fetchpriority="high"
         />
 
         {/* Cinematic Deep Navy Gradient Overlay */}

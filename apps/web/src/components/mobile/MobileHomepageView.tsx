@@ -27,8 +27,8 @@ import {
 } from 'lucide-react';
 import { MapLibreMapView, DISTRICT_CENTROIDS } from '../map/MapLibreMapView';
 import { ExternalInformationDetail } from '../news/InformationDetailModal';
+import { getEvidencePhotoUrl } from '../../utils/evidencePhoto';
 import { 
-  getEvidencePhotoUrl, 
   formatObservedTimeAgo, 
   formatBangkokTime 
 } from '../sections/SituationHeroSection';
@@ -294,33 +294,6 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
         {/* Subtle background glow */}
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-1/2 -left-12 w-40 h-40 bg-sky-400/10 rounded-full blur-2xl pointer-events-none" />
-
-        {/* Top Control Bar: Scope selector + Notification bell */}
-        <div className="flex items-center justify-between relative z-10">
-          
-          {/* Location Scope Trigger */}
-          <button
-            type="button"
-            onClick={() => setShowDistrictSheet(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 text-xs font-semibold text-white tracking-wide transition-all shadow-xs"
-            aria-label="เลือกขอบเขตพื้นที่"
-          >
-            <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span>{selectedDistrict === 'ALL' ? 'ปราจีนบุรี' : `อ.${selectedDistrict}`}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-sky-300 shrink-0" />
-          </button>
-
-          {/* Notification Bell */}
-          <button
-            type="button"
-            onClick={() => setShowNotifications(true)}
-            aria-label="การแจ้งเตือน"
-            className="relative p-2 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 text-white transition-all border border-white/15 shadow-xs"
-          >
-            <Bell className="w-4 h-4 text-white" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse ring-2 ring-[#0A1D38]"></span>
-          </button>
-        </div>
 
         {/* FloodTrace Identity */}
         <div className="mt-3.5 relative z-10">
@@ -639,7 +612,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
                       {/* Publisher Badge Pill (Bottom-left of image) */}
                       <div className="absolute bottom-2.5 left-2.5 z-10">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm ${getPublisherBadgeStyle(item.agency || item.source_name)}`}>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md shadow-sm ${getPublisherBadgeStyle(item.agency || item.source_name)}`}>
                           {publisherName}
                         </span>
                       </div>
@@ -647,15 +620,15 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
                     {/* Article Content */}
                     <div className="p-3.5 space-y-1.5">
-                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">
+                      <h3 className="font-bold text-sm text-slate-900 leading-snug line-clamp-2">
                         {item.title}
                       </h3>
                       
-                      <div className="text-[11px] text-slate-400 font-medium">
+                      <div className="text-xs text-slate-400 font-medium">
                         {formatThaiDate(item.published_at)}
                       </div>
 
-                      <p className="text-xs text-slate-600 leading-relaxed line-clamp-3 mt-1">
+                      <p className="text-sm text-slate-600 leading-relaxed line-clamp-3 mt-1">
                         {item.summary || item.factual_summary || 'รายงานข้อมูลสถานการณ์และผลการตรวจวัดในพื้นที่'}
                       </p>
                     </div>
@@ -702,7 +675,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
               <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 สถานการณ์และหลักฐานล่าสุด
               </h2>
-              <p className="text-[11px] text-slate-500 font-normal">
+              <p className="text-xs text-slate-500 font-normal">
                 ข้อมูลอ้างอิงจากแหล่งสาธารณะภายนอก (External Evidence)
               </p>
             </div>
@@ -719,17 +692,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
           <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory no-scrollbar -mx-4 px-4">
             {eligibleEvidence.map((item) => {
               const isBroken = brokenImages[item.id];
-              const rawPhotoUrl = getEvidencePhotoUrl(item);
-              const fallbackUrl = item.district?.includes('กบินทร์')
-                ? '/assets/evidence/evd_001_kabin_market.jpg'
-                : item.district?.includes('ศรีมหาโพธิ')
-                ? '/assets/citizen/cit_012.jpg'
-                : item.district?.includes('บ้านสร้าง')
-                ? '/assets/evidence/evd_013_bangtaen_road.jpg'
-                : '/assets/citizen/cit_015.jpg';
-              const photoUrl = (!isBroken && rawPhotoUrl && !rawPhotoUrl.includes('lookaside.fbsbx.com'))
-                ? rawPhotoUrl
-                : fallbackUrl;
+              const photoUrl = isBroken ? '/assets/evidence/evd_008_boat_rescue.jpg' : getEvidencePhotoUrl(item);
               const verification = getEvidenceBadge(item.verification_status);
               const timeAgo = formatObservedTimeAgo(item.observed_at, item.published_at);
               const locationText = item.location_text || (item.district ? `อ.${item.district}, จ.ปราจีนบุรี` : 'จ.ปราจีนบุรี');
@@ -737,7 +700,11 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
               return (
                 <article
                   key={item.id}
-                  onClick={() => onSelectEvidence(item)}
+                  onClick={() => onSelectEvidence({
+                    ...item,
+                    title: item.title_or_summary || item.title,
+                    source_image_url: photoUrl
+                  })}
                   className="w-[240px] sm:w-[260px] shrink-0 snap-start bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-card transition-all overflow-hidden flex flex-col justify-between cursor-pointer"
                 >
                   <div>
@@ -747,23 +714,29 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                         src={photoUrl}
                         alt={item.title_or_summary || item.description || 'หลักฐานภายนอก'}
                         loading="lazy"
-                        onError={() => handleImageError(item.id)}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.src.includes('evd_008_boat_rescue.jpg')) {
+                            target.src = '/assets/evidence/evd_008_boat_rescue.jpg';
+                          }
+                          handleImageError(item.id);
+                        }}
                         className="w-full h-full object-cover"
                       />
 
                       {/* Source Platform Badge */}
-                      <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-black/65 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                      <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-black/65 backdrop-blur-xs text-white text-xs font-semibold px-2 py-0.5 rounded-md">
                         <span>{item.source_platform || 'แหล่งสาธารณะ'}</span>
                       </div>
                     </div>
 
                     {/* Content Details */}
                     <div className="p-3 space-y-1.5">
-                      <h3 className="font-bold text-xs text-slate-900 leading-snug line-clamp-2">
+                      <h3 className="font-bold text-sm text-slate-900 leading-snug line-clamp-2">
                         {item.title_or_summary || item.description || 'ข้อสังเกตสภาพน้ำและสิ่งแวดล้อม'}
                       </h3>
 
-                      <div className="text-[10px] text-slate-500 leading-tight">
+                      <div className="text-xs text-slate-500 leading-tight">
                         <div className="truncate font-medium text-slate-700">
                           {locationText}
                         </div>
@@ -776,7 +749,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
                   {/* Verification Status Pill */}
                   <div className="p-3 pt-0">
-                    <div className={`text-[10px] font-bold px-2 py-1 rounded-lg border text-center ${verification.badgeClass}`}>
+                    <div className={`text-xs font-bold px-2 py-1 rounded-lg border text-center ${verification.badgeClass}`}>
                       {verification.label}
                     </div>
                   </div>

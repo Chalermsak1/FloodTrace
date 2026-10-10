@@ -7,14 +7,18 @@ import {
   MapPin, 
   Clock, 
   ChevronRight, 
-  Check, 
   AlertCircle, 
   Compass, 
-  ShieldCheck,
-  CheckCircle2,
+  ShieldCheck, 
   BellRing,
   X
 } from 'lucide-react';
+import { 
+  Badge, 
+  Button, 
+  Modal, 
+  EmptyState 
+} from '../components/ui';
 
 const ALL_DISTRICTS = [
   'กบินทร์บุรี',
@@ -109,56 +113,68 @@ export const MyAreaPage: React.FC = () => {
     }));
   };
 
-  const getPriorityBadgeClass = (priority: string) => {
-    if (priority === 'สูงมาก') return 'bg-rose-100 text-rose-800 border-rose-200';
-    if (priority === 'สูง') return 'bg-red-50 text-red-700 border-red-200';
-    if (priority === 'ปานกลาง') return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  const getPriorityVariant = (priority: string) => {
+    if (priority === 'สูงมาก' || priority === 'สูง') return 'critical';
+    if (priority === 'ปานกลาง') return 'watch';
+    return 'normal';
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       
       {/* Page Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0C65E8] text-xs font-semibold mb-2 border border-blue-100">
-            <Compass className="w-3.5 h-3.5" />
-            <span>การติดตามสถานะพื้นที่ส่วนบุคคล</span>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="unmonitored" icon={<Compass className="w-3.5 h-3.5" />}>
+              การติดตามสถานะพื้นที่ส่วนบุคคล
+            </Badge>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#063B70] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0A2540] tracking-tight">
             พื้นที่ของฉัน
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 mt-1">
+          <p className="text-sm sm:text-base text-slate-600 mt-1 max-w-2xl leading-relaxed">
             ปักหมุดติดตามตำบลและอำเภอที่คุณสนใจ เพื่อรับการแจ้งเตือนการเปลี่ยนแปลงสถานการณ์น้ำและสิ่งแวดล้อม
           </p>
         </div>
 
         {/* Primary Action Button */}
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="md"
+          iconLeft={<Plus className="w-4 h-4" />}
           onClick={() => setShowAddModal(true)}
-          className="px-6 py-3 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-base font-semibold transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
+          className="shrink-0"
         >
-          <Plus className="w-5 h-5" />
-          <span>+ เพิ่มพื้นที่ติดตาม</span>
-        </button>
+          เพิ่มพื้นที่ติดตาม
+        </Button>
       </div>
 
-      {/* Followed Area Cards Grid (Section 25: Clean cards, NO large charts) */}
+      {/* Followed Area Cards Grid */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-[#063B70]">
-          พื้นที่ที่กำลังติดตาม ({savedDistricts.length})
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[#0A2540]">
+            พื้นที่ที่กำลังติดตาม ({savedDistricts.length})
+          </h2>
+          <span className="text-xs text-slate-500">ข้อมูลอัปเดตตามสถานีโทรมาตรประจำอำเภอ</span>
+        </div>
 
         {savedDistricts.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3">
-            <MapPin className="w-8 h-8 text-slate-300 mx-auto" />
-            <h3 className="font-bold text-slate-700 text-base">ยังไม่มีพื้นที่ที่ติดตาม</h3>
-            <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              กดปุ่ม "+ เพิ่มพื้นที่ติดตาม" เพื่อเลือกอำเภอในจังหวัดปราจีนบุรีที่คุณต้องการเฝ้าระวัง
-            </p>
-          </div>
+          <EmptyState
+            icon={<MapPin className="w-8 h-8 text-slate-400" />}
+            title="ยังไม่มีพื้นที่ที่ติดตาม"
+            description="กดปุ่ม 'เพิ่มพื้นที่ติดตาม' เพื่อเลือกอำเภอในจังหวัดปราจีนบุรีที่คุณต้องการเฝ้าระวัง"
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft={<Plus className="w-4 h-4" />}
+                onClick={() => setShowAddModal(true)}
+              >
+                เลือกอำเภอแรก
+              </Button>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {savedDistricts.map(districtName => {
@@ -173,47 +189,46 @@ export const MyAreaPage: React.FC = () => {
               return (
                 <div
                   key={districtName}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-subtle hover:shadow-card transition-all flex flex-col justify-between space-y-4"
+                  className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs hover:shadow-card hover:border-[#0284C7]/60 transition-all flex flex-col justify-between space-y-4 group"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#0C65E8]" />
-                        <h3 className="text-lg font-bold text-[#063B70]">
+                        <MapPin className="w-4 h-4 text-[#0284C7]" />
+                        <h3 className="text-lg font-bold text-[#0A2540] group-hover:text-[#0284C7] transition-colors">
                           อำเภอ{districtName}
                         </h3>
                       </div>
-                      <span className="text-sm text-slate-500 mt-0.5 block">
+                      <span className="text-xs sm:text-sm text-slate-500 mt-0.5 block">
                         จังหวัดปราจีนบุรี
                       </span>
                     </div>
 
                     {/* Current Watch Level Badge */}
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityBadgeClass(status.priority)}`}>
+                    <Badge variant={getPriorityVariant(status.priority)}>
                       {status.priority || 'ระดับเฝ้าระวังต่ำ'}
-                    </span>
+                    </Badge>
                   </div>
 
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 flex items-center justify-between">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs sm:text-sm text-slate-600 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-4 h-4 text-slate-400" />
                       <span>อัปเดตล่าสุด: {status.lastUpdated}</span>
                     </div>
-                    <span className="text-slate-600 font-medium">
+                    <span className="text-slate-700 font-medium">
                       {status.watchStatus}
                     </span>
                   </div>
 
                   {/* Footer Action & Notification Toggle */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                    
                     {/* Notification toggle */}
                     <button
                       type="button"
                       onClick={() => toggleNotification(districtName)}
-                      className={`text-sm font-semibold flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-colors ${
+                      className={`text-xs sm:text-sm font-semibold flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-colors cursor-pointer ${
                         status.alertEnabled
-                          ? 'text-[#0C65E8] bg-blue-50'
+                          ? 'text-[#0284C7] bg-sky-50 border border-sky-100'
                           : 'text-slate-400 bg-slate-100'
                       }`}
                     >
@@ -226,20 +241,20 @@ export const MyAreaPage: React.FC = () => {
                         type="button"
                         onClick={() => handleRemoveArea(districtName)}
                         aria-label={`ยกเลิกติดตามอำเภอ${districtName}`}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                        title="ยกเลิกติดตาม"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
 
                       <Link
                         to={`/area-detail?district=${encodeURIComponent(districtName)}`}
-                        className="text-sm font-semibold text-[#0C65E8] hover:text-[#063B70] flex items-center gap-1 py-1 px-2"
+                        className="text-xs sm:text-sm font-semibold text-[#0284C7] hover:text-[#0A2540] flex items-center gap-1 py-1 px-2"
                       >
                         <span>ดูรายละเอียด</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </Link>
                     </div>
-
                   </div>
                 </div>
               );
@@ -248,11 +263,11 @@ export const MyAreaPage: React.FC = () => {
         )}
       </div>
 
-      {/* Section 2: Recent Important Changes (Section 25) */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-subtle space-y-4">
+      {/* Section 2: Recent Important Changes */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-          <Bell className="w-5 h-5 text-[#0C65E8]" />
-          <h2 className="text-lg font-bold text-[#063B70]">การแจ้งเตือนล่าสุดในพื้นที่ของคุณ</h2>
+          <Bell className="w-5 h-5 text-[#0284C7]" />
+          <h2 className="text-lg font-bold text-[#0A2540]">การแจ้งเตือนล่าสุดในพื้นที่ของคุณ</h2>
         </div>
 
         <div className="space-y-3">
@@ -262,83 +277,77 @@ export const MyAreaPage: React.FC = () => {
               <div className="font-bold text-base text-amber-900">
                 อ.บ้านสร้าง: มีมวลน้ำหลากระบายลงสู่ทุ่งรับน้ำตามฤดูกาล
               </div>
-              <p className="text-slate-600 leading-relaxed text-sm">
+              <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">
                 สถานีตรวจวัดระดับน้ำปากคลองบางพลวงบันทึกระดับน้ำเพิ่มขึ้น 12 ซม. ใน 24 ชม. ที่ผ่านมา แนะนำเกษตรกรเฝ้าระวังแปลงเพาะเลี้ยง
               </p>
-              <div className="text-xs text-slate-500 pt-1">
-                2 ชั่วโมงที่ผ่านมา • OFFICIAL กรมชลประทาน
+              <div className="text-xs text-slate-500 pt-1 flex items-center gap-2">
+                <span>2 ชั่วโมงที่ผ่านมา</span>
+                <span>•</span>
+                <Badge variant="official" size="xs">OFFICIAL กรมชลประทาน</Badge>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-[#0C65E8] shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-200/80 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-[#0284C7] shrink-0 mt-0.5" />
             <div className="text-sm text-slate-800 space-y-1">
-              <div className="font-bold text-base text-[#063B70]">
+              <div className="font-bold text-base text-[#0A2540]">
                 อ.กบินทร์บุรี: รายงานผลตรวจคุณภาพน้ำผิวดินรอบประจำเดือน
               </div>
-              <p className="text-slate-600 leading-relaxed text-sm">
+              <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">
                 สำนักงานสิ่งแวดล้อมและควบคุมมลพิษที่ 7 (สคพ.7) เผยแพร่ผลวิเคราะห์ตัวอย่างน้ำจุดบรรจบแม่น้ำพระปรง-หนุมาน อยู่ในเกณฑ์มาตรฐานแหล่งน้ำประเภท 3
               </p>
-              <div className="text-xs text-slate-500 pt-1">
-                เมื่อวานนี้ • OFFICIAL กรมควบคุมมลพิษ
+              <div className="text-xs text-slate-500 pt-1 flex items-center gap-2">
+                <span>เมื่อวานนี้</span>
+                <span>•</span>
+                <Badge variant="official" size="xs">OFFICIAL กรมควบคุมมลพิษ</Badge>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Area Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
-            
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-[#063B70]">เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี</h3>
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 block">เลือกอำเภอ:</label>
-              <select
-                value={selectedToAdd}
-                onChange={(e) => setSelectedToAdd(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0C65E8] min-h-[44px]"
-              >
-                {ALL_DISTRICTS.map(d => (
-                  <option key={d} value={d} disabled={savedDistricts.includes(d)}>
-                    {d} {savedDistricts.includes(d) ? '(ติดตามอยู่แล้ว)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors min-h-[44px]"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleAddArea}
-                className="px-5 py-2.5 bg-[#0C65E8] hover:bg-[#063B70] text-white rounded-xl text-sm font-semibold transition-colors min-h-[44px]"
-              >
-                ยืนยันการเพิ่ม
-              </button>
-            </div>
-
-          </div>
+      {/* Add Area Modal using UI Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="เพิ่มพื้นที่ติดตามใน จ.ปราจีนบุรี"
+        subtitle="เลือกอำเภอเพื่อรับข้อมูลการเฝ้าระวังน้ำและแจ้งเตือนอย่างต่อเนื่อง"
+        maxWidth="md"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setShowAddModal(false)}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleAddArea}
+            >
+              ยืนยันการเพิ่ม
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <label className="text-sm font-semibold text-slate-700 block">เลือกอำเภอ:</label>
+          <select
+            value={selectedToAdd}
+            onChange={(e) => setSelectedToAdd(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm sm:text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0284C7] min-h-[44px] cursor-pointer"
+          >
+            {ALL_DISTRICTS.map(d => (
+              <option key={d} value={d} disabled={savedDistricts.includes(d)}>
+                {d} {savedDistricts.includes(d) ? '(ติดตามอยู่แล้ว)' : ''}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
+      </Modal>
 
     </div>
   );
