@@ -99,8 +99,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
             <Layers className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 leading-tight">จัดการชั้นข้อมูลแผนที่ (Layer Manager)</h3>
-            <span className="text-3xs text-slate-500 font-medium">WebGIS • สารสนเทศลุ่มน้ำปราจีนบุรี</span>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">จัดการชั้นข้อมูลแผนที่ (Layer Manager)</h3>
+            <span className="text-xs text-slate-500 font-medium">WebGIS • สารสนเทศลุ่มน้ำปราจีนบุรี</span>
           </div>
         </div>
         <button
@@ -116,10 +116,10 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
 
       {/* 2. Quick Presets Bar (MapStore Thematic Modes) */}
       <div className="px-4 py-2.5 border-b border-slate-100 bg-white">
-        <span className="text-3xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
           โหมดการทำงานด่วน (Map View Presets)
         </span>
-        <div className="grid grid-cols-5 gap-1 text-2xs font-semibold text-center">
+        <div className="grid grid-cols-5 gap-1 text-xs font-semibold text-center">
           <button
             type="button"
             onClick={() => onApplyPreset('all')}
@@ -189,11 +189,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
             onClick={() => toggleGroup('hazard')}
             className="flex items-center justify-between cursor-pointer py-1 group"
           >
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-blue-700">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700">
               {collapsedGroups.hazard ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
               <span>1. สภาวะน้ำท่วมและขอบเขตวิเคราะห์</span>
             </div>
-            <span className="text-3xs font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200/80">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200/80">
               {layerCounts.floodPoints} จุด
             </span>
           </div>
@@ -208,7 +208,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     <span className="w-3 h-3 rounded-full bg-[#0284C7] shrink-0 border border-white shadow-xs"></span>
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 truncate">จุดรายงานน้ำท่วมและน้ำขัง</div>
-                      <div className="text-3xs text-sky-800">จุดสังเกตการณ์น้ำท่วมจากแหล่งสาธารณะ</div>
+                      <div className="text-xs text-sky-800">จุดสังเกตการณ์น้ำท่วมจากแหล่งสาธารณะ</div>
                     </div>
                   </div>
                   <button
@@ -229,7 +229,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 shrink-0 border border-white shadow-xs"></span>
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 truncate">พื้นผิวการเฝ้าระวัง (Priority Surface)</div>
-                      <div className="text-3xs text-slate-500">กริดวิเคราะห์ความเสี่ยงต่อเนื่อง 7 อำเภอ</div>
+                      <div className="text-xs text-slate-500">กริดวิเคราะห์ความเสี่ยงต่อเนื่อง 7 อำเภอ</div>
                     </div>
                   </div>
                   <button
@@ -245,7 +245,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                 {/* Inline Opacity Slider for Priority Surface */}
                 {visibleLayers.monitoringSurface && (
                   <div className="mt-2 pt-2 border-t border-sky-200/60 space-y-1">
-                    <div className="flex items-center justify-between text-3xs text-slate-500">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <Sliders className="w-3 h-3 text-slate-400" />
                         <span>ความโปร่งแสงพื้นผิว</span>
@@ -271,8 +271,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-sm bg-slate-800 shrink-0 border border-white"></span>
                     <div>
-                      <div className="text-2xs font-semibold text-slate-800">หน้ากากนอกเขตปราจีนบุรี</div>
-                      <div className="text-3xs text-slate-400">ควบคุมขอบเขตวิเคราะห์เชิงพื้นที่</div>
+                      <div className="text-xs font-semibold text-slate-800">หน้ากากนอกเขตปราจีนบุรี</div>
+                      <div className="text-xs text-slate-400">ควบคุมขอบเขตวิเคราะห์เชิงพื้นที่</div>
                     </div>
                   </div>
                   <button
@@ -297,11 +297,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
             onClick={() => toggleGroup('hydro')}
             className="flex items-center justify-between cursor-pointer py-1 group"
           >
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-blue-700">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700">
               {collapsedGroups.hydro ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
               <span>2. โครงข่ายอุทกวิทยา (Hydrology)</span>
             </div>
-            <span className="text-3xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80">
               {layerCounts.monitoringStations} สถานี • {layerCounts.waterways} ลำน้ำ
             </span>
           </div>
@@ -318,7 +318,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                       <div className="text-xs font-bold text-slate-900 truncate">
                         แม่น้ำและลำคลองสายหลัก ({layerCounts.waterways} สาย)
                       </div>
-                      <div className="text-3xs text-blue-900">
+                      <div className="text-xs text-blue-900">
                         ทาสีตามโทรมาตรจริงเฉพาะ HIGH CONFIDENCE
                       </div>
                     </div>
@@ -342,7 +342,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                       <div className="text-xs font-bold text-slate-900 truncate">
                         สถานีวัดระดับน้ำ ({layerCounts.waterStations} แห่ง)
                       </div>
-                      <div className="text-3xs text-amber-800">โทรมาตรจาก สสน. (ThaiWater) & กรมชลประทาน (RID)</div>
+                      <div className="text-xs text-amber-800">โทรมาตรจาก สสน. (ThaiWater) & กรมชลประทาน (RID)</div>
                     </div>
                   </div>
                   <button
@@ -364,7 +364,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                       <div className="text-xs font-bold text-slate-900 truncate">
                         สถานีวัดน้ำฝนอัตโนมัติ ({layerCounts.rainfallStations} แห่ง)
                       </div>
-                      <div className="text-3xs text-amber-800">ปริมาณฝนสะสม 24 ชม. และรายชั่วโมง</div>
+                      <div className="text-xs text-amber-800">ปริมาณฝนสะสม 24 ชม. และรายชั่วโมง</div>
                     </div>
                   </div>
                   <button
@@ -389,11 +389,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
             onClick={() => toggleGroup('field')}
             className="flex items-center justify-between cursor-pointer py-1 group"
           >
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-blue-700">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700">
               {collapsedGroups.field ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
               <span>3. ข่าวสารและข้อมูลภาคสนาม</span>
             </div>
-            <span className="text-3xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/80">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/80">
               {layerCounts.newsItems} ข่าว • {layerCounts.environmental} หลักฐาน
             </span>
           </div>
@@ -409,11 +409,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1">
                         <span>ข่าวสารจากสื่อมวลชน</span>
-                        <span className="text-3xs font-bold px-1.5 py-0.2 rounded-full bg-indigo-200/70 text-indigo-950">
+                        <span className="text-xs font-bold px-1.5 py-0.2 rounded-full bg-indigo-200/70 text-indigo-950">
                           {layerCounts.newsItems} ข่าว
                         </span>
                       </div>
-                      <div className="text-3xs text-indigo-900">ข่าวที่มีพิกัดอำเภอชัดเจน พร้อมภาพประกอบ</div>
+                      <div className="text-xs text-indigo-900">ข่าวที่มีพิกัดอำเภอชัดเจน พร้อมภาพประกอบ</div>
                     </div>
                   </div>
                   <button
@@ -434,11 +434,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1">
                         <span>ข้อสังเกตสิ่งแวดล้อม (External Evidence)</span>
-                        <span className="text-3xs font-bold px-1.5 py-0.2 rounded-full bg-purple-200/70 text-purple-950">
+                        <span className="text-xs font-bold px-1.5 py-0.2 rounded-full bg-purple-200/70 text-purple-950">
                           {layerCounts.environmental} รายการ
                         </span>
                       </div>
-                      <div className="text-3xs text-purple-900">ฟอง คราบ สีน้ำผิดปกติ (สังเกตทางกายภาพ)</div>
+                      <div className="text-xs text-purple-900">ฟอง คราบ สีน้ำผิดปกติ (สังเกตทางกายภาพ)</div>
                     </div>
                   </div>
                   <button
@@ -449,7 +449,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     {visibleLayers.environmental ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
                 </div>
-                <div className="text-3xs text-slate-400 mt-1 pl-5 italic">
+                <div className="text-xs text-slate-400 mt-1 pl-5 italic">
                   * ข้อสังเกตทางกายภาพ ไม่ใช่การยืนยันมลพิษทางเคมี
                 </div>
               </div>
@@ -462,11 +462,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1">
                         <span>รายงานจากประชาชน (Citizen Reports)</span>
-                        <span className="text-3xs font-bold px-1.5 py-0.2 rounded-full bg-orange-200/70 text-orange-950">
+                        <span className="text-xs font-bold px-1.5 py-0.2 rounded-full bg-orange-200/70 text-orange-950">
                           {layerCounts.citizenReports} เรื่อง
                         </span>
                       </div>
-                      <div className="text-3xs text-orange-900">พิกัดระดับตำบล (~1.1 กม.) เพื่อความเป็นส่วนตัว</div>
+                      <div className="text-xs text-orange-900">พิกัดระดับตำบล (~1.1 กม.) เพื่อความเป็นส่วนตัว</div>
                     </div>
                   </div>
                   <button
@@ -482,12 +482,12 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
               {/* Verification Ring Explanation Box */}
               <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-3xs font-bold">
+                  <span className="w-4 h-4 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-xs font-bold">
                     ✓
                   </span>
                   <span className="text-xs font-bold text-emerald-950">สัญลักษณ์การยืนยัน (Verification Ring)</span>
                 </div>
-                <p className="text-3xs text-emerald-800 leading-relaxed">
+                <p className="text-xs text-emerald-800 leading-relaxed">
                   วงแหวนสีเขียว <strong className="font-semibold text-emerald-900">#16A34A</strong> จะปรากฏบนหมุดเฉพาะเมื่อมีเอกสารยืนยันจากหน่วยงานหรือผลตรวจแล็บจริงเท่านั้น (พบ {layerCounts.verifiedCount} รายการ)
                 </p>
               </div>
@@ -504,11 +504,11 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
             onClick={() => toggleGroup('base')}
             className="flex items-center justify-between cursor-pointer py-1 group"
           >
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-blue-700">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700">
               {collapsedGroups.base ? <ChevronRight className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
               <span>4. แผนที่ฐานและป้ายชื่อภูมิศาสตร์</span>
             </div>
-            <span className="text-3xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
               {basemap === 'satellite' ? 'ดาวเทียม' : 'ถนน'}
             </span>
           </div>
@@ -518,7 +518,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
               
               {/* Basemap Switcher Tiles */}
               <div className="space-y-1">
-                <span className="text-3xs font-semibold text-slate-500 uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                   เลือกแผนที่ฐาน (Base Maps):
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -535,8 +535,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                       🛰️
                     </div>
                     <div>
-                      <div className="text-2xs font-bold text-slate-900">ภาพดาวเทียม</div>
-                      <div className="text-3xs text-slate-500">ESRI World Imagery</div>
+                      <div className="text-xs font-bold text-slate-900">ภาพดาวเทียม</div>
+                      <div className="text-xs text-slate-500">ESRI World Imagery</div>
                     </div>
                   </button>
 
@@ -553,8 +553,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                       🗺️
                     </div>
                     <div>
-                      <div className="text-2xs font-bold text-slate-900">แผนที่ถนน</div>
-                      <div className="text-3xs text-slate-500">Carto Positron / OSM</div>
+                      <div className="text-xs font-bold text-slate-900">แผนที่ถนน</div>
+                      <div className="text-xs text-slate-500">Carto Positron / OSM</div>
                     </div>
                   </button>
                 </div>
@@ -566,8 +566,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                   <div className="flex items-center gap-2">
                     <Tag className="w-3.5 h-3.5 text-slate-500" />
                     <div>
-                      <div className="text-2xs font-semibold text-slate-800">ป้ายชื่ออำเภอและตำบล</div>
-                      <div className="text-3xs text-slate-400">ตัวอักษรตรวจจับการชนกันอัตโนมัติ</div>
+                      <div className="text-xs font-semibold text-slate-800">ป้ายชื่ออำเภอและตำบล</div>
+                      <div className="text-xs text-slate-400">ตัวอักษรตรวจจับการชนกันอัตโนมัติ</div>
                     </div>
                   </div>
                   <button
@@ -586,8 +586,8 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
                   <div className="flex items-center gap-2">
                     <Route className="w-3.5 h-3.5 text-slate-500" />
                     <div>
-                      <div className="text-2xs font-semibold text-slate-800">เส้นทางคมนาคมและทางหลวง</div>
-                      <div className="text-3xs text-slate-400">โครงข่ายถนนเพื่อการสัญจร</div>
+                      <div className="text-xs font-semibold text-slate-800">เส้นทางคมนาคมและทางหลวง</div>
+                      <div className="text-xs text-slate-400">โครงข่ายถนนเพื่อการสัญจร</div>
                     </div>
                   </div>
                   <button
@@ -607,7 +607,7 @@ export const WebGISLayerManager: React.FC<WebGISLayerManagerProps> = ({
       </div>
 
       {/* 4. Footer Note */}
-      <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50 text-3xs text-slate-500 flex items-center justify-between">
+      <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex items-center justify-between">
         <span>FloodTrace WebGIS v2.4</span>
         <span className="font-semibold text-slate-700">ลุ่มน้ำปราจีนบุรี</span>
       </div>

@@ -53,7 +53,7 @@ export const Tabs: React.FC<TabsProps> = ({
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-2xs font-bold ${
+                  className={`px-1.5 py-0.2 rounded-full text-xs font-bold ${
                     isActive ? 'bg-blue-100 text-[#0284C7]' : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -83,7 +83,7 @@ export const Tabs: React.FC<TabsProps> = ({
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span
-                className={`px-1.5 py-0.2 rounded-full text-2xs font-bold ${
+                className={`px-1.5 py-0.2 rounded-full text-xs font-bold ${
                   isActive ? 'bg-blue-50 text-[#0284C7]' : 'bg-slate-200 text-slate-600'
                 }`}
               >

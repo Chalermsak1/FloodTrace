@@ -286,7 +286,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
             <span className="font-semibold text-white tracking-wide">
               ระบบเฝ้าระวังพื้นที่เปิดใช้งาน
             </span>
-            <span className="text-slate-400 text-3xs font-mono hidden md:inline">
+            <span className="text-slate-400 text-xs font-mono hidden md:inline">
               (SPATIAL SITUATION VIEW)
             </span>
           </div>
@@ -294,7 +294,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
           {/* Center/Right: Territorial Scope & Connection State */}
           <div className="flex items-center flex-wrap justify-center sm:justify-end gap-2 text-slate-300">
             {/* Connection Status Pill */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 border border-white/10 text-3xs font-medium">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 border border-white/10 text-xs font-medium">
               <span className={`w-1.5 h-1.5 rounded-full ${
                 sseStatus === 'connected' ? 'bg-emerald-400' : (sseStatus === 'reconnecting' ? 'bg-amber-400' : 'bg-slate-400')
               }`} />
@@ -332,17 +332,17 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
           {/* 1. Identity & Operational Status */}
           <div className="flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sky-200 text-xs font-semibold">
-              <span className="text-sky-300 font-bold uppercase tracking-wider font-mono text-[10px]">
+              <span className="text-sky-300 font-bold uppercase tracking-wider font-mono text-xs">
                 FLOODTRACE
               </span>
               <span className="w-1 h-1 rounded-full bg-sky-400" />
-              <span className="text-white text-[11px] truncate max-w-[170px] sm:max-w-none">
+              <span className="text-white text-xs truncate max-w-[170px] sm:max-w-none">
                 ระบบติดตามสถานการณ์น้ำและสิ่งแวดล้อม
               </span>
             </div>
 
             {/* Live Indicator Pill */}
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/45 border border-white/15 text-[11px] text-slate-300 shrink-0">
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/45 border border-white/15 text-xs text-slate-300 shrink-0">
               <span className={`w-2 h-2 rounded-full ${sseStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
               <span className="font-medium">{sseStatus === 'connected' ? 'อัปเดตอัตโนมัติ' : 'ข้อมูลล่าสุด'}</span>
             </div>
@@ -355,13 +355,13 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                 <span>สถานการณ์ล่าสุด</span>
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
               </h1>
-              <p className="text-[11px] text-purple-200/80">
+              <p className="text-xs text-purple-200/80">
                 ข้อมูลอ้างอิงจากแหล่งสาธารณะภายนอก (External Evidence)
               </p>
             </div>
             <Link
               to="/cases"
-              className="text-[11px] font-semibold text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 shrink-0 min-h-[36px] flex items-center"
+              className="text-xs font-semibold text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 shrink-0 min-h-[36px] flex items-center"
             >
               ดูเหตุการณ์ทั้งหมด ({externalEvidence.length})
             </Link>
@@ -410,11 +410,11 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/20 pointer-events-none" />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-3xs text-white/95 font-medium border border-white/15 flex items-center gap-1 shadow-sm whitespace-nowrap">
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-xs text-white/95 font-medium border border-white/15 flex items-center gap-1 shadow-sm whitespace-nowrap">
                       <Newspaper className="w-3 h-3 text-purple-300 shrink-0" />
                       <span>ภาพข่าว/สื่อสาธารณะ</span>
                     </div>
-                    <div className={`absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-3xs font-bold border backdrop-blur-md flex items-center gap-1 shadow-sm whitespace-nowrap ${verBadge.badgeClass}`}>
+                    <div className={`absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold border backdrop-blur-md flex items-center gap-1 shadow-sm whitespace-nowrap ${verBadge.badgeClass}`}>
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${verBadge.dotClass}`} />
                       <span>{verBadge.label}</span>
                     </div>
@@ -428,7 +428,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                   </div>
 
                   {/* Location & Time & Source */}
-                  <div className="text-3xs text-slate-300/90 space-y-1 pt-1.5 border-t border-white/10">
+                  <div className="text-xs text-slate-300/90 space-y-1 pt-1.5 border-t border-white/10">
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1 text-slate-400 shrink-0">
                         <MapPin className="w-3 h-3 text-sky-400 shrink-0" />
@@ -460,16 +460,16 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between gap-2 flex-wrap text-3xs border-t border-white/10">
+                  <div className="pt-2 flex items-center justify-between gap-2 flex-wrap text-xs border-t border-white/10">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-200 text-3xs font-semibold border border-purple-500/40 whitespace-nowrap">
+                      <span className="px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-200 text-xs font-semibold border border-purple-500/40 whitespace-nowrap">
                         หลักฐานภายนอก
                       </span>
-                      <span className={`px-1.5 py-0.5 rounded text-3xs font-semibold border whitespace-nowrap ${verBadge.badgeClass}`}>
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${verBadge.badgeClass}`}>
                         {verBadge.label}
                       </span>
                     </div>
-                    <div className="text-purple-300 font-semibold group-hover:text-purple-100 flex items-center gap-1 text-3xs whitespace-nowrap shrink-0 ml-auto">
+                    <div className="text-purple-300 font-semibold group-hover:text-purple-100 flex items-center gap-1 text-xs whitespace-nowrap shrink-0 ml-auto">
                       <span>ดูรายละเอียด</span>
                       <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                     </div>
@@ -487,12 +487,12 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
             {/* Water */}
             <div className="p-2.5 sm:p-3 rounded-2xl bg-black/45 backdrop-blur-md border border-sky-500/25 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-3xs text-sky-300">
+              <div className="flex items-center justify-between text-xs text-sky-300">
                 <span className="font-semibold flex items-center gap-1">
                   <Waves className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                   ระดับน้ำ
                 </span>
-                <span className="text-slate-400 truncate max-w-[65px] text-3xs">
+                <span className="text-slate-400 truncate max-w-[65px] text-xs">
                   {keyWaterStation?.district || 'กบินทร์บุรี'}
                 </span>
               </div>
@@ -500,26 +500,26 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                 {keyWaterStation?.water_level_msl != null ? (
                   <div className="text-base sm:text-lg font-bold text-white tracking-tight">
                     {keyWaterStation.water_level_msl.toFixed(2)}{' '}
-                    <span className="text-3xs font-semibold text-sky-300">ม.รทก.</span>
+                    <span className="text-xs font-semibold text-sky-300">ม.รทก.</span>
                   </div>
                 ) : (
                   <div className="text-xs text-slate-400">-</div>
                 )}
               </div>
-              <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+              <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                 <span className="truncate max-w-[70px]">{keyWaterStation?.name_th || 'สะพานณรงค์ดำริ'}</span>
-                <span className="px-1 py-0.2 rounded text-3xs font-bold bg-sky-500/20 text-sky-200">LIVE</span>
+                <span className="px-1 py-0.2 rounded text-xs font-bold bg-sky-500/20 text-sky-200">LIVE</span>
               </div>
             </div>
 
             {/* Rain */}
             <div className="p-2.5 sm:p-3 rounded-2xl bg-black/45 backdrop-blur-md border border-blue-500/25 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-3xs text-blue-300">
+              <div className="flex items-center justify-between text-xs text-blue-300">
                 <span className="font-semibold flex items-center gap-1">
                   <CloudRain className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                   ฝน 24 ชม.
                 </span>
-                <span className="text-slate-400 truncate max-w-[65px] text-3xs">
+                <span className="text-slate-400 truncate max-w-[65px] text-xs">
                   {keyRainStation?.district || 'บ้านสร้าง'}
                 </span>
               </div>
@@ -527,26 +527,26 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                 {keyRainStation?.rain_24h_mm != null ? (
                   <div className="text-base sm:text-lg font-bold text-white tracking-tight">
                     {keyRainStation.rain_24h_mm.toFixed(1)}{' '}
-                    <span className="text-3xs font-semibold text-blue-300">มม.</span>
+                    <span className="text-xs font-semibold text-blue-300">มม.</span>
                   </div>
                 ) : (
                   <div className="text-xs text-slate-400">-</div>
                 )}
               </div>
-              <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+              <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                 <span className="truncate max-w-[70px]">{keyRainStation?.name_th || 'หอทอง'}</span>
-                <span className="px-1 py-0.2 rounded text-3xs font-bold bg-blue-500/20 text-blue-200">RECENT</span>
+                <span className="px-1 py-0.2 rounded text-xs font-bold bg-blue-500/20 text-blue-200">RECENT</span>
               </div>
             </div>
 
             {/* Priority (Visible on Tablet, hidden on narrow phone to keep 2-col clean) */}
             <div className="hidden sm:flex p-2.5 sm:p-3 rounded-2xl bg-black/45 backdrop-blur-md border border-amber-500/25 flex-col justify-between">
-              <div className="flex items-center justify-between text-3xs text-amber-300">
+              <div className="flex items-center justify-between text-xs text-amber-300">
                 <span className="font-semibold flex items-center gap-1">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   เฝ้าระวัง
                 </span>
-                <span className="text-slate-400 truncate max-w-[65px] text-3xs">
+                <span className="text-slate-400 truncate max-w-[65px] text-xs">
                   {overviewData?.district ? `อ.${overviewData.district}` : 'พื้นที่หลัก'}
                 </span>
               </div>
@@ -555,9 +555,9 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                   {overviewData?.verification_priority || 'สูง'}
                 </div>
               </div>
-              <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+              <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                 <span className="truncate">แบบจำลอง</span>
-                <span className="px-1 py-0.2 rounded text-3xs font-bold bg-amber-500/20 text-amber-200">เฝ้าระวัง</span>
+                <span className="px-1 py-0.2 rounded text-xs font-bold bg-amber-500/20 text-amber-200">เฝ้าระวัง</span>
               </div>
             </div>
           </div>
@@ -604,7 +604,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
             
             {/* Identity & Mission Eyebrow */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sky-200 text-xs font-semibold w-fit shadow-xs">
-              <span className="text-sky-300 font-bold uppercase tracking-[0.2em] font-mono text-2xs">
+              <span className="text-sky-300 font-bold uppercase tracking-[0.2em] font-mono text-xs">
                 FLOODTRACE
               </span>
               <span className="w-1 h-1 rounded-full bg-sky-400" />
@@ -633,16 +633,16 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
             {/* Real telemetry cards backed by actual backend state     */}
             {/* ======================================================== */}
             <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between text-2xs font-bold text-sky-300/80 uppercase tracking-wider px-1">
+              <div className="flex items-center justify-between text-xs font-bold text-sky-300/80 uppercase tracking-wider px-1">
                 <span>สรุปข้อมูลโทรมาตรและสถานะล่าสุด (Live Situation Strip)</span>
-                <span className="text-3xs font-normal text-slate-400">อ้างอิงเวลาจริงจากสถานี</span>
+                <span className="text-xs font-normal text-slate-400">อ้างอิงเวลาจริงจากสถานี</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 
                 {/* 1. Water Level (ระดับน้ำโทรมาตร) */}
                 <div className="p-3 rounded-2xl bg-black/40 backdrop-blur-md border border-sky-500/20 hover:border-sky-400/40 transition-colors flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-3xs text-sky-300">
+                  <div className="flex items-center justify-between text-xs text-sky-300">
                     <span className="font-semibold flex items-center gap-1">
                       <Waves className="w-3.5 h-3.5 text-sky-400" />
                       ระดับน้ำโทรมาตร
@@ -661,9 +661,9 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                       <div className="text-xs font-medium text-slate-400">ไม่มีข้อมูลล่าสุด</div>
                     )}
                   </div>
-                  <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+                  <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                     <span className="truncate">{keyWaterStation?.name_th || 'สะพานณรงค์ดำริ'}</span>
-                    <span className={`px-1.5 py-0.2 rounded font-semibold text-3xs ${
+                    <span className={`px-1.5 py-0.2 rounded font-semibold text-xs ${
                       keyWaterStation?.freshness_status === 'RECENT' ? 'bg-sky-500/20 text-sky-200' : 'bg-amber-500/20 text-amber-200'
                     }`}>
                       {keyWaterStation?.freshness_status === 'RECENT' ? 'สดใหม่' : 'โทรมาตร'}
@@ -673,7 +673,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
 
                 {/* 2. Rainfall 24h (ปริมาณฝนสะสม) */}
                 <div className="p-3 rounded-2xl bg-black/40 backdrop-blur-md border border-blue-500/20 hover:border-blue-400/40 transition-colors flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-3xs text-blue-300">
+                  <div className="flex items-center justify-between text-xs text-blue-300">
                     <span className="font-semibold flex items-center gap-1">
                       <CloudRain className="w-3.5 h-3.5 text-blue-400" />
                       ฝนสะสม 24 ชม.
@@ -692,7 +692,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                       <div className="text-xs font-medium text-slate-400">ไม่มีข้อมูลล่าสุด</div>
                     )}
                   </div>
-                  <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+                  <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                     <span className="truncate">{keyRainStation?.name_th || 'หอทอง'}</span>
                     <span className="text-slate-300 font-medium">โทรมาตร</span>
                   </div>
@@ -700,7 +700,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
 
                 {/* 3. Monitoring Priority / Flood Status */}
                 <div className="p-3 rounded-2xl bg-black/40 backdrop-blur-md border border-amber-500/20 hover:border-amber-400/40 transition-colors flex flex-col justify-between col-span-2 sm:col-span-1">
-                  <div className="flex items-center justify-between text-3xs text-amber-300">
+                  <div className="flex items-center justify-between text-xs text-amber-300">
                     <span className="font-semibold flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
                       ลำดับเฝ้าระวัง
@@ -714,12 +714,12 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                       <span className="text-lg sm:text-xl font-bold text-amber-300">
                         {overviewData?.verification_priority || 'สูง'}
                       </span>
-                      <span className="text-2xs text-slate-400 font-medium">
+                      <span className="text-xs text-slate-400 font-medium">
                         (แบบจำลองพื้นที่)
                       </span>
                     </div>
                   </div>
-                  <div className="text-3xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+                  <div className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
                     <span className="truncate">รายงานชุมชน: {overviewData?.community_observation_count ?? 22} จุด</span>
                     <span className="text-amber-300 font-semibold">เฝ้าระวัง</span>
                   </div>
@@ -749,7 +749,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
             </div>
 
             {/* Scientific Integrity Disclaimer (Section 36) */}
-            <div className="flex items-center gap-2 text-2xs text-slate-400 pt-1">
+            <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>
                 ข้อมูลจัดทำเพื่อการเฝ้าระวังและสนับสนุนการตัดสินใจเบื้องต้น ไม่ใช่การยืนยันการปนเปื้อนสารเคมีหรือผลตรวจทางแล็บ
@@ -773,7 +773,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                     <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
                       สถานการณ์และหลักฐานล่าสุด
                     </h2>
-                    <p className="text-2xs text-purple-200/80">
+                    <p className="text-xs text-purple-200/80">
                       ข้อมูลอ้างอิงจากแหล่งสาธารณะภายนอก (External Evidence)
                     </p>
                   </div>
@@ -781,7 +781,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
 
                 <Link
                   to="/cases"
-                  className="text-2xs font-semibold text-purple-300 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
+                  className="text-xs font-semibold text-purple-300 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
                 >
                   <span>ดูเหตุการณ์ทั้งหมด ({externalEvidence.length})</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -805,7 +805,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                 <div className="p-6 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-center space-y-2">
                   <AlertTriangle className="w-6 h-6 text-rose-400 mx-auto" />
                   <p className="text-sm font-semibold text-rose-200">ไม่สามารถโหลดเหตุการณ์ล่าสุดได้</p>
-                  <p className="text-2xs text-slate-400">กรุณาตรวจสอบการเชื่อมต่อหรือรีเฟรชหน้าเว็บ</p>
+                  <p className="text-xs text-slate-400">กรุณาตรวจสอบการเชื่อมต่อหรือรีเฟรชหน้าเว็บ</p>
                 </div>
               ) : sortedEvidence.length === 0 ? (
                 /* EMPTY STATE (Section 11) - Truthful: No fake events */
@@ -855,12 +855,12 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/20 pointer-events-none" />
                           {/* Evidence attribution badge on image */}
-                          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-3xs text-white/95 font-medium border border-white/15 flex items-center gap-1 shadow-sm whitespace-nowrap">
+                          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-xs text-white/95 font-medium border border-white/15 flex items-center gap-1 shadow-sm whitespace-nowrap">
                             <Newspaper className="w-3 h-3 text-purple-300 shrink-0" />
                             <span>ภาพข่าว/สื่อสาธารณะ</span>
                           </div>
                           {/* Verification status pill */}
-                          <div className={`absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-3xs font-bold border backdrop-blur-md flex items-center gap-1 shadow-sm whitespace-nowrap ${verBadge.badgeClass}`}>
+                          <div className={`absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold border backdrop-blur-md flex items-center gap-1 shadow-sm whitespace-nowrap ${verBadge.badgeClass}`}>
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${verBadge.dotClass}`} />
                             <span>{verBadge.label}</span>
                           </div>
@@ -874,7 +874,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                         </div>
 
                         {/* 3. Metadata Rows (Location, Observed Time, Source) */}
-                        <div className="text-3xs text-slate-300/90 space-y-1 pt-1 border-t border-white/10">
+                        <div className="text-xs text-slate-300/90 space-y-1 pt-1 border-t border-white/10">
                           {/* Location */}
                           <div className="flex items-center justify-between">
                             <span className="flex items-center gap-1 text-slate-400">
@@ -910,28 +910,28 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
                         </div>
 
                         {/* 4. Action hint & badges (Section 9 & 14) */}
-                        <div className="pt-2 flex items-center justify-between gap-2 flex-wrap text-3xs border-t border-white/10">
+                        <div className="pt-2 flex items-center justify-between gap-2 flex-wrap text-xs border-t border-white/10">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-200 text-3xs font-semibold border border-purple-500/40 whitespace-nowrap">
+                            <span className="px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-200 text-xs font-semibold border border-purple-500/40 whitespace-nowrap">
                               หลักฐานภายนอก
                             </span>
                             {ev.related_sources_count && ev.related_sources_count > 1 && (
-                              <span className="px-1.5 py-0.5 rounded bg-blue-950/90 text-blue-200 text-3xs font-semibold border border-blue-400/40 whitespace-nowrap flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 rounded bg-blue-950/90 text-blue-200 text-xs font-semibold border border-blue-400/40 whitespace-nowrap flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                                 <span>{ev.related_sources_count} แหล่งข้อมูล</span>
                               </span>
                             )}
                             {ev.related_news && ev.related_news.length > 0 && (
-                              <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-200 text-3xs font-semibold border border-emerald-400/40 whitespace-nowrap flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-200 text-xs font-semibold border border-emerald-400/40 whitespace-nowrap flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                                 <span>ข่าวสนับสนุน ({ev.related_news.length})</span>
                               </span>
                             )}
-                            <span className={`px-1.5 py-0.5 rounded text-3xs font-semibold border whitespace-nowrap ${verBadge.badgeClass}`}>
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${verBadge.badgeClass}`}>
                               {verBadge.label}
                             </span>
                           </div>
-                          <div className="text-purple-300 font-semibold group-hover:text-purple-100 flex items-center gap-1 text-3xs whitespace-nowrap shrink-0 ml-auto">
+                          <div className="text-purple-300 font-semibold group-hover:text-purple-100 flex items-center gap-1 text-xs whitespace-nowrap shrink-0 ml-auto">
                             <span>ดูรายละเอียด</span>
                             <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
                           </div>
@@ -944,7 +944,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
               )}
 
               {/* Bottom Notice on External Evidence */}
-              <div className="pt-2 border-t border-white/10 text-3xs text-slate-400 leading-tight flex items-start gap-1.5">
+              <div className="pt-2 border-t border-white/10 text-xs text-slate-400 leading-tight flex items-start gap-1.5">
                 <span className="font-bold text-purple-400 shrink-0">หมายเหตุ:</span>
                 <span>
                   ข้อมูลหลักฐานภายนอกรวบรวมเพื่อประกอบการติดตามสถานการณ์ ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การยืนยันผู้กระทำผิด
@@ -967,7 +967,7 @@ export const SituationHeroSection: React.FC<SituationHeroSectionProps> = ({
           className="inline-flex flex-col items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer group"
           aria-label="เลื่อนลงเพื่อดูข้อมูลและสถานการณ์เพิ่มเติม"
         >
-          <span className="text-2xs sm:text-xs font-semibold tracking-wide">
+          <span className="text-xs sm:text-xs font-semibold tracking-wide">
             เลื่อนเพื่อดูข้อมูลและแผนที่สถานการณ์
           </span>
           <ChevronDown className="w-4 h-4 text-sky-400 animate-hero-scroll group-hover:translate-y-0.5 transition-transform" />

@@ -78,17 +78,17 @@ export default {
         sans: ['"Noto Sans Thai"', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       fontSize: {
-        '3xs': ['0.75rem', { lineHeight: '1.4' }],     // 12px
-        '2xs': ['0.8125rem', { lineHeight: '1.4' }],   // 13px
-        'xs': ['0.875rem', { lineHeight: '1.45' }],    // 14px
-        'sm': ['0.9375rem', { lineHeight: '1.5' }],    // 15px
-        'base': ['1.0625rem', { lineHeight: '1.65' }], // 17px
-        'lg': ['1.1875rem', { lineHeight: '1.55' }],   // 19px
-        'xl': ['1.3125rem', { lineHeight: '1.45' }],   // 21px
-        '2xl': ['1.625rem', { lineHeight: '1.35' }],   // 26px
-        '3xl': ['2rem', { lineHeight: '1.3' }],        // 32px
-        '4xl': ['2.375rem', { lineHeight: '1.25' }],   // 38px
-        'display': ['2.875rem', { lineHeight: '1.22' }], // 46px
+        '3xs': ['0.75rem', { lineHeight: '1.45' }],     // 12px minimum floor
+        '2xs': ['0.75rem', { lineHeight: '1.45' }],     // 12px minimum floor
+        'xs': ['0.75rem', { lineHeight: '1.45' }],      // 12px - Small metadata, badges, timestamps
+        'sm': ['0.875rem', { lineHeight: '1.5' }],      // 14px - Supporting text, secondary labels
+        'base': ['1rem', { lineHeight: '1.6' }],        // 16px - Standard readable body text, inputs
+        'lg': ['1.125rem', { lineHeight: '1.5' }],      // 18px - Card headings, emphasized body
+        'xl': ['1.25rem', { lineHeight: '1.4' }],       // 20px - Sub-section headings
+        '2xl': ['1.5rem', { lineHeight: '1.35' }],      // 24px - Section headings / Mobile page title
+        '3xl': ['1.875rem', { lineHeight: '1.3' }],     // 30px - Desktop page title (28-32px)
+        '4xl': ['2.25rem', { lineHeight: '1.25' }],     // 36px - Hero / Large display
+        'display': ['2.75rem', { lineHeight: '1.2' }],  // 44px - Display headline
       },
       borderRadius: {
         'card': '14px',

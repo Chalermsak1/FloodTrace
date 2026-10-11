@@ -46,13 +46,13 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 {icon}
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
               {title}
             </h1>
             {badge && <div className="shrink-0">{badge}</div>}
           </div>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl">
+            <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-3xl">
               {subtitle}
             </p>
           )}

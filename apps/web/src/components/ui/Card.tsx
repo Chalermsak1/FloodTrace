@@ -49,11 +49,11 @@ export const CardHeader: React.FC<{
           </div>
         )}
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight leading-snug">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
             {title}
           </h3>
           {subtitle && (
-            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
               {subtitle}
             </p>
           )}

@@ -306,7 +306,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                 <span className="text-2xl font-bold tracking-tight text-white leading-none">
                   FloodTrace
                 </span>
-                <span className="text-[10px] font-semibold bg-white/15 text-sky-100 px-2 py-0.5 rounded-full border border-white/20">
+                <span className="text-xs font-semibold bg-white/15 text-sky-100 px-2.5 py-0.5 rounded-full border border-white/20">
                   Ruwaigon
                 </span>
               </div>
@@ -436,21 +436,21 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
             {/* Bottom Floating Situation Card (Reference: Overlaid Dark Glass Card) */}
             <div className="absolute bottom-3 left-3 right-12 z-20 bg-slate-950/85 backdrop-blur-md rounded-xl p-3 border border-white/15 text-white shadow-xl max-w-[270px]">
-              <div className="text-[11px] font-semibold text-sky-300 flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-sky-300 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                 <span>สถานการณ์ล่าสุด</span>
               </div>
-              <div className="text-xs font-bold text-white mt-1 leading-snug line-clamp-2">
+              <div className="text-sm font-bold text-white mt-1 leading-snug line-clamp-2">
                 {overviewData?.priority_counts?.high 
                   ? `พบ ${overviewData.priority_counts.high} โซนเฝ้าระวัง ในพื้นที่จังหวัดปราจีนบุรี`
                   : 'พบเหตุการณ์น้ำท่วมในหลายพื้นที่ของจังหวัดปราจีนบุรี'}
               </div>
               <Link 
                 to="/map"
-                className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 mt-1.5 transition-colors group"
+                className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 mt-1.5 transition-colors group"
               >
                 <span>ดูรายละเอียด</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
@@ -466,7 +466,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
               <Activity className="w-3.5 h-3.5 text-blue-600" />
               <span>ข้อมูลตรวจวัดจริงจากสถานี (Measured Fact)</span>
             </span>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-400">
               {lastRefreshedAt ? `อัปเดต ${formatBangkokTime(lastRefreshedAt.toISOString())}` : 'ข้อมูลล่าสุด'}
             </span>
           </div>
@@ -482,11 +482,11 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                     <span className="text-xs font-bold text-[#063B70] truncate">ระดับน้ำ</span>
                   </div>
                   {activeWaterStation?.freshness_status ? (
-                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border ${getFreshnessBadge(activeWaterStation.freshness_status).className}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getFreshnessBadge(activeWaterStation.freshness_status).className}`}>
                       {getFreshnessBadge(activeWaterStation.freshness_status).label}
                     </span>
                   ) : (
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                       TELEMETRY
                     </span>
                   )}
@@ -494,10 +494,10 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
                 {activeWaterStation && activeWaterStation.water_level_msl !== null && activeWaterStation.water_level_msl !== undefined ? (
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+                    <span className="text-2xl font-black text-slate-900 tracking-tight">
                       {Number(activeWaterStation.water_level_msl).toFixed(2)}
                     </span>
-                    <span className="text-[11px] font-semibold text-slate-500">ม.รทก.</span>
+                    <span className="text-xs font-semibold text-slate-500">ม.รทก.</span>
                   </div>
                 ) : (
                   <div className="text-xs font-medium text-slate-400 mt-2">
@@ -506,11 +506,11 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                 )}
               </div>
 
-              <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-tight">
+              <div className="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500 leading-tight">
                 <div className="truncate font-medium text-slate-700">
                   {activeWaterStation?.name_th || 'สถานีตรวจวัดระดับน้ำ'}
                 </div>
-                <div className="text-[9px] text-slate-400 mt-0.5 truncate">
+                <div className="text-xs text-slate-400 mt-0.5 truncate">
                   {activeWaterStation?.observed_at ? `ตรวจวัด ${formatBangkokTime(activeWaterStation.observed_at)}` : 'ข้อมูลโทรมาตร HII'}
                 </div>
               </div>
@@ -525,11 +525,11 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                     <span className="text-xs font-bold text-[#063B70] truncate">ฝนสะสม 24 ชม.</span>
                   </div>
                   {activeRainStation?.freshness_status ? (
-                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border ${getFreshnessBadge(activeRainStation.freshness_status).className}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getFreshnessBadge(activeRainStation.freshness_status).className}`}>
                       {getFreshnessBadge(activeRainStation.freshness_status).label}
                     </span>
                   ) : (
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                       TELEMETRY
                     </span>
                   )}
@@ -537,10 +537,10 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
 
                 {activeRainStation && activeRainStation.rain_24h_mm !== null && activeRainStation.rain_24h_mm !== undefined ? (
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+                    <span className="text-2xl font-black text-slate-900 tracking-tight">
                       {Number(activeRainStation.rain_24h_mm).toFixed(1)}
                     </span>
-                    <span className="text-[11px] font-semibold text-slate-500">มม.</span>
+                    <span className="text-xs font-semibold text-slate-500">มม.</span>
                   </div>
                 ) : (
                   <div className="text-xs font-medium text-slate-400 mt-2">
@@ -549,11 +549,11 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                 )}
               </div>
 
-              <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-tight">
+              <div className="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500 leading-tight">
                 <div className="truncate font-medium text-slate-700">
                   {activeRainStation?.name_th || 'สถานีตรวจวัดน้ำฝน'}
                 </div>
-                <div className="text-[9px] text-slate-400 mt-0.5 truncate">
+                <div className="text-xs text-slate-400 mt-0.5 truncate">
                   {activeRainStation?.observed_at ? `ตรวจวัด ${formatBangkokTime(activeRainStation.observed_at)}` : 'ข้อมูลโทรมาตร สสน.'}
                 </div>
               </div>
@@ -606,7 +606,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 p-4 text-center">
                           <Newspaper className="w-7 h-7 mb-1 text-slate-300" />
-                          <span className="text-[11px]">ภาพประกอบจากแหล่งต้นทาง</span>
+                          <span className="text-xs">ภาพประกอบจากแหล่งต้นทาง</span>
                         </div>
                       )}
 
@@ -774,7 +774,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
               <MessageSquarePlus className="w-4 h-4 text-[#0C65E8]" />
               <span>แจ้งข้อสังเกตจากชุมชน</span>
             </div>
-            <p className="text-[11px] text-slate-600 leading-tight">
+            <p className="text-xs text-slate-600 leading-normal">
               พบน้ำท่วม น้ำเปลี่ยนสี หรือมีกลิ่น ส่งข้อมูลเพื่อช่วยติดตามสถานการณ์
             </p>
           </div>
@@ -787,7 +787,7 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
         </section>
 
         {/* Provenance Footer Note */}
-        <div className="text-center pt-2 pb-4 text-[11px] text-slate-400">
+        <div className="text-center pt-2 pb-4 text-xs text-slate-400">
           <p>ข้อมูลเปิดเพื่อประโยชน์สาธารณะ • ตรวจสอบแหล่งที่มาได้</p>
         </div>
 
@@ -883,13 +883,13 @@ export const MobileHomepageView: React.FC<MobileHomepageViewProps> = ({
               <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 space-y-1">
                 <div className="font-bold text-[#063B70]">รายงานสถานการณ์น้ำท่วมลุ่มน้ำปราจีนบุรี</div>
                 <div className="text-slate-600">ตรวจพบการเฝ้าระวังระดับน้ำบริเวณ อ.กบินทร์บุรี และ อ.ศรีมหาโพธิ</div>
-                <div className="text-[10px] text-slate-400 mt-1">อัปเดตอัตโนมัติจากโทรมาตร</div>
+                <div className="text-xs text-slate-400 mt-1">อัปเดตอัตโนมัติจากโทรมาตร</div>
               </div>
 
               <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-100 space-y-1">
                 <div className="font-bold text-amber-900">ข้อควรระวังการใช้น้ำผิวดิน</div>
                 <div className="text-amber-800">หลีกเลี่ยงการใช้น้ำที่มีกลิ่นหรือสีผิดปกติในพื้นที่ลุ่มน้ำตอนล่าง</div>
-                <div className="text-[10px] text-amber-600 mt-1">คำแนะนำสาธารณะ</div>
+                <div className="text-xs text-amber-600 mt-1">คำแนะนำสาธารณะ</div>
               </div>
             </div>
 

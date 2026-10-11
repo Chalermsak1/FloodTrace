@@ -269,7 +269,7 @@ const getFreshnessBadgeHtml = (status?: string, ageSeconds?: number) => {
   }
 
   return `
-    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-3xs font-medium border ${colorClass} shrink-0 whitespace-nowrap">
+    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium border ${colorClass} shrink-0 whitespace-nowrap">
       <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
       <span>${label}${ageStr ? ` (${ageStr})` : ''}</span>
     </span>
@@ -716,7 +716,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             <!-- Contributing Factors -->
             ${factorsHtml ? `
               <div class="p-2.5 rounded-xl bg-slate-50/70 border border-slate-100/80 space-y-1.5 text-xs">
-                <span class="text-[10px] font-semibold text-slate-500 block uppercase tracking-wider">ปัจจัยและการประเมินเชิงพื้นที่:</span>
+                <span class="text-xs font-semibold text-slate-500 block uppercase tracking-wider">ปัจจัยและการประเมินเชิงพื้นที่:</span>
                 <ul class="space-y-1 pl-0.5">${factorsHtml}</ul>
               </div>
             ` : ''}
@@ -728,7 +728,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             </div>
 
             <!-- Freshness & District Footer -->
-            <div class="text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+            <div class="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex items-center justify-between">
               <span>ความสดใหม่: <strong class="text-slate-700">${props.freshness || 'ข้อมูลรายวัน (24 ชม.)'}</strong></span>
               <span class="text-[#0C65E8] font-bold">อ.${props.district}</span>
             </div>
@@ -767,7 +767,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             <p class="text-xs text-slate-700 leading-relaxed font-medium">
               FloodTrace ให้บริการวิเคราะห์เชิงพื้นที่สำหรับจังหวัดปราจีนบุรี
             </p>
-            <p class="text-2xs text-slate-400 pt-1 border-t border-slate-100 leading-normal">
+            <p class="text-xs text-slate-400 pt-1 border-t border-slate-100 leading-normal">
               พื้นที่สีเทาหมายถึงอยู่นอกขอบเขตการคำนวณของระบบ ไม่ได้หมายความว่าปลอดภัยหรือไม่มีน้ำท่วม
             </p>
           </div>
@@ -808,26 +808,26 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
               <div class="flex items-start justify-between gap-2">
                 <div>
                   <h4 class="text-sm font-bold text-[#063B70] leading-snug">${props.name || props.river_name}</h4>
-                  <span class="text-3xs text-slate-500">${props.type || 'ลำน้ำ'} • อ.${props.district || 'กบินทร์บุรี'}</span>
+                  <span class="text-xs text-slate-500">${props.type || 'ลำน้ำ'} • อ.${props.district || 'กบินทร์บุรี'}</span>
                 </div>
-                <span class="text-3xs font-bold px-2 py-0.5 rounded-full text-white shrink-0 shadow-xs" style="background-color: ${statusBadgeBg}">
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white shrink-0 shadow-xs" style="background-color: ${statusBadgeBg}">
                   ${statusLabel}
                 </span>
               </div>
             </div>
 
             <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-snug">
-              <div class="text-3xs font-semibold text-slate-500 mb-0.5">การประเมินสภาวะลำน้ำ:</div>
+              <div class="text-xs font-semibold text-slate-500 mb-0.5">การประเมินสภาวะลำน้ำ:</div>
               <div>${props.status_explanation || 'ไม่มีข้อมูลสถานะ'}</div>
             </div>
 
             ${props.matched_station_name ? `
               <div class="space-y-1.5 p-2 rounded-xl bg-blue-50/60 border border-blue-100 text-xs">
-                <div class="flex items-center justify-between text-3xs font-medium text-blue-900">
+                <div class="flex items-center justify-between text-xs font-medium text-blue-900">
                   <span>สถานีตรวจวัดอ้างอิง:</span>
                   <span class="font-bold text-blue-950">${props.matched_station_name} (${props.matched_station_id})</span>
                 </div>
-                <div class="flex items-center justify-between text-3xs text-slate-600">
+                <div class="flex items-center justify-between text-xs text-slate-600">
                   <span>ความเชื่อมั่นการเชื่อมโยง:</span>
                   <span class="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                     ✓ ${props.match_confidence === 'HIGH_CONFIDENCE' ? 'เชื่อมโยงโดยตรง' : props.match_confidence}
@@ -838,13 +838,13 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   <span class="font-bold text-blue-950">${waterLevelText}</span>
                 </div>
                 ${props.critical_level_msl ? `
-                <div class="flex items-center justify-between text-3xs text-slate-500">
+                <div class="flex items-center justify-between text-xs text-slate-500">
                   <span>ระดับวิกฤตตลิ่ง:</span>
                   <span class="font-semibold text-red-600">${critLevelText}</span>
                 </div>` : ''}
               </div>
             ` : `
-              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-3xs text-slate-500">
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500">
                 <span>ℹ️ ช่วงลำน้ำนี้ยังไม่มีสถานีโทรมาตรเชื่อมโยงโดยตรง จึงแสดงเส้นทางน้ำตามภูมิศาสตร์เพื่อการติดตาม</span>
               </div>
             `}
@@ -1097,7 +1097,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
               .setHTML(`
                 <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                   <div class="flex items-center justify-between gap-1.5 border-b border-amber-100 pb-1.5 pr-4">
-                    <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap flex items-center gap-1">
+                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap flex items-center gap-1">
                       <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${bgColor}"></span>
                       สถานีวัดระดับน้ำ
                     </span>
@@ -1105,15 +1105,15 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   </div>
                   <div>
                     <div class="text-sm font-bold text-slate-900 leading-tight">${st.name_th || st.station_id}</div>
-                    <div class="text-3xs text-slate-400 mt-0.5">${st.district ? `อ.${st.district}` : 'จ.ปราจีนบุรี'}</div>
+                    <div class="text-xs text-slate-400 mt-0.5">${st.district ? `อ.${st.district}` : 'จ.ปราจีนบุรี'}</div>
                   </div>
                   <div class="flex items-baseline justify-between px-2.5 py-1.5 rounded-xl bg-amber-50/70 border border-amber-100">
-                    <span class="text-2xs text-amber-900 font-medium">ระดับน้ำปัจจุบัน</span>
-                    <span class="text-base font-bold text-amber-950">${st.water_level_msl != null ? st.water_level_msl.toFixed(2) : '-'} <span class="text-2xs font-semibold text-amber-700">ม.รทก.</span></span>
+                    <span class="text-xs text-amber-900 font-medium">ระดับน้ำปัจจุบัน</span>
+                    <span class="text-base font-bold text-amber-950">${st.water_level_msl != null ? st.water_level_msl.toFixed(2) : '-'} <span class="text-xs font-semibold text-amber-700">ม.รทก.</span></span>
                   </div>
 
                   <!-- Hydrological Matching Confidence -->
-                  <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-3xs">
+                  <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
                     <div class="flex items-center justify-between">
                       <span class="text-slate-500 font-medium">ลำน้ำที่เชื่อมโยง:</span>
                       <span class="font-bold text-slate-800">${st.matched_waterway_name || 'นอกโครงข่ายหลัก'}</span>
@@ -1134,7 +1134,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                     </div>` : ''}
                   </div>
 
-                  <div class="text-3xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
+                  <div class="text-xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
                     ${st.critical_level_msl ? `
                     <div class="flex items-center justify-between">
                       <span>ระดับวิกฤต/ตลิ่ง</span>
@@ -1193,7 +1193,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
               .setHTML(`
                 <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                   <div class="flex items-center justify-between gap-1.5 border-b border-amber-100 pb-1.5 pr-4">
-                    <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap flex items-center gap-1">
+                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap flex items-center gap-1">
                       <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                       สถานีวัดน้ำฝน
                     </span>
@@ -1201,13 +1201,13 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   </div>
                   <div>
                     <div class="text-sm font-bold text-slate-900 leading-tight">${rs.name_th || rs.station_id}</div>
-                    <div class="text-3xs text-slate-400 mt-0.5">${rs.district ? `อ.${rs.district}` : 'จ.ปราจีนบุรี'}${rs.subdistrict ? ` ต.${rs.subdistrict}` : ''}</div>
+                    <div class="text-xs text-slate-400 mt-0.5">${rs.district ? `อ.${rs.district}` : 'จ.ปราจีนบุรี'}${rs.subdistrict ? ` ต.${rs.subdistrict}` : ''}</div>
                   </div>
                   <div class="flex items-baseline justify-between px-2.5 py-1.5 rounded-xl bg-amber-50/70 border border-amber-100">
-                    <span class="text-2xs text-amber-900 font-medium">ฝนสะสม 24 ชม.</span>
-                    <span class="text-base font-bold text-amber-950">${rain24.toFixed(1)} <span class="text-2xs font-semibold text-amber-700">มม.</span></span>
+                    <span class="text-xs text-amber-900 font-medium">ฝนสะสม 24 ชม.</span>
+                    <span class="text-base font-bold text-amber-950">${rain24.toFixed(1)} <span class="text-xs font-semibold text-amber-700">มม.</span></span>
                   </div>
-                  <div class="text-3xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
+                  <div class="text-xs text-slate-500 space-y-1 pt-1 border-t border-slate-100">
                     ${rs.rain_1h_mm != null ? `
                     <div class="flex items-center justify-between">
                       <span>ฝน 1 ชม. ล่าสุด</span>
@@ -1281,19 +1281,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             .setHTML(`
               <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                 <div class="flex items-center justify-between gap-1.5 border-b border-orange-100 pb-1.5 pr-4">
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200/60 whitespace-nowrap flex items-center gap-1">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200/60 whitespace-nowrap flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
                     รายงานจากประชาชน
                   </span>
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${cluster.verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${cluster.verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
                     ${cluster.verified ? '✓ ยืนยันแล้ว' : 'ข้อสังเกตชุมชน'}
                   </span>
                 </div>
                 <div>
                   <div class="text-sm font-bold text-slate-900 leading-tight">${cluster.lastObs.category_th || cluster.lastObs.category || 'รายงานข้อสังเกต'}</div>
-                  <div class="text-3xs text-slate-400 mt-0.5">${cluster.lastObs.district ? `อ.${cluster.lastObs.district}` : 'จ.ปราจีนบุรี'}</div>
+                  <div class="text-xs text-slate-400 mt-0.5">${cluster.lastObs.district ? `อ.${cluster.lastObs.district}` : 'จ.ปราจีนบุรี'}</div>
                 </div>
-                <div class="text-3xs text-slate-600 space-y-1">
+                <div class="text-xs text-slate-600 space-y-1">
                   <div class="flex items-center justify-between">
                     <span>เวลาที่แจ้ง</span>
                     <span class="font-medium text-slate-800">${formatThaiTime(cluster.lastObs.observed_at || cluster.lastObs.created_at)}</span>
@@ -1304,10 +1304,10 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   </div>
                   ${cluster.count > 1 ? `<div class="text-orange-700 font-semibold pt-0.5">พบรายงานในบริเวณนี้: ${cluster.count} รายการ</div>` : ''}
                 </div>
-                <p class="text-2xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
+                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
                   ${cluster.lastObs.description || 'มีข้อสังเกตสภาพแวดล้อมในพื้นที่'}
                 </p>
-                <div class="text-3xs text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <div class="text-xs text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
                   <span>ความแม่นยำระดับตำบล (~1.1 กม.)</span>
                   <span class="italic">คุ้มครองความเป็นส่วนตัว</span>
                 </div>
@@ -1358,19 +1358,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             .setHTML(`
               <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                 <div class="flex items-center justify-between gap-1.5 border-b border-purple-100 pb-1.5 pr-4">
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/60 whitespace-nowrap flex items-center gap-1">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/60 whitespace-nowrap flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                     ข้อสังเกตสิ่งแวดล้อม
                   </span>
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
                     ${isVerified ? '✓ ตรวจสอบยืนยันแล้ว' : 'ข้อสังเกตทางกายภาพ'}
                   </span>
                 </div>
                 <div>
                   <div class="text-sm font-bold text-slate-900 leading-tight">${item.title_or_summary || 'รายงานข้อสังเกตสภาพน้ำ'}</div>
-                  <div class="text-3xs text-purple-800 mt-0.5 font-medium">${item.source_name || 'แหล่งสาธารณะ'} (${item.source_platform || 'ONLINE'})</div>
+                  <div class="text-xs text-purple-800 mt-0.5 font-medium">${item.source_name || 'แหล่งสาธารณะ'} (${item.source_platform || 'ONLINE'})</div>
                 </div>
-                <div class="text-3xs text-slate-600 space-y-1">
+                <div class="text-xs text-slate-600 space-y-1">
                   <div class="flex items-center justify-between">
                     <span>เวลาที่สังเกตพบ</span>
                     <span class="font-medium text-slate-800">${formatThaiTime(item.observed_at || item.published_at || item.created_at)}</span>
@@ -1383,29 +1383,29 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   ` : ''}
                 </div>
                 ${item.text_excerpt ? `
-                  <div class="text-3xs text-slate-800 bg-purple-50/70 p-2 rounded-lg border border-purple-100/80 leading-relaxed">
+                  <div class="text-xs text-slate-800 bg-purple-50/70 p-2 rounded-lg border border-purple-100/80 leading-relaxed">
                     <span class="font-bold text-purple-900 block mb-0.5">ลักษณะที่สังเกตพบ:</span>
                     "${item.text_excerpt}"
                   </div>
                 ` : item.description ? `
-                  <p class="text-2xs text-slate-600 line-clamp-2 leading-relaxed bg-purple-50/40 p-2 rounded-lg border border-purple-100/70">
+                  <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-purple-50/40 p-2 rounded-lg border border-purple-100/70">
                     ${item.description}
                   </p>
                 ` : ''}
                 ${item.source_url ? `
                   <div class="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
-                    <span class="text-3xs text-purple-700 font-medium">บันทึกหลักฐานในระบบ</span>
+                    <span class="text-xs text-purple-700 font-medium">บันทึกหลักฐานในระบบ</span>
                     ${item.source_url.includes('example.com') ? `
-                      <span class="text-3xs text-amber-700 italic">Demo Reference</span>
+                      <span class="text-xs text-amber-700 italic">Demo Reference</span>
                     ` : `
-                      <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-3xs text-purple-700 hover:text-purple-900 font-bold underline">
+                      <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs text-purple-700 hover:text-purple-900 font-bold underline">
                         <span>เปิดหน้าเพจต้นทาง</span>
                         <span>↗</span>
                       </a>
                     `}
                   </div>
                 ` : ''}
-                <div class="text-3xs text-slate-500 pt-1 border-t border-slate-100 italic leading-tight">
+                <div class="text-xs text-slate-500 pt-1 border-t border-slate-100 italic leading-tight">
                   ข้อสังเกตทางกายภาพจากแหล่งสาธารณะ ไม่ใช่ผลตรวจแล็บสารพิษ
                 </div>
               </div>
@@ -1454,19 +1454,19 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             .setHTML(`
               <div class="space-y-2 p-1 min-w-[240px] max-w-[280px] font-sans text-slate-800">
                 <div class="flex items-center justify-between gap-1.5 border-b border-sky-100 pb-1.5 pr-4">
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60 whitespace-nowrap flex items-center gap-1">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60 whitespace-nowrap flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
                     จุดน้ำท่วม / น้ำขัง
                   </span>
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
                     ${isVerified ? '✓ สอดคล้องกับพื้นที่' : 'รอตรวจสอบ'}
                   </span>
                 </div>
                 <div>
                   <div class="text-sm font-bold text-slate-900 leading-tight">${item.title_or_summary || 'รายงานสถานการณ์น้ำท่วม'}</div>
-                  <div class="text-3xs text-sky-800 mt-0.5 font-medium">${item.source_name || 'สื่อสาธารณะ'} (${item.source_platform || 'ONLINE'})</div>
+                  <div class="text-xs text-sky-800 mt-0.5 font-medium">${item.source_name || 'สื่อสาธารณะ'} (${item.source_platform || 'ONLINE'})</div>
                 </div>
-                <div class="text-3xs text-slate-600 space-y-1">
+                <div class="text-xs text-slate-600 space-y-1">
                   <div class="flex items-center justify-between">
                     <span>เวลาที่สังเกตพบ</span>
                     <span class="font-medium text-slate-800">${formatThaiTime(item.observed_at || item.published_at || item.created_at)}</span>
@@ -1479,29 +1479,29 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                   ` : ''}
                 </div>
                 ${item.text_excerpt ? `
-                  <div class="text-3xs text-slate-800 bg-sky-50/70 p-2 rounded-lg border border-sky-100/80 leading-relaxed">
+                  <div class="text-xs text-slate-800 bg-sky-50/70 p-2 rounded-lg border border-sky-100/80 leading-relaxed">
                     <span class="font-bold text-sky-900 block mb-0.5">ข้อความจากแหล่งต้นทาง:</span>
                     "${item.text_excerpt}"
                   </div>
                 ` : item.description ? `
-                  <p class="text-2xs text-slate-600 line-clamp-2 leading-relaxed bg-sky-50/40 p-2 rounded-lg border border-sky-100/70">
+                  <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-sky-50/40 p-2 rounded-lg border border-sky-100/70">
                     ${item.description}
                   </p>
                 ` : ''}
                 ${item.source_url ? `
                   <div class="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
-                    <span class="text-3xs text-emerald-700 font-medium">บันทึกข้อมูลในระบบ</span>
+                    <span class="text-xs text-emerald-700 font-medium">บันทึกข้อมูลในระบบ</span>
                     ${item.source_url.includes('example.com') ? `
-                      <span class="text-3xs text-amber-700 italic">Demo Reference</span>
+                      <span class="text-xs text-amber-700 italic">Demo Reference</span>
                     ` : `
-                      <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-3xs text-sky-700 hover:text-sky-900 font-bold underline">
+                      <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-900 font-bold underline">
                         <span>เปิดหน้าเพจต้นทาง</span>
                         <span>↗</span>
                       </a>
                     `}
                   </div>
                 ` : ''}
-                <div class="text-3xs text-slate-400 pt-1 border-t border-slate-100 italic leading-tight">
+                <div class="text-xs text-slate-400 pt-1 border-t border-slate-100 italic leading-tight">
                   จุดรายงานสถานการณ์น้ำท่วมจากแหล่งสาธารณะ
                 </div>
               </div>
@@ -1561,11 +1561,11 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
             .setHTML(`
               <div class="space-y-2 p-1 min-w-[250px] max-w-[300px] font-sans text-slate-800">
                 <div class="flex items-center justify-between gap-1.5 border-b border-indigo-100 pb-1.5 pr-4">
-                  <span class="text-3xs font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200/60 whitespace-nowrap flex items-center gap-1">
+                  <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200/60 whitespace-nowrap flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#1E3A8A]"></span>
                     ข่าวสารสื่อมวลชน
                   </span>
-                  <span class="text-3xs text-slate-500 font-medium">
+                  <span class="text-xs text-slate-500 font-medium">
                     ${item.district ? 'อ.' + item.district : 'จ.ปราจีนบุรี'}
                   </span>
                 </div>
@@ -1578,24 +1578,24 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
                 <div>
                   <div class="text-xs font-bold text-slate-900 leading-snug">${item.title || 'รายงานข่าวสาร'}</div>
-                  <div class="text-3xs text-indigo-800 mt-0.5 font-semibold flex items-center justify-between">
+                  <div class="text-xs text-indigo-800 mt-0.5 font-semibold flex items-center justify-between">
                     <span>${item.source_name || 'สื่อมวลชน'}</span>
                     <span class="text-slate-400 font-normal">${formatThaiTime(item.published_at || item.created_at)}</span>
                   </div>
                 </div>
 
                 ${item.summary || item.factual_details ? `
-                  <p class="text-3xs text-slate-600 line-clamp-3 leading-relaxed bg-indigo-50/40 p-2 rounded-lg border border-indigo-100/70">
+                  <p class="text-xs text-slate-600 line-clamp-3 leading-relaxed bg-indigo-50/40 p-2 rounded-lg border border-indigo-100/70">
                     ${item.summary || item.factual_details}
                   </p>
                 ` : ''}
 
                 <div class="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
-                  <span class="text-3xs text-slate-500">
+                  <span class="text-xs text-slate-500">
                     ${item.location_precision === 'DISTRICT' || !item.latitude ? 'พิกัดระดับอำเภอ' : item.location_precision || 'พิกัดรายงาน'}
                   </span>
                   ${item.source_url && !item.source_url.includes('example.com') ? `
-                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-3xs text-blue-600 hover:text-blue-800 font-bold underline">
+                    <a href="${item.source_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-bold underline">
                       <span>อ่านข่าวต้นทาง</span>
                       <span>↗</span>
                     </a>
@@ -1696,7 +1696,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
         <p className="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
           การแสดงผลแผนที่เชิงพื้นที่แบบอินเทอร์แอคทีฟต้องการ WebGL2 กรุณาเปิดใช้งาน Hardware Acceleration หรือใช้งานบนเบราว์เซอร์ที่รองรับ
         </p>
-        <div className="text-2xs text-slate-400 bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-700/60">
+        <div className="text-xs text-slate-400 bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-700/60">
           FloodTrace Spatial Intelligence • Prachin Buri Monitoring
         </div>
       </div>
@@ -1713,17 +1713,17 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
           <button
             type="button"
             onClick={() => setIsLegendClosed(false)}
-            className="absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
+            className="absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
             title="เปิดเกณฑ์เตือนภัย & โครงข่ายน้ำ"
           >
             <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
             <span>เกณฑ์เตือนภัย</span>
           </button>
         ) : (
-          <div className={`absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 ${showLegendExpanded ? 'w-[230px] sm:w-[250px]' : 'w-auto'} bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-lg border border-slate-200/90 text-3xs font-sans select-none transition-all`}>
+          <div className={`absolute bottom-10 sm:bottom-11 right-2.5 sm:right-4 z-20 ${showLegendExpanded ? 'w-[230px] sm:w-[250px]' : 'w-auto'} bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-lg border border-slate-200/90 text-xs font-sans select-none transition-all`}>
             <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-100">
               <div 
-                className="flex items-center gap-1.5 font-bold text-slate-900 text-3xs cursor-pointer select-none"
+                className="flex items-center gap-1.5 font-bold text-slate-900 text-xs cursor-pointer select-none"
                 onClick={() => setShowLegendExpanded(!showLegendExpanded)}
               >
                 <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
@@ -1733,7 +1733,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                 <button 
                   type="button" 
                   onClick={() => setShowLegendExpanded(!showLegendExpanded)}
-                  className="text-slate-500 hover:text-slate-800 text-[10px] font-semibold px-1 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="text-slate-500 hover:text-slate-800 text-xs font-semibold px-1 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                   title={showLegendExpanded ? 'ย่อคำอธิบาย' : 'ขยายคำอธิบาย'}
                 >
                   {showLegendExpanded ? 'ย่อ' : 'ขยาย'}
@@ -1754,8 +1754,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
               <div className="space-y-1.5 animate-in fade-in duration-100">
                 {/* Water Status Colors */}
                 <div className="space-y-0.5">
-                  <div className="text-[10px] font-semibold uppercase text-slate-400">สภาวะลำน้ำ / สถานี:</div>
-                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-[10px]">
+                  <div className="text-xs font-semibold uppercase text-slate-400">สภาวะลำน้ำ / สถานี:</div>
+                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-xs">
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0"></span>
                       <span className="text-slate-700">วิกฤต (ล้นตลิ่ง)</span>
@@ -1781,8 +1781,8 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
 
                 {/* Station Matching Confidence */}
                 <div className="pt-1 border-t border-slate-100 space-y-0.5">
-                  <div className="text-[10px] font-semibold uppercase text-slate-400">การเชื่อมโยงสถานีโทรมาตร:</div>
-                  <div className="space-y-0.5 text-[10px] text-slate-600">
+                  <div className="text-xs font-semibold uppercase text-slate-400">การเชื่อมโยงสถานีโทรมาตร:</div>
+                  <div className="space-y-0.5 text-xs text-slate-600">
                     <div className="flex items-center gap-1">
                       <span className="text-emerald-700 font-bold shrink-0">● HIGH:</span>
                       <span className="truncate">&lt; 1 กม. ทาสีลำน้ำ</span>
@@ -1799,7 +1799,7 @@ export const MapLibreMapView: React.FC<MapLibreMapViewProps> = ({
                 </div>
 
                 {/* Footnote */}
-                <div className="pt-0.5 border-t border-slate-100 text-[9px] text-slate-400 leading-tight">
+                <div className="pt-0.5 border-t border-slate-100 text-xs text-slate-400 leading-tight">
                   ข้อมูล: RID & สสน. (ThaiWater)
                 </div>
               </div>

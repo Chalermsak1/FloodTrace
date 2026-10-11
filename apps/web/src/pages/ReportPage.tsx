@@ -287,9 +287,9 @@ export const ReportPage: React.FC = () => {
                 >
                   <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
                     {isPassed ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <span className={`w-4 h-4 rounded-full text-2xs flex items-center justify-center font-bold ${
+                      <span className={`w-4.5 h-4.5 rounded-full text-xs flex items-center justify-center font-bold shrink-0 ${
                         isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                       }`}>
                         {item.num}
@@ -297,7 +297,7 @@ export const ReportPage: React.FC = () => {
                     )}
                     <span>{item.title}</span>
                   </div>
-                  <span className={`text-2xs hidden sm:block mt-0.5 ${
+                  <span className={`text-xs hidden sm:block mt-0.5 ${
                     isActive ? 'text-blue-200' : isPassed ? 'text-emerald-700' : 'text-slate-400'
                   }`}>
                     {item.desc}

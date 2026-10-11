@@ -150,18 +150,18 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
 
               {/* Top Source Category Badge Overlaid on Image */}
               <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
-                <span className="px-2.5 py-1 rounded-lg text-3xs font-bold shadow-xs backdrop-blur-md bg-slate-900/80 text-white border border-white/20">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold shadow-xs backdrop-blur-md bg-slate-900/80 text-white border border-white/20">
                   {getSourceBadgeLabel()}
                 </span>
               </div>
 
               {/* Source Provenance Tag (Overlaid on Bottom of Image) */}
               <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                <span className="px-2 py-0.5 rounded-md text-3xs font-semibold bg-slate-900/75 text-white backdrop-blur-xs shadow-xs truncate max-w-[85%]">
+                <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-900/75 text-white backdrop-blur-xs shadow-xs truncate max-w-[85%]">
                   ภาพจาก {displayDomain}
                 </span>
                 {item.image_source_type && item.image_source_type !== 'FALLBACK' && item.image_source_type !== 'NONE' && (
-                  <span className="px-1.5 py-0.5 rounded text-3xs font-mono font-bold bg-[#0C65E8]/85 text-white backdrop-blur-xs">
+                  <span className="px-1.5 py-0.5 rounded text-xs font-mono font-bold bg-[#0C65E8]/85 text-white backdrop-blur-xs">
                     {item.image_source_type === 'OG_IMAGE' ? 'OG' : item.image_source_type === 'TWITTER_IMAGE' ? 'TW' : 'SRC'}
                   </span>
                 )}
@@ -176,10 +176,10 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
               <span className="text-xs font-bold text-slate-700 truncate max-w-[90%]">
                 {agencyName}
               </span>
-              <span className="text-2xs text-slate-400 mt-0.5 truncate max-w-[90%]">
+              <span className="text-xs text-slate-400 mt-0.5 truncate max-w-[90%]">
                 {getSourceBadgeLabel()}
               </span>
-              <span className="text-3xs text-slate-400 mt-1 italic">
+              <span className="text-xs text-slate-400 mt-1 italic">
                 (แหล่งต้นทางไม่มีภาพประกอบ)
               </span>
             </div>
@@ -188,7 +188,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
           {/* Demo Data Indicator overlay if demo record */}
           {isDemo && (
             <div className="absolute top-2 right-2 z-10">
-              <span className="px-2 py-0.5 rounded-md text-3xs font-black tracking-wider uppercase bg-amber-500 text-white shadow-xs">
+              <span className="px-2 py-0.5 rounded-md text-xs font-black tracking-wider uppercase bg-amber-500 text-white shadow-xs">
                 DEMO DATA
               </span>
             </div>
@@ -209,14 +209,14 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
                 {agencyName}
               </span>
               <span className="text-slate-300">•</span>
-              <span className="flex items-center gap-1 text-slate-500 text-2xs shrink-0">
+              <span className="flex items-center gap-1 text-slate-500 text-xs shrink-0">
                 <Clock className="w-3 h-3 text-slate-400" />
                 <span>{formatThaiDate(item.published_at || item.retrieved_at)}</span>
               </span>
             </div>
 
             {isDisputed && (
-              <span className="bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded text-3xs font-bold shrink-0">
+              <span className="bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded text-xs font-bold shrink-0">
                 ข้อเท็จจริงขัดแย้ง
               </span>
             )}
@@ -224,7 +224,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
 
           {/* Linked Event Tag if present */}
           {(item.monitoring_event_id || item.event_relevance === 'HIGH') && (
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#0C65E8] text-3xs font-semibold border border-blue-100">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#0C65E8] text-xs font-semibold border border-blue-100">
               <Compass className="w-3 h-3 text-[#0C65E8]" />
               <span className="truncate max-w-[200px]">
                 {item.district ? `เหตุการณ์เฝ้าระวัง: ${item.district}` : 'เชื่อมโยงกับเหตุการณ์เฝ้าระวัง'}
@@ -255,7 +255,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {isDemo ? (
-          <div className="text-2xs text-amber-800 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200/80 flex items-center justify-between w-full">
+          <div className="text-xs text-amber-800 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200/80 flex items-center justify-between w-full">
             <span className="font-bold">ข้อมูลจำลองเพื่อการพัฒนา (DEMO DATA)</span>
             {onSelect && (
               <button
@@ -270,7 +270,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onSelect }) => {
         ) : !isSourceAvailable ? (
           <div className="flex items-center justify-between w-full text-xs">
             <span 
-              className="text-2xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1"
+              className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1"
               title="แหล่งข้อมูลต้นทางไม่สามารถเข้าถึงได้ หรืออยู่ระหว่างการตรวจสอบความถูกต้อง"
             >
               <AlertTriangle className="w-3 h-3 text-slate-400" />

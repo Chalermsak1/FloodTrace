@@ -1576,7 +1576,7 @@ export const AdminReportsPage: React.FC = () => {
                         <HelpCircle className="w-4 h-4 text-amber-600" />
                         5. การขอข้อมูลเพิ่มเติมจากประชาชน (Information Requests)
                         {reportDetail.info_requests && reportDetail.info_requests.length > 0 && (
-                          <span className="ml-1.5 px-2 py-0.5 rounded-full text-2xs bg-amber-100 text-amber-800 font-bold">
+                          <span className="ml-1.5 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800 font-bold">
                             {reportDetail.info_requests.length}
                           </span>
                         )}
@@ -1602,7 +1602,7 @@ export const AdminReportsPage: React.FC = () => {
                                   </span>
                                 </div>
                                 <p className="text-slate-800 font-medium">{ir.request_text}</p>
-                                <div className="text-slate-400 text-2xs flex items-center justify-between pt-1 border-t border-amber-100">
+                                <div className="text-slate-400 text-xs flex items-center justify-between pt-1 border-t border-amber-100">
                                   <span>โดย: {ir.requested_by}</span>
                                   <span>{ir.requested_at ? new Date(ir.requested_at).toLocaleString('th-TH') : ''}</span>
                                 </div>
@@ -1966,7 +1966,7 @@ export const AdminReportsPage: React.FC = () => {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-2xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
+                    <span className="text-xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
                     <button
                       onClick={() => handleTriggerSource('thaiwater_rid_runoff')}
                       disabled={triggeringSource === 'thaiwater_rid_runoff'}
@@ -2023,7 +2023,7 @@ export const AdminReportsPage: React.FC = () => {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-2xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
+                    <span className="text-xs text-slate-400">Endpoint: api-v3.thaiwater.net</span>
                     <button
                       onClick={() => handleTriggerSource('thaiwater_rainfall')}
                       disabled={triggeringSource === 'thaiwater_rainfall'}
@@ -2049,11 +2049,11 @@ export const AdminReportsPage: React.FC = () => {
                     <div>
                       <div className="font-semibold text-slate-800">DIW ผู้ประกอบกิจการกำจัดของเสียอันตราย</div>
                       <div className="text-slate-500 mt-0.5">กรมโรงงานอุตสาหกรรม (1,326 โรงงาน)</div>
-                      <div className="text-amber-800 bg-amber-50 rounded px-2 py-0.5 mt-1 inline-block text-2xs border border-amber-200">
+                      <div className="text-amber-800 bg-amber-50 rounded px-2 py-0.5 mt-1 inline-block text-xs border border-amber-200">
                         ข้อมูลอ้างอิงทางการ — พฤษภาคม 2563 (ไม่ใช่ข้อพิสูจน์มลพิษ)
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
                       🔵 ข้อมูลอ้างอิง
                     </span>
                   </div>
@@ -2063,7 +2063,7 @@ export const AdminReportsPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">DWR โครงข่ายทางน้ำและลุ่มน้ำปราจีนบุรี</div>
                       <div className="text-slate-500 mt-0.5">กรมทรัพยากรน้ำ (3 เครือข่ายทางน้ำ)</div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
                       🔵 ข้อมูลอ้างอิง
                     </span>
                   </div>
@@ -2073,7 +2073,7 @@ export const AdminReportsPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">DOPA ข้อมูลหมู่บ้าน / MOPH สถานพยาบาล</div>
                       <div className="text-slate-500 mt-0.5">กรมการปกครอง (65 หมู่บ้าน) / สธ. (11 โรงพยาบาล)</div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-blue-100 text-blue-800">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
                       🔵 ข้อมูลอ้างอิง
                     </span>
                   </div>
@@ -2091,7 +2091,7 @@ export const AdminReportsPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">GISTDA — ขอบเขตน้ำท่วมจากดาวเทียม</div>
                       <div className="text-slate-500 mt-0.5">ต้องใช้กุญแจ API องค์กรระดับสูง</div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700">
                       ⚪ ยังรอการอนุญาต
                     </span>
                   </div>
@@ -2101,7 +2101,7 @@ export const AdminReportsPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">TMD — เรดาร์ตรวจวัดกลุ่มฝนความละเอียดสูง</div>
                       <div className="text-slate-500 mt-0.5">กรมอุตุนิยมวิทยา</div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700">
                       ⚪ ยังรอการอนุญาต
                     </span>
                   </div>
@@ -2111,12 +2111,12 @@ export const AdminReportsPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">PCD — คุณภาพน้ำในแหล่งน้ำผิวดิน</div>
                       <div className="text-slate-500 mt-0.5">กรมควบคุมมลพิษ</div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200 text-slate-700">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700">
                       ⚪ ยังรอการอนุญาต
                     </span>
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-100 text-slate-600 text-2xs leading-relaxed">
+                <div className="p-3 rounded-xl bg-slate-100 text-slate-600 text-xs leading-relaxed">
                   <strong>หลักการ Fail-Closed:</strong> ระบบ FloodTrace จะไม่สร้างหรือสังเคราะห์ข้อมูลจำลอง (Mock) มาทดแทนแหล่งข้อมูลที่ไม่สามารถเข้าถึงได้เด็ดขาด
                 </div>
               </div>

@@ -194,7 +194,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {(packet.what_we_know?.official_records || []).map((r, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
                         {r.data_category}
                       </span>
                       <div className="text-slate-200 font-semibold text-xs mt-1">{r.source}</div>
@@ -208,7 +208,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                   ))}
                   {(packet.what_we_know?.measured_facts || []).map((m, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {m.data_category}
                       </span>
                       <div className="text-slate-200 font-semibold text-xs mt-1">{m.source}</div>
@@ -228,7 +228,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {(packet.what_was_observed?.flood_observations || []).map((f, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                         {f.status}
                       </span>
                       <div className="text-slate-200 font-semibold text-xs mt-1">{f.source}</div>
@@ -237,7 +237,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                   ))}
                   {(packet.what_was_observed?.community_observations || []).map((c, i) => (
                     <div key={i} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                      <span className="px-2 py-0.5 rounded text-2xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
                         CITIZEN_REPORTED • {c.status}
                       </span>
                       <div className="text-slate-200 font-semibold text-xs mt-1">Ground Reports: {c.count} notices</div>
@@ -256,7 +256,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                 <p className="text-xs sm:text-sm text-slate-300">{packet.what_the_model_suggests.summary}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="px-2 py-0.5 rounded text-2xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                       {packet.what_the_model_suggests.hydrological_connectivity.data_category}
                     </span>
                     <div className="text-slate-200 font-semibold text-xs mt-1">
@@ -267,7 +267,7 @@ export const EvidencePacketModal: React.FC<Props> = ({
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
-                    <span className="px-2 py-0.5 rounded text-2xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                       {packet.what_the_model_suggests.atmospheric_forecast.data_category}
                     </span>
                     <div className="text-slate-200 font-semibold text-xs mt-1">

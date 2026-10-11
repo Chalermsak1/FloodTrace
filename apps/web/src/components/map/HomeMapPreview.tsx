@@ -200,20 +200,20 @@ export const HomeMapPreview: React.FC = () => {
 
         {/* Floating Split Map Legend (Compact, Collapsible & Closable) */}
         {showLegend ? (
-          <div className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-xl border border-slate-200/90 w-[calc(100%-1rem)] sm:w-[260px] max-w-[270px] space-y-1.5 text-3xs animate-fadeIn">
+          <div className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl p-2 sm:p-2.5 shadow-xl border border-slate-200/90 w-[calc(100%-1rem)] sm:w-[260px] max-w-[270px] space-y-1.5 text-xs animate-fadeIn">
             <div className="flex items-center justify-between border-b border-slate-100 pb-1">
               <div 
                 className="flex items-center gap-1.5 cursor-pointer select-none"
                 onClick={() => setIsLegendExpanded(!isLegendExpanded)}
               >
                 <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span className="text-3xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์</span>
+                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-                  className="text-slate-500 hover:text-slate-800 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="text-slate-500 hover:text-slate-800 text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                   title={isLegendExpanded ? 'ย่อคำอธิบาย' : 'ขยายคำอธิบาย'}
                 >
                   {isLegendExpanded ? 'ย่อ' : 'ขยาย'}
@@ -234,39 +234,39 @@ export const HomeMapPreview: React.FC = () => {
               <div className="space-y-1.5 animate-in fade-in duration-100">
                 {/* LEGEND A: ระดับความสำคัญ */}
                 <div className="space-y-0.5">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                     ระดับความสำคัญ (Priority Surface)
                   </span>
                   <div className="grid grid-cols-5 gap-0.5 text-center">
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูงมาก</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">สูงมาก</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูง</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">สูง</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#EAB308] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ปานกลาง</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ปานกลาง</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ต่ำ</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ต่ำ</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#64748B] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
                     </div>
                   </div>
                 </div>
 
                 {/* LEGEND B: ข้อมูลบนแผนที่ */}
                 <div className="space-y-1 pt-1 border-t border-slate-100">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                     ข้อมูลบนแผนที่ (Map Markers)
                   </span>
-                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-slate-700 text-[10px]">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700 text-xs">
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[#0284C7] shrink-0 shadow-xs"></span>
                       <span className="truncate">สถานีระดับน้ำ</span>
@@ -278,7 +278,7 @@ export const HomeMapPreview: React.FC = () => {
                   </div>
                 </div>
 
-                <p className="text-[9px] text-slate-400 leading-tight border-t border-slate-100 pt-1">
+                <p className="text-xs text-slate-400 leading-normal border-t border-slate-100 pt-1">
                   พื้นที่สีแสดงระดับ Monitoring Priority เชิงพื้นที่ ไม่ใช่การยืนยันมลพิษหรือสารเคมีทางแล็บ
                 </p>
               </div>
@@ -289,7 +289,7 @@ export const HomeMapPreview: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowLegend(true)}
-              className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
+              className="absolute bottom-3 sm:bottom-4 left-2 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 shadow-md border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
               title="เปิดคำอธิบายสัญลักษณ์ (Map Legend)"
             >
               <Info className="w-3 h-3 text-blue-600" />
@@ -350,7 +350,7 @@ export const HomeMapPreview: React.FC = () => {
                 {/* 3. Contributing Factors / Spatial Evaluation Bullet Points (From Image 2) */}
                 {factors.length > 0 && (
                   <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-100/80 space-y-1.5">
-                    <span className="text-[11px] font-semibold text-slate-500 block uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-500 block uppercase tracking-wider">
                       ปัจจัยและการประเมินเชิงพื้นที่:
                     </span>
                     <ul className="space-y-1.5 pl-0.5">

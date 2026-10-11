@@ -539,13 +539,13 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                   <tr key={item.id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3 px-4">
                       <div className="font-mono font-bold text-slate-900 text-xs">{item.id}</div>
-                      <div className="text-2xs text-slate-500">
+                      <div className="text-xs text-slate-500">
                         {item.observed_at ? new Date(item.observed_at).toLocaleDateString('th-TH') : 'ไม่ระบุวันพบ'}
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-semibold text-purple-900">{item.source_name}</div>
-                      <div className="text-2xs text-slate-500">{item.source_platform}</div>
+                      <div className="text-xs text-slate-500">{item.source_platform}</div>
                     </td>
                     <td className="py-3 px-4 max-w-xs">
                       <div className="font-semibold text-slate-800 truncate" title={item.title_or_summary}>
@@ -555,7 +555,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                         href={item.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-2xs text-purple-700 hover:underline flex items-center gap-1 mt-0.5"
+                        className="text-xs text-purple-700 hover:underline flex items-center gap-1 mt-0.5"
                       >
                         <ExternalLink className="w-3 h-3" />
                         <span className="truncate max-w-[180px]">{item.source_url}</span>
@@ -568,7 +568,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-xs font-medium text-slate-700">{item.district || 'จ.ปราจีนบุรี'}</div>
-                      <div className="text-2xs text-slate-500 font-mono">[{item.location_precision}]</div>
+                      <div className="text-xs text-slate-500 font-mono">[{item.location_precision}]</div>
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -775,7 +775,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-2xs text-slate-500 mb-1">Latitude (ถ้ามีพิกัดเฉพาะเจาะจง)</label>
+                    <label className="block text-xs text-slate-500 mb-1">Latitude (ถ้ามีพิกัดเฉพาะเจาะจง)</label>
                     <input
                       type="text"
                       value={intakeForm.latitude}
@@ -785,7 +785,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-2xs text-slate-500 mb-1">Longitude (ถ้ามีพิกัดเฉพาะเจาะจง)</label>
+                    <label className="block text-xs text-slate-500 mb-1">Longitude (ถ้ามีพิกัดเฉพาะเจาะจง)</label>
                     <input
                       type="text"
                       value={intakeForm.longitude}
@@ -828,7 +828,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                   placeholder="https://example.com/images/water1.jpg"
                   className="w-full border border-slate-200 rounded-lg p-2"
                 />
-                <span className="text-2xs text-slate-500">
+                <span className="text-xs text-slate-500">
                   * จัดเก็บเฉพาะลิงก์อ้างอิง ไม่ทำสำเนาถาวรโดยไม่ได้รับอนุญาต (ลิขสิทธิ์ปลอดภัย - Section 23)
                 </span>
               </div>
@@ -921,19 +921,19 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                     <div>
-                      <span className="text-2xs text-slate-500 block">แพลตฟอร์ม</span>
+                      <span className="text-xs text-slate-500 block">แพลตฟอร์ม</span>
                       <span className="font-bold text-slate-800">{selectedEvidence.source_platform}</span>
                     </div>
                     <div>
-                      <span className="text-2xs text-slate-500 block">ประเภทเหตุการณ์</span>
+                      <span className="text-xs text-slate-500 block">ประเภทเหตุการณ์</span>
                       <span className="font-bold text-slate-800">{selectedEvidence.event_type}</span>
                     </div>
                     <div>
-                      <span className="text-2xs text-slate-500 block">สถานะตรวจทาน</span>
+                      <span className="text-xs text-slate-500 block">สถานะตรวจทาน</span>
                       <span className="font-bold text-purple-700">{selectedEvidence.verification_status}</span>
                     </div>
                     <div>
-                      <span className="text-2xs text-slate-500 block">การเปิดเผย</span>
+                      <span className="text-xs text-slate-500 block">การเปิดเผย</span>
                       <span className="font-bold text-slate-800">{selectedEvidence.publication_status}</span>
                     </div>
                   </div>
@@ -943,8 +943,8 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                     {selectedEvidence.source_url.includes('example.com') ? (
                       <div className="mt-1 p-2 bg-amber-50 rounded-lg border border-amber-200 text-xs space-y-0.5">
                         <span className="font-bold text-amber-900 block">ลิงก์จำลองเพื่อการทดสอบ (Demo / Mock URL):</span>
-                        <span className="font-mono text-2xs text-slate-600 break-all block">{selectedEvidence.source_url}</span>
-                        <span className="text-2xs text-amber-700 block">* รายการนี้เป็นข้อมูลตัวอย่างเพื่อการทดสอบ ไม่ใช่โดเมนจริงบนอินเทอร์เน็ต</span>
+                        <span className="font-mono text-xs text-slate-600 break-all block">{selectedEvidence.source_url}</span>
+                        <span className="text-xs text-amber-700 block">* รายการนี้เป็นข้อมูลตัวอย่างเพื่อการทดสอบ ไม่ใช่โดเมนจริงบนอินเทอร์เน็ต</span>
                       </div>
                     ) : (
                       <a
@@ -1005,7 +1005,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
 
                         <div className="p-3 bg-white border border-slate-200 rounded-lg">
                           <span className="text-xs font-bold text-slate-700 block mb-0.5">ความสอดคล้องเชิงเวลา (Temporal Alignment)</span>
-                          <span className="text-2xs text-slate-400 block mb-1.5 leading-tight">แสดงกรอบเวลา ไม่ใช่ข้อพิสูจน์เชิงสาเหตุ</span>
+                          <span className="text-xs text-slate-400 block mb-1.5 leading-tight">แสดงกรอบเวลา ไม่ใช่ข้อพิสูจน์เชิงสาเหตุ</span>
                           <div className="text-xs text-slate-600">
                             ความสดใหม่: {correlations.temporal_correlation?.temporal_category || correlations.temporal_correlation?.time_relevance_label || 'RECENT'}
                           </div>
@@ -1034,7 +1034,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                         )}
                       </div>
 
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-2xs text-amber-900">
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
                         <em>หลักเกณฑ์ข้อเท็จจริง: ความสัมพันธ์แวดล้อมสนับสนุนการจัดลำดับการเฝ้าระวังเท่านั้น ไม่ใช่ข้อพิสูจน์การปนเปื้อน หรือการกระทำผิด</em>
                       </div>
                     </div>
@@ -1231,7 +1231,7 @@ export const ExternalEvidenceAdminView: React.FC<StaffUserProps> = ({
                         <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
                           <div className="flex justify-between items-center">
                             <span className="font-bold text-slate-900">{log.action}</span>
-                            <span className="text-2xs text-slate-500">{new Date(log.created_at).toLocaleString('th-TH')}</span>
+                            <span className="text-xs text-slate-500">{new Date(log.created_at).toLocaleString('th-TH')}</span>
                           </div>
                           <div className="text-slate-600">โดย: <span className="font-medium">{log.staff_user_id}</span></div>
                           <div className="text-slate-700">เหตุผล: {log.reason}</div>

@@ -47,7 +47,7 @@ export const AreaDetailSection: React.FC<AreaDetailSectionProps> = ({
               </p>
             </div>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#E16434] text-white">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E16434] text-white">
             HIGH
           </span>
         </div>

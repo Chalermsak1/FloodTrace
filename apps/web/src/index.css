@@ -17,18 +17,18 @@
   /* Typography System Tokens (Section 50.1 - 50.21) */
   --font-family-sans: "Noto Sans Thai", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Typography Scale (Optimized for Thai Script Legibility) */
-  --font-size-3xs: 0.75rem;    /* 12.5px */
-  --font-size-2xs: 0.8125rem;  /* 13.5px */
-  --font-size-xs: 0.875rem;    /* 14.5px - Badges, metadata */
-  --font-size-sm: 0.9375rem;   /* 15.5px - Secondary text, captions, table headers */
-  --font-size-base: 1.0625rem; /* 17.5px - Standard readable body text, inputs, buttons */
-  --font-size-lg: 1.1875rem;   /* 19.5px - Card headings, emphasized body */
-  --font-size-xl: 1.3125rem;   /* 21.5px - Sub-section headings */
-  --font-size-2xl: 1.625rem;   /* 26.8px - Section headings (desktop 26-28px) */
-  --font-size-3xl: 2rem;       /* 33px - Page headings (desktop 32-36px) */
-  --font-size-4xl: 2.375rem;   /* 39px - Large page headings */
-  --font-size-display: 2.875rem;/* 47.5px - Display / Hero headline */
+  /* Typography Scale (Optimized for Thai & English Legibility) */
+  --font-size-3xs: 0.75rem;    /* 12px min floor */
+  --font-size-2xs: 0.75rem;    /* 12px min floor */
+  --font-size-xs: 0.75rem;     /* 12px - Badges, metadata */
+  --font-size-sm: 0.875rem;    /* 14px - Secondary text, captions, table headers */
+  --font-size-base: 1rem;      /* 16px - Standard readable body text, inputs, buttons */
+  --font-size-lg: 1.125rem;    /* 18px - Card headings, emphasized body */
+  --font-size-xl: 1.25rem;     /* 20px - Sub-section headings */
+  --font-size-2xl: 1.5rem;     /* 24px - Section headings (desktop 20-24px, mobile page title) */
+  --font-size-3xl: 1.875rem;   /* 30px - Page headings (desktop 28-32px) */
+  --font-size-4xl: 2.25rem;    /* 36px - Large page headings / Hero */
+  --font-size-display: 2.75rem;/* 44px - Display / Hero headline */
 
   /* Font Weights */
   --font-weight-regular: 400;
@@ -36,17 +36,17 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Line Heights (Section 50.4) */
-  --line-height-tight: 1.25;
+  /* Line Heights (Sufficient for Thai tone marks & vowels) */
+  --line-height-tight: 1.3;
   --line-height-heading: 1.35;
-  --line-height-normal: 1.65;
-  --line-height-readable: 1.75;
+  --line-height-normal: 1.55;
+  --line-height-readable: 1.65;
 }
 
 @layer base {
   html {
     font-family: var(--font-family-sans);
-    font-size: 16.5px;
+    font-size: 16px;
     letter-spacing: normal;
     overflow-x: hidden;
     max-width: 100%;
@@ -80,6 +80,79 @@
   button, input, select, textarea {
     font-family: var(--font-family-sans);
     letter-spacing: normal;
+  }
+}
+
+@layer components {
+  /* ============================================================ */
+  /* Reusable FloodTrace Global Typography Tokens                 */
+  /* Desktop scale: Page title (28-32px), Section (20-24px),      */
+  /* Card (16-18px), Body (14-16px), Supporting (12-14px),       */
+  /* Small metadata (12px min)                                    */
+  /* Mobile scale: Page title (24-28px), Section (18-22px),       */
+  /* Card (16-18px), Body (14-16px), Supporting (12-14px)        */
+  /* ============================================================ */
+  .text-page-title {
+    font-size: 1.5rem; /* 24px mobile */
+    line-height: 1.35;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  @media (min-width: 640px) {
+    .text-page-title {
+      font-size: 1.875rem; /* 30px desktop */
+      line-height: 1.3;
+    }
+  }
+
+  .text-section-title {
+    font-size: 1.25rem; /* 20px mobile */
+    line-height: 1.35;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  @media (min-width: 640px) {
+    .text-section-title {
+      font-size: 1.5rem; /* 24px desktop */
+      line-height: 1.35;
+    }
+  }
+
+  .text-card-title {
+    font-size: 1rem; /* 16px mobile */
+    line-height: 1.4;
+    font-weight: 700;
+  }
+  @media (min-width: 640px) {
+    .text-card-title {
+      font-size: 1.125rem; /* 18px desktop */
+      line-height: 1.4;
+    }
+  }
+
+  .text-body-readable {
+    font-size: 0.9375rem; /* 15px mobile */
+    line-height: 1.6;
+    font-weight: 400;
+  }
+  @media (min-width: 640px) {
+    .text-body-readable {
+      font-size: 1rem; /* 16px desktop */
+      line-height: 1.65;
+    }
+  }
+
+  .text-supporting {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  .text-metadata {
+    font-size: 0.75rem; /* 12px absolute minimum */
+    line-height: 1.45;
+    font-weight: 500;
   }
 }
 
@@ -461,36 +534,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   hyphens: auto;
 }
 
-/* Global 320px Viewport Integrity */
-@media (max-width: 359px) {
-  .text-3xs {
-    font-size: 0.7rem;
-  }
-}
-
 /* ============================================================ */
-/* Enhanced Thai Typography Legibility Rules                    */
-/* Ensures sub-pixel tone marks and vowels are crystal clear     */
+/* Enhanced Thai Typography Legibility & 12px Minimum Floor     */
+/* Ensures sub-pixel tone marks and vowels are crystal clear    */
 /* ============================================================ */
-.text-\[9px\] {
-  font-size: 0.75rem !important; /* ~12.5px */
-  line-height: 1.35 !important;
-}
-.text-\[10px\] {
-  font-size: 0.8125rem !important; /* ~13.5px */
-  line-height: 1.4 !important;
-}
-.text-\[11px\] {
-  font-size: 0.875rem !important; /* ~14.5px */
+.text-\[7px\],
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\],
+.text-3xs,
+.text-2xs {
+  font-size: 0.75rem !important; /* 12px absolute minimum floor */
   line-height: 1.45 !important;
 }
-.text-3xs {
-  font-size: 0.75rem !important;
-  line-height: 1.35 !important;
-}
-.text-2xs {
-  font-size: 0.8125rem !important;
-  line-height: 1.4 !important;
-}
+
 
 

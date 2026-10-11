@@ -629,16 +629,16 @@ export const MapPage: React.FC = () => {
           </div>
 
           {/* Quick Counter Badges */}
-          <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
-            <span className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full border border-sky-100">
+          <div className="hidden lg:flex items-center gap-1.5 text-xs font-medium text-slate-600">
+            <span className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 px-2.5 py-0.5 rounded-full border border-sky-100">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
               <span>{layerCounts.floodPoints} จุดน้ำ</span>
             </span>
-            <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full border border-purple-100">
+            <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded-full border border-purple-100">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
               <span>{layerCounts.environmental} จุดสังเกต</span>
             </span>
-            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-100">
+            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full border border-amber-100">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               <span>{layerCounts.monitoringStations} สถานี</span>
             </span>
@@ -793,21 +793,21 @@ export const MapPage: React.FC = () => {
 
         {/* 7. WebGIS Map Legend (Compact, Collapsible & Closable) */}
         {showLegend ? (
-          <div className={`absolute bottom-8 sm:bottom-10 left-2.5 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/90 p-2 sm:p-2.5 w-[calc(100%-1.25rem)] sm:w-[260px] max-w-[270px] space-y-1.5 text-3xs ${selectedCellData || selectedMarkerData ? 'hidden lg:block' : 'block'}`}>
+          <div className={`absolute bottom-8 sm:bottom-10 left-2.5 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/90 p-2.5 sm:p-3 w-[calc(100%-1.25rem)] sm:w-[270px] max-w-[280px] space-y-1.5 text-xs ${selectedCellData || selectedMarkerData ? 'hidden lg:block' : 'block'}`}>
             {/* Legend Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div 
                 className="flex items-center gap-1.5 cursor-pointer select-none"
                 onClick={() => setIsLegendExpanded(!isLegendExpanded)}
               >
-                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span className="text-3xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์</span>
+                <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">คำอธิบายสัญลักษณ์</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-                  className="text-slate-500 hover:text-slate-800 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="text-slate-500 hover:text-slate-800 text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                   title={isLegendExpanded ? 'ย่อคำอธิบาย' : 'ขยายคำอธิบาย'}
                 >
                   {isLegendExpanded ? 'ย่อ' : 'ขยาย'}
@@ -828,39 +828,39 @@ export const MapPage: React.FC = () => {
               <div className="space-y-1.5 animate-in fade-in duration-100">
                 {/* LEGEND A: ระดับความสำคัญในการเฝ้าระวัง */}
                 <div className="space-y-0.5">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                     ระดับความสำคัญ (Priority Surface)
                   </span>
                   <div className="grid grid-cols-5 gap-0.5 text-center">
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูงมาก</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">สูงมาก</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">สูง</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">สูง</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#EAB308] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ปานกลาง</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ปานกลาง</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ต่ำ</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ต่ำ</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#64748B] shadow-xs"></span>
-                      <span className="text-[10px] text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
+                      <span className="text-xs text-slate-700 font-medium mt-0.5">ไม่มีข้อมูล</span>
                     </div>
                   </div>
                 </div>
 
                 {/* LEGEND B: Thematic Layers + Verification Indicator */}
                 <div className="space-y-1 pt-1 border-t border-slate-100">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                     สัญลักษณ์ 5 ชั้นข้อมูลหลัก
                   </span>
-                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-slate-700 text-[10px]">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700 text-xs">
                     <div className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[#0284C7] shrink-0 shadow-xs"></span>
                       <span className="truncate">น้ำท่วม/ขัง</span>
@@ -886,10 +886,10 @@ export const MapPage: React.FC = () => {
                       <span className="truncate">แม่น้ำ/ลำคลอง</span>
                     </div>
                     <div className="flex items-center gap-1 col-span-2 pt-0.5 border-t border-slate-100">
-                      <span className="w-3 h-3 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[8px] font-bold shrink-0 shadow-xs">
+                      <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
                         ✓
                       </span>
-                      <span className="font-semibold text-emerald-900 text-[10px]">
+                      <span className="font-semibold text-emerald-900 text-xs">
                         วงแหวนเขียว: ตรวจสอบยืนยันแล้ว
                       </span>
                     </div>
@@ -897,7 +897,7 @@ export const MapPage: React.FC = () => {
                 </div>
 
                 {/* Disclaimers */}
-                <p className="text-[9px] text-slate-400 leading-tight border-t border-slate-100 pt-1">
+                <p className="text-xs text-slate-400 leading-normal border-t border-slate-100 pt-1">
                   หมุดม่วงคือข้อสังเกตกายภาพ ไม่ใช่ผลตรวจแล็บ • พื้นที่ไม่มีข้อมูลไม่ได้หมายความว่าปลอดภัย
                 </p>
               </div>
@@ -908,17 +908,17 @@ export const MapPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowLegend(true)}
-              className="absolute bottom-8 sm:bottom-10 left-2.5 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
+              className="absolute bottom-8 sm:bottom-10 left-2.5 sm:left-4 z-20 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 shadow-md border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 hover:bg-blue-50 hover:text-blue-700 transition-all select-none cursor-pointer"
               title="เปิดคำอธิบายสัญลักษณ์ (Map Legend)"
             >
-              <Info className="w-3 h-3 text-blue-600" />
+              <Info className="w-3.5 h-3.5 text-blue-600" />
               <span>คำอธิบายสัญลักษณ์</span>
             </button>
           )
         )}
 
         {/* WebGIS Status & Coordinate Bar (Bottom edge) */}
-        <div className="absolute bottom-2 right-2.5 sm:right-4 z-20 bg-slate-900/85 backdrop-blur-md rounded-xl border border-slate-700/80 px-3 py-1.5 text-3xs text-slate-300 shadow-lg flex items-center gap-3 select-none pointer-events-auto">
+        <div className="absolute bottom-2 right-2.5 sm:right-4 z-20 bg-slate-900/85 backdrop-blur-md rounded-xl border border-slate-700/80 px-3 py-1.5 text-xs text-slate-300 shadow-lg flex items-center gap-3 select-none pointer-events-auto">
           {isInspectorActive && (
             <div className="flex items-center gap-1 text-emerald-400 font-semibold border-r border-slate-700 pr-2.5">
               <Crosshair className="w-3 h-3 animate-pulse" />
@@ -948,27 +948,27 @@ export const MapPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-1.5 flex-wrap">
                 {selectedMarkerData._layerType === 'flooding' ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7]"></span>
                     จุดน้ำท่วม / น้ำขัง
                   </span>
                 ) : selectedMarkerData._layerType === 'environmental' ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]"></span>
                     ข้อสังเกตสิ่งแวดล้อม
                   </span>
                 ) : selectedMarkerData._layerType === 'monitoringStations' ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]"></span>
                     {selectedMarkerData._subType === 'waterLevel' ? 'สถานีวัดระดับน้ำ' : 'สถานีวัดน้ำฝน'}
                   </span>
                 ) : selectedMarkerData._layerType === 'news' ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300">
                     <Newspaper className="w-3 h-3 text-blue-800" />
                     ข่าวสารและสื่อมวลชน
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>
                     รายงานจากประชาชน
                   </span>
@@ -976,16 +976,16 @@ export const MapPage: React.FC = () => {
 
                 {/* Verification Status Badge */}
                 {isGenuineVerified(selectedMarkerData) || selectedMarkerData._verified ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                     <span>ยืนยันแล้ว (Official/Lab)</span>
                   </span>
                 ) : selectedMarkerData._layerType === 'news' ? (
-                  <span className="inline-flex items-center gap-1 text-3xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                     <span>สื่อมวลชนเผยแพร่</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-3xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                     <span>{selectedMarkerData._layerType === 'environmental' ? 'ข้อสังเกตทางกายภาพ' : 'รอตรวจสอบ'}</span>
                   </span>
                 )}
@@ -1033,13 +1033,13 @@ export const MapPage: React.FC = () => {
             {selectedMarkerData.water_level_msl != null && (
               <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-baseline justify-between">
                 <div>
-                  <span className="text-2xs text-amber-800 font-semibold block">ระดับน้ำตรวจวัดจริง</span>
+                  <span className="text-xs text-amber-800 font-semibold block">ระดับน้ำตรวจวัดจริง</span>
                   <span className="text-lg font-black text-amber-950">{Number(selectedMarkerData.water_level_msl).toFixed(2)}</span>
                   <span className="text-xs text-amber-800 font-bold ml-1">ม.รทก.</span>
                 </div>
                 {selectedMarkerData.warning_level_msl != null && (
                   <div className="text-right">
-                    <span className="text-3xs text-amber-700 block">ระดับเฝ้าระวัง</span>
+                    <span className="text-xs text-amber-700 block">ระดับเฝ้าระวัง</span>
                     <span className="text-xs font-bold text-amber-900">{Number(selectedMarkerData.warning_level_msl).toFixed(2)} ม.รทก.</span>
                   </div>
                 )}
@@ -1049,13 +1049,13 @@ export const MapPage: React.FC = () => {
             {selectedMarkerData.rain_24h_mm != null && (
               <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-baseline justify-between">
                 <div>
-                  <span className="text-2xs text-amber-800 font-semibold block">ฝนสะสม 24 ชม.</span>
+                  <span className="text-xs text-amber-800 font-semibold block">ฝนสะสม 24 ชม.</span>
                   <span className="text-lg font-black text-amber-950">{Number(selectedMarkerData.rain_24h_mm).toFixed(1)}</span>
                   <span className="text-xs text-amber-800 font-bold ml-1">มม.</span>
                 </div>
                 {selectedMarkerData.rain_1h_mm != null && (
                   <div className="text-right">
-                    <span className="text-3xs text-amber-700 block">ฝน 1 ชม. ล่าสุด</span>
+                    <span className="text-xs text-amber-700 block">ฝน 1 ชม. ล่าสุด</span>
                     <span className="text-xs font-bold text-amber-900">{Number(selectedMarkerData.rain_1h_mm).toFixed(1)} มม.</span>
                   </div>
                 )}
@@ -1065,7 +1065,7 @@ export const MapPage: React.FC = () => {
             {/* Reported Descriptions / Physical Observations */}
             {(selectedMarkerData.text_excerpt || selectedMarkerData.description) && (
               <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-1">
-                <span className="text-3xs font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                   {selectedMarkerData._layerType === 'environmental' ? 'ลักษณะทางกายภาพที่สังเกตพบ' : selectedMarkerData._layerType === 'news' ? 'เนื้อหาข่าวโดยสรุป' : 'รายละเอียดรายงาน'}
                 </span>
                 <p className="text-xs text-slate-700 leading-relaxed">
@@ -1093,7 +1093,7 @@ export const MapPage: React.FC = () => {
             )}
 
             {/* Metadata / Provenance Details */}
-            <div className="text-3xs text-slate-500 space-y-1 border-t border-slate-100 pt-2">
+            <div className="text-xs text-slate-500 space-y-1 border-t border-slate-100 pt-2">
               <div className="flex items-center justify-between">
                 <span>เวลาตรวจวัด / เผยแพร่</span>
                 <span className="font-semibold text-slate-700">
@@ -1121,11 +1121,11 @@ export const MapPage: React.FC = () => {
             {/* External Link */}
             {selectedMarkerData.source_url && (
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-3xs text-emerald-700 font-medium">
+                <span className="text-xs text-emerald-700 font-medium">
                   {selectedMarkerData._layerType === 'news' ? 'ลิงก์ข่าวต้นทาง' : 'บันทึกหลักฐานในระบบ'}
                 </span>
                 {selectedMarkerData.source_url.includes('example.com') ? (
-                  <span className="text-3xs text-amber-700 italic">Demo Reference</span>
+                  <span className="text-xs text-amber-700 italic">Demo Reference</span>
                 ) : (
                   <a
                     href={selectedMarkerData.source_url}
@@ -1141,7 +1141,7 @@ export const MapPage: React.FC = () => {
             )}
 
             {/* Cautionary Footer */}
-            <div className="text-3xs text-slate-400 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-tight">
+            <div className="text-xs text-slate-400 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-tight">
               {selectedMarkerData._layerType === 'news'
                 ? '📰 ข่าวสารรายงานจากสำนักข่าวสาธารณะ ระบุพิกัดหรืออำเภอเพื่อการติดตามสถานการณ์'
                 : selectedMarkerData._layerType === 'environmental'

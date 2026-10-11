@@ -226,14 +226,14 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
         <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-3 bg-slate-50/50">
           <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-3xs sm:text-2xs font-bold border ${authBadge.color}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs sm:text-xs font-bold border ${authBadge.color}`}>
                 {authBadge.label}
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-3xs sm:text-2xs font-semibold ${verBadge.color}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs sm:text-xs font-semibold ${verBadge.color}`}>
                 {verBadge.label}
               </span>
               {isDemo && (
-                <span className="px-2.5 py-0.5 rounded-full text-3xs sm:text-2xs font-black uppercase tracking-wider bg-amber-500 text-white">
+                <span className="px-2.5 py-0.5 rounded-full text-xs sm:text-xs font-black uppercase tracking-wider bg-amber-500 text-white">
                   DEMO DATA
                 </span>
               )}
@@ -281,11 +281,11 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                   }`}
                 />
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                  <span className="px-2 py-0.5 rounded text-3xs font-medium bg-slate-900/80 text-white backdrop-blur-xs">
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-900/80 text-white backdrop-blur-xs">
                     ภาพประกอบเหตุการณ์จริง ({item.source_domain || item.source_name || 'สื่อสาธารณะ'})
                   </span>
                   {item.image_source_type && (
-                    <span className="px-1.5 py-0.5 rounded text-3xs font-mono font-bold bg-[#0C65E8]/90 text-white">
+                    <span className="px-1.5 py-0.5 rounded text-xs font-mono font-bold bg-[#0C65E8]/90 text-white">
                       {item.image_source_type}
                     </span>
                   )}
@@ -300,7 +300,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
               </div>
               <div className="text-xs">
                 <div className="font-semibold text-slate-700">ภาพจากแหล่งต้นทาง ({item.source_name})</div>
-                <div className="text-slate-500 text-3xs mt-0.5">
+                <div className="text-slate-500 text-xs mt-0.5">
                   ไม่สามารถแสดงผลภาพถ่ายโดยตรงจากเซิร์ฟเวอร์ภายนอกได้ (สามารถตรวจสอบได้ที่ลิงก์แหล่งข้อมูลต้นฉบับ)
                 </div>
               </div>
@@ -313,9 +313,9 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             <div className="text-xs space-y-1">
               <div className="font-bold flex items-center gap-1.5 text-emerald-900">
                 <span>{isCuratedNews ? 'บันทึกข้อมูลและสรุปเนื้อหาข่าวสารไว้ในระบบแล้ว' : 'บันทึกข้อมูลหลักและข้อเท็จจริงไว้ใน FloodTrace แล้ว'}</span>
-                <span className="px-1.5 py-0.2 rounded text-3xs font-semibold bg-emerald-200/80 text-emerald-900">สำเนาปลอดภัย</span>
+                <span className="px-1.5 py-0.2 rounded text-xs font-semibold bg-emerald-200/80 text-emerald-900">สำเนาปลอดภัย</span>
               </div>
-              <p className="text-emerald-800/90 text-2xs sm:text-xs leading-relaxed">
+              <p className="text-emerald-800/90 text-xs sm:text-xs leading-relaxed">
                 {isCuratedNews 
                   ? 'หัวข้อข่าว, วันที่เผยแพร่, ภาพหน้าปกจริงจากแหล่งข่าว และสรุปเนื้อหา ได้รับการบันทึกไว้ในระบบเพื่อความสะดวกในการติดตามสถานการณ์ คุณสามารถกดอ่านเนื้อหาฉบับเต็มได้จากแหล่งต้นทาง'
                   : 'พิกัดพื้นที่เกิดเหตุ, เวลาสังเกตพบจริง, ข้อความที่ชุมชน/แหล่งข่าวรายงาน และภาพถ่ายหลักฐาน ถูกบันทึกเป็นหลักฐานอิเล็กทรอนิกส์ในระบบ คุณสามารถตรวจสอบข้อมูลทั้งหมดได้โดยตรงจากหน้านี้อย่างครบถ้วน แม้ว่าหน้าเว็บภายนอกจะเข้าถึงไม่ได้หรือเกิดข้อผิดพลาดทางเทคนิค'}
@@ -332,7 +332,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                   <span>พิกัดและพื้นที่เกิดเหตุ (Location & Spatial Scope)</span>
                 </div>
                 {item.location_precision && (
-                  <span className="px-2 py-0.5 rounded text-3xs font-semibold bg-sky-100 text-sky-800 border border-sky-300/60">
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-300/60">
                     ความแม่นยำ: {item.location_precision === 'EXACT' ? 'จุดพิกัดสังเกตการณ์' : item.location_precision === 'NEARBY' ? 'บริเวณใกล้เคียง' : item.location_precision}
                   </span>
                 )}
@@ -344,7 +344,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                   <span className="font-bold text-slate-900 text-sm">{item.location_text || (item.district ? `อ.${item.district} จ.ปราจีนบุรี` : 'จ.ปราจีนบุรี')}</span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 text-2xs pt-1 border-t border-sky-200/60">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 text-xs pt-1 border-t border-sky-200/60">
                   {item.subdistrict && (
                     <span>ตำบล: <strong>{item.subdistrict}</strong></span>
                   )}
@@ -370,7 +370,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                 <span>ข้อมูลจากแหล่งต้นทาง (Original Source Record)</span>
               </div>
               {item.source_platform && (
-                <span className="px-2 py-0.5 rounded text-3xs font-semibold bg-slate-200/80 text-slate-700 font-mono">
+                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200/80 text-slate-700 font-mono">
                   {item.source_platform}
                 </span>
               )}
@@ -387,7 +387,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
               </div>
               {item.observed_at && (
                 <div className="bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 sm:col-span-2">
-                  <span className="text-amber-800 font-semibold flex items-center gap-1.5 text-2xs">
+                  <span className="text-amber-800 font-semibold flex items-center gap-1.5 text-xs">
                     <Clock className="w-3.5 h-3.5 text-amber-600" />
                     เวลาที่สังเกตพบเหตุการณ์จริง (Observed Time):
                   </span>
@@ -440,14 +440,14 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             {/* Linked Monitoring Event if correlated */}
             {item.monitoring_event_id ? (
               <div className="p-3 rounded-xl bg-white border border-blue-200/80 space-y-1">
-                <span className="text-3xs font-bold text-[#0C65E8] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#0C65E8] uppercase tracking-wider">
                   เหตุการณ์เฝ้าระวังที่เชื่อมโยง
                 </span>
                 <p className="font-bold text-sm text-[#063B70]">
                   {item.linked_event_title || item.monitoring_event_id}
                 </p>
                 {item.district && (
-                  <span className="inline-block text-2xs text-slate-500">
+                  <span className="inline-block text-xs text-slate-500">
                     พื้นที่: อำเภอ{item.district}
                   </span>
                 )}
@@ -455,17 +455,17 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             ) : isCuratedNews ? (
               <div className="p-3.5 rounded-xl bg-white border border-blue-200/80 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-3xs font-bold text-[#0C65E8] uppercase tracking-wider">
+                  <span className="text-xs font-bold text-[#0C65E8] uppercase tracking-wider">
                     สถานะการคัดสรรข่าวสาร (Curated Public Source)
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-3xs font-bold ${verBadge.color}`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${verBadge.color}`}>
                     {verBadge.label}
                   </span>
                 </div>
                 <p className="text-xs text-slate-700 leading-relaxed">
                   ข่าวสารและบทความนี้ได้รับการคัดสรรโดยโครงการ FloodTrace เพื่อสนับสนุนการติดตามสถานการณ์และเผยแพร่ข้อมูลสู่สาธารณะ ทั้งนี้ FloodTrace ไม่ได้เป็นผู้ตรวจพิสูจน์ข้อเท็จจริงทุกข้อความในบทความด้วยตนเอง โปรดอ่านและอ้างอิงจากแหล่งข่าวต้นทางเป็นหลัก
                 </p>
-                <div className="pt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-slate-500 border-t border-slate-100">
+                <div className="pt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 border-t border-slate-100">
                   <span><strong className="text-slate-700">แหล่งข่าว:</strong> {item.source_name}</span>
                   {item.published_at && (
                     <span><strong className="text-slate-700">วันที่เผยแพร่:</strong> {formatThaiDateTime(item.published_at)}</span>
@@ -475,10 +475,10 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             ) : (
               <div className="p-3 rounded-xl bg-white border border-purple-200/80 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-3xs font-bold text-purple-700 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">
                     สถานะการตรวจสอบหลักฐาน (Evidence Verification)
                   </span>
-                  <span className={`px-2 py-0.5 rounded-full text-3xs font-bold ${verBadge.color}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${verBadge.color}`}>
                     {verBadge.label}
                   </span>
                 </div>
@@ -492,15 +492,15 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             {item.monitoring_event_id && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
                 <div className="p-2.5 rounded-xl bg-white border border-blue-100">
-                  <span className="text-slate-400 block text-3xs">ความสอดคล้องเชิงพื้นที่</span>
+                  <span className="text-slate-400 block text-xs">ความสอดคล้องเชิงพื้นที่</span>
                   <span className="font-bold text-slate-800">{item.spatial_relevance || 'UNKNOWN'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white border border-blue-100">
-                  <span className="text-slate-400 block text-3xs">ความสอดคล้องด้านเวลา</span>
+                  <span className="text-slate-400 block text-xs">ความสอดคล้องด้านเวลา</span>
                   <span className="font-bold text-slate-800">{item.temporal_relevance || 'UNKNOWN'}</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-white border border-blue-100 col-span-2 sm:col-span-1">
-                  <span className="text-slate-400 block text-3xs">ระดับความเกี่ยวเนื่อง</span>
+                  <span className="text-slate-400 block text-xs">ระดับความเกี่ยวเนื่อง</span>
                   <span className={`font-bold ${
                     item.event_relevance === 'HIGH' ? 'text-blue-700' :
                     item.event_relevance === 'MEDIUM' ? 'text-indigo-600' : 'text-slate-600'
@@ -514,7 +514,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             {/* Explainable Reasons */}
             {item.correlation_reasons && item.correlation_reasons.length > 0 && (
               <div className="space-y-1 pt-1">
-                <span className="text-2xs font-semibold text-slate-500">เหตุผลที่เชื่อมโยงกับเหตุการณ์:</span>
+                <span className="text-xs font-semibold text-slate-500">เหตุผลที่เชื่อมโยงกับเหตุการณ์:</span>
                 <ul className="space-y-1 text-xs text-slate-700">
                   {item.correlation_reasons.map((reason, idx) => (
                     <li key={idx} className="flex items-start gap-1.5">
@@ -545,11 +545,11 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                     <Layers className="w-4 h-4 text-purple-600" />
                     <span>แหล่งข้อมูลและหลักฐานต้นทางที่เกี่ยวข้อง ({item.related_sources.length + 1} แหล่งอ้างอิง)</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-3xs font-semibold bg-purple-100 text-purple-800 border border-purple-300/60">
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-300/60">
                     รวมกลุ่มตามเหตุการณ์
                   </span>
                 </div>
-                <p className="text-2xs sm:text-xs text-purple-800/90 leading-relaxed">
+                <p className="text-xs sm:text-xs text-purple-800/90 leading-relaxed">
                   เหตุการณ์นี้มีรายงานจากแหล่งข้อมูลสาธารณะหลายแห่งที่สอดคล้องกัน ระบบจึงจัดกลุ่มไว้ภายใต้การเฝ้าระวังเดียวกัน โดยแยกบันทึกข้อมูลต้นฉบับของแต่ละแหล่งไว้อย่างครบถ้วน:
                 </p>
 
@@ -559,14 +559,14 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-1.5 py-0.5 rounded text-3xs font-semibold bg-purple-100 text-purple-800">
+                            <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">
                               {src.source_platform || 'SOCIAL'}
                             </span>
-                            <span className="text-2xs font-bold text-slate-700 truncate">
+                            <span className="text-xs font-bold text-slate-700 truncate">
                               {src.source_name}
                             </span>
                             {src.observed_at && (
-                              <span className="text-3xs text-slate-400">
+                              <span className="text-xs text-slate-400">
                                 • พบเมื่อ {formatThaiDateTime(src.observed_at)}
                               </span>
                             )}
@@ -580,7 +580,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                             href={src.source_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-3xs font-semibold border border-purple-200 flex items-center gap-1 shrink-0 transition-colors"
+                            className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 flex items-center gap-1 shrink-0 transition-colors"
                             title="ดูโพสต์/หลักฐานต้นฉบับ"
                           >
                             <span>ดูต้นทาง</span>
@@ -589,7 +589,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                         )}
                       </div>
                       {src.description && (
-                        <p className="text-2xs text-slate-600 line-clamp-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <p className="text-xs text-slate-600 line-clamp-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
                           "{src.description}"
                         </p>
                       )}
@@ -607,11 +607,11 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                     <Newspaper className="w-4 h-4 text-indigo-600" />
                     <span>ข่าวสารและรายงานสื่อมวลชนที่เกี่ยวข้อง ({item.related_news.length} รายงาน)</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-3xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300/60">
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300/60">
                     ข้อมูลสนับสนุน
                   </span>
                 </div>
-                <p className="text-2xs sm:text-xs text-indigo-800/90 leading-relaxed">
+                <p className="text-xs sm:text-xs text-indigo-800/90 leading-relaxed">
                   รายงานข่าวจากสื่อมวลชนที่เกี่ยวข้องกับเหตุการณ์นี้ ถูกเชื่อมโยงเป็นข้อมูลสนับสนุนบริบทเชิงสารสนเทศ โดยระบบคงสถานะเป็นหมวดหมู่ข่าวสารแยกต่างหาก ไม่นับรวมเป็นรายงานประชาชน:
                 </p>
 
@@ -620,11 +620,11 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                     <div key={news.id || idx} className="p-3 bg-white rounded-xl border border-indigo-200/70 shadow-xs flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-1.5 py-0.5 rounded text-3xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {news.source_name}
                           </span>
                           {news.published_at && (
-                            <span className="text-3xs text-slate-400">
+                            <span className="text-xs text-slate-400">
                               เผยแพร่เมื่อ {formatThaiDateTime(news.published_at)}
                             </span>
                           )}
@@ -633,7 +633,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                           {news.title}
                         </h4>
                         {news.summary && (
-                          <p className="text-2xs text-slate-500 line-clamp-1">
+                          <p className="text-xs text-slate-500 line-clamp-1">
                             {news.summary}
                           </p>
                         )}
@@ -643,7 +643,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
                           href={news.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-3xs font-semibold border border-indigo-200 flex items-center gap-1 shrink-0 transition-colors"
+                          className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 flex items-center gap-1 shrink-0 transition-colors"
                           title="อ่านข่าวต้นทาง"
                         >
                           <span>อ่านข่าว</span>
@@ -657,7 +657,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
             )}
 
             {/* Legal / Scientific Caution Notice */}
-            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/70 text-amber-900 text-2xs space-y-1">
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/70 text-amber-900 text-xs space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <Info className="w-3.5 h-3.5 text-amber-700" />
                 <span>ข้อกำหนดความถูกต้องและขอบเขตการใช้งาน</span>
@@ -704,7 +704,7 @@ export const InformationDetailModal: React.FC<InformationDetailModalProps> = ({ 
 
           <div className="flex flex-wrap items-center gap-2 justify-end">
             <span 
-              className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-3xs sm:text-2xs inline-flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-xs sm:text-xs inline-flex items-center gap-1.5"
               title="ข้อมูลหลักทั้งหมดถูกบันทึกไว้ในระบบเรียบร้อยแล้ว"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />

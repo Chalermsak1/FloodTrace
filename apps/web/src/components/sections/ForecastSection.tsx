@@ -41,7 +41,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                 <span className="text-xs font-bold text-[#0B243D]">จุดเฝ้าระวังหลัก (อ.กบินทร์บุรี)</span>
               </div>
               <div className="w-3/4 border-t-2 border-dashed border-[#5794E0] my-1 relative">
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-white px-2 py-0.5 rounded text-2xs font-bold text-[#0C57C7] border border-[#C4C7D1]">
+                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-white px-2 py-0.5 rounded text-xs font-bold text-[#0C57C7] border border-[#C4C7D1]">
                   ทิศทางการไหล +3 วัน
                 </span>
               </div>
@@ -59,7 +59,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
                 <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
                 <span>สถานะข้อมูลคาดการณ์</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-200 text-amber-900">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900">
                 {isForecastBlocked ? 'ACCESS REQUIRED' : 'MODELED'}
               </span>
             </div>
@@ -80,11 +80,11 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           {/* Legend and Horizon */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2 bg-white rounded-lg border border-[#C4C7D1]/60">
-              <div className="text-2xs text-[#717F8F]">ช่วงเวลาคาดการณ์</div>
+              <div className="text-xs text-[#717F8F]">ช่วงเวลาคาดการณ์</div>
               <div className="font-bold text-[#0B243D] mt-0.5">+24H ถึง +72H</div>
             </div>
             <div className="p-2 bg-white rounded-lg border border-[#C4C7D1]/60">
-              <div className="text-2xs text-[#717F8F]">ประเภทข้อมูล</div>
+              <div className="text-xs text-[#717F8F]">ประเภทข้อมูล</div>
               <div className="font-bold text-[#0C57C7] mt-0.5">แบบจำลอง (MODELED)</div>
             </div>
           </div>

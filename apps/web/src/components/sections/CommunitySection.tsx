@@ -122,10 +122,10 @@ export const CommunitySection: React.FC<CommunitySectionProps> = ({
                     {signs}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="px-1.5 py-0.5 rounded text-2xs font-bold bg-orange-100 text-[#E16434] border border-orange-200">
+                    <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-[#E16434] border border-orange-200">
                       CITIZEN_REPORTED
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-2xs font-bold bg-slate-100 text-slate-700">
+                    <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">
                       UNVERIFIED
                     </span>
                   </div>

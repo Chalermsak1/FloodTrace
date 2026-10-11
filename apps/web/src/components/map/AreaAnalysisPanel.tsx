@@ -193,7 +193,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
       return (
         <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-2xs font-medium">กำลังรวบรวมข้อมูลโทรมาตร ข่าวสาร และรายงาน...</span>
+          <span className="text-xs font-medium">กำลังรวบรวมข้อมูลโทรมาตร ข่าวสาร และรายงาน...</span>
         </div>
       );
     }
@@ -206,7 +206,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
               <div>
-                <span className="text-3xs text-blue-800 font-medium block">สถานีระดับน้ำ</span>
+                <span className="text-xs text-blue-800 font-medium block">สถานีระดับน้ำ</span>
                 <span className="text-sm font-bold text-blue-950">{totalWaterStations} สถานี</span>
               </div>
               <Droplets className="w-4 h-4 text-blue-600 shrink-0" />
@@ -214,7 +214,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
 
             <div className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-between">
               <div>
-                <span className="text-3xs text-sky-800 font-medium block">สถานีวัดน้ำฝน</span>
+                <span className="text-xs text-sky-800 font-medium block">สถานีวัดน้ำฝน</span>
                 <span className="text-sm font-bold text-sky-950">{totalRainStations} สถานี</span>
               </div>
               <CloudRain className="w-4 h-4 text-sky-600 shrink-0" />
@@ -222,7 +222,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
 
             <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100 flex items-center justify-between">
               <div>
-                <span className="text-3xs text-amber-800 font-medium block">ข่าวสารทางการ</span>
+                <span className="text-xs text-amber-800 font-medium block">ข่าวสารทางการ</span>
                 <span className="text-sm font-bold text-amber-950">{totalNews} ข่าว</span>
               </div>
               <Newspaper className="w-4 h-4 text-amber-600 shrink-0" />
@@ -230,7 +230,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
 
             <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-100 flex items-center justify-between">
               <div>
-                <span className="text-3xs text-teal-800 font-medium block">รายงานประชาชน</span>
+                <span className="text-xs text-teal-800 font-medium block">รายงานประชาชน</span>
                 <span className="text-sm font-bold text-teal-950">{totalReports} เรื่อง</span>
               </div>
               <Users className="w-4 h-4 text-teal-600 shrink-0" />
@@ -240,22 +240,22 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           {/* Primary Water Reaches in this Area */}
           {reaches.length > 0 && (
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
-              <div className="flex items-center justify-between text-2xs font-semibold text-slate-700">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                 <span className="flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5 text-blue-600" />
                   <span>โครงข่ายลำน้ำหลักในพื้นที่:</span>
                 </span>
-                <span className="text-3xs text-slate-400">{reaches.length} ช่วงลำน้ำ</span>
+                <span className="text-xs text-slate-400">{reaches.length} ช่วงลำน้ำ</span>
               </div>
               <div className="space-y-1.5">
                 {reaches.slice(0, 3).map((r: any) => (
                   <div key={r.segment_id} className="p-2 bg-white rounded-lg border border-slate-200/80 flex items-center justify-between text-xs">
                     <div className="min-w-0 pr-2">
                       <div className="font-semibold text-slate-900 truncate">{r.name}</div>
-                      <div className="text-3xs text-slate-500 truncate">{r.desc}</div>
+                      <div className="text-xs text-slate-500 truncate">{r.desc}</div>
                     </div>
                     <span 
-                      className="px-2 py-0.5 rounded-full text-3xs font-bold text-white shrink-0 shadow-2xs"
+                      className="px-2 py-0.5 rounded-full text-xs font-bold text-white shrink-0 shadow-2xs"
                       style={{ backgroundColor: r.color }}
                     >
                       {r.monitoring_status === 'CRITICAL' ? 'วิกฤต' :
@@ -272,7 +272,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           {/* Contributing Spatial Factors */}
           {displayFactors.length > 0 && (
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
-              <div className="text-3xs font-semibold text-slate-500 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 การประเมินสภาวะเชิงพื้นที่:
               </div>
               <div className="space-y-1">
@@ -292,7 +292,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     )}
                     <div className="min-w-0 flex-1">
                       <span className="font-semibold block">{f.title}</span>
-                      {f.detail && <span className="text-slate-500 block text-2xs">{f.detail}</span>}
+                      {f.detail && <span className="text-slate-500 block text-xs">{f.detail}</span>}
                     </div>
                   </div>
                 ))}
@@ -301,7 +301,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           )}
 
           {/* Data Limitations Notice (Safety Principle) */}
-          <div className="p-2 rounded-xl bg-amber-50/60 border border-amber-200/70 text-2xs text-amber-900 leading-snug flex items-start gap-1.5">
+          <div className="p-2 rounded-xl bg-amber-50/60 border border-amber-200/70 text-xs text-amber-900 leading-snug flex items-start gap-1.5">
             <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold block text-amber-950">หลักการความน่าเชื่อถือทางอุทกวิทยา:</span>
@@ -322,7 +322,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           {/* Reaches Status Section */}
           {reaches.length > 0 && (
             <div className="space-y-1.5">
-              <h5 className="text-2xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+              <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
                 <Activity className="w-3 h-3 text-blue-600" />
                 <span>สภาพลำน้ำตามสถานีเชื่อมโยงจริง ({reaches.length} ช่วง)</span>
               </h5>
@@ -332,15 +332,15 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     <div className="flex items-start justify-between gap-2">
                       <div className="font-bold text-slate-900 leading-tight">{r.name}</div>
                       <span 
-                        className="px-2 py-0.5 rounded-full text-3xs font-bold text-white shrink-0"
+                        className="px-2 py-0.5 rounded-full text-xs font-bold text-white shrink-0"
                         style={{ backgroundColor: r.color }}
                       >
                         {r.status_label_th || r.monitoring_status}
                       </span>
                     </div>
-                    <div className="text-2xs text-slate-600">{r.status_explanation}</div>
+                    <div className="text-xs text-slate-600">{r.status_explanation}</div>
                     {r.matched_station_name && (
-                      <div className="text-3xs text-slate-500 pt-1 border-t border-slate-200 flex items-center justify-between">
+                      <div className="text-xs text-slate-500 pt-1 border-t border-slate-200 flex items-center justify-between">
                         <span>สถานีอ้างอิง: <strong className="text-slate-800">{r.matched_station_name}</strong></span>
                         <span className="text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded font-semibold border border-emerald-200">
                           เชื่อมโยงโดยตรง
@@ -355,7 +355,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
 
           {/* Water Gauge Stations List */}
           <div className="space-y-1.5">
-            <h5 className="text-2xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+            <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
               <Droplets className="w-3 h-3 text-blue-600" />
               <span>สถานีตรวจวัดระดับน้ำโทรมาตร ({waterStations.length} สถานี)</span>
             </h5>
@@ -370,9 +370,9 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     <div className="flex items-start justify-between gap-1.5">
                       <div>
                         <div className="font-bold text-slate-900">{st.name_th || st.station_id}</div>
-                        <div className="text-3xs text-slate-400">รหัส: {st.station_id} • อ.{st.district}</div>
+                        <div className="text-xs text-slate-400">รหัส: {st.station_id} • อ.{st.district}</div>
                       </div>
-                      <span className={`text-3xs font-semibold px-1.5 py-0.5 rounded border ${
+                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${
                         st.freshness_status === 'LIVE' || st.freshness_status === 'RECENT'
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                           : 'bg-slate-100 text-slate-600 border-slate-200'
@@ -381,7 +381,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-slate-50 rounded-lg text-2xs">
+                    <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-slate-50 rounded-lg text-xs">
                       <div>
                         <span className="text-slate-500 block">ระดับน้ำตรวจวัด:</span>
                         <strong className="text-sm font-bold text-slate-900">
@@ -397,7 +397,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     </div>
 
                     {/* Matching Confidence Badge */}
-                    <div className="p-1.5 rounded-lg bg-slate-50/80 border border-slate-100 space-y-0.5 text-3xs">
+                    <div className="p-1.5 rounded-lg bg-slate-50/80 border border-slate-100 space-y-0.5 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 font-medium">ลำน้ำที่เชื่อมโยง:</span>
                         <span className="font-semibold text-slate-800">{st.matched_waterway_name || 'นอกโครงข่ายหลัก'}</span>
@@ -429,7 +429,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
           {/* Rainfall Stations List */}
           {rainStations.length > 0 && (
             <div className="space-y-1.5 pt-2 border-t border-slate-100">
-              <h5 className="text-2xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+              <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
                 <CloudRain className="w-3 h-3 text-sky-600" />
                 <span>สถานีวัดน้ำฝนอัตโนมัติ ({rainStations.length} สถานี)</span>
               </h5>
@@ -438,11 +438,11 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   <div key={rs.station_id} className="p-2 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
                     <div>
                       <div className="font-semibold text-slate-900">{rs.name_th}</div>
-                      <div className="text-3xs text-slate-400">อ.{rs.district} • {rs.agency || 'สสน.'}</div>
+                      <div className="text-xs text-slate-400">อ.{rs.district} • {rs.agency || 'สสน.'}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-sky-700">{rs.rain_24h_mm != null ? `${rs.rain_24h_mm.toFixed(1)} มม.` : '-'}</div>
-                      <div className="text-3xs text-slate-400">ฝนสะสม 24 ชม.</div>
+                      <div className="text-xs text-slate-400">ฝนสะสม 24 ชม.</div>
                     </div>
                   </div>
                 ))}
@@ -462,7 +462,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             <div className="py-8 text-center text-slate-400 space-y-1">
               <Newspaper className="w-8 h-8 text-slate-300 mx-auto" />
               <div className="text-xs font-semibold text-slate-600">ไม่มีข่าวสารที่เชื่อมโยงกับพื้นที่นี้โดยตรง</div>
-              <div className="text-2xs text-slate-400">FloodTrace แสดงเฉพาะข่าวที่มีการระบุพิกัดหรือผลกระทบระดับอำเภอชัดเจน</div>
+              <div className="text-xs text-slate-400">FloodTrace แสดงเฉพาะข่าวที่มีการระบุพิกัดหรือผลกระทบระดับอำเภอชัดเจน</div>
             </div>
           ) : (
             newsItems.map((n: any) => (
@@ -481,14 +481,14 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   </div>
                 )}
                 <div>
-                  <div className="flex items-center justify-between text-3xs text-slate-500 mb-1">
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                     <span className="font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60">
                       {n.source_name || 'สื่อมวลชน'}
                     </span>
                     <span>{n.published_at_th}</span>
                   </div>
                   <h5 className="font-bold text-slate-900 leading-snug">{n.title}</h5>
-                  <p className="text-2xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">
                     {n.factual_summary}
                   </p>
                 </div>
@@ -497,7 +497,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     href={n.source_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-3xs font-semibold text-blue-600 hover:text-blue-800"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
                   >
                     <span>อ่านข่าวต้นฉบับ</span>
                     <ExternalLink className="w-3 h-3" />
@@ -519,7 +519,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             <div className="py-8 text-center text-slate-400 space-y-1">
               <Camera className="w-8 h-8 text-slate-300 mx-auto" />
               <div className="text-xs font-semibold text-slate-600">ไม่มีหลักฐานสาธารณะในพื้นที่นี้</div>
-              <div className="text-2xs text-slate-400">ยังไม่มีภาพถ่ายหรือวิดีโอจากสื่อสาธารณะที่ระบุพิกัดในเขตนี้</div>
+              <div className="text-xs text-slate-400">ยังไม่มีภาพถ่ายหรือวิดีโอจากสื่อสาธารณะที่ระบุพิกัดในเขตนี้</div>
             </div>
           ) : (
             evidenceItems.map((ev: any) => (
@@ -535,7 +535,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   </div>
                 )}
                 <div>
-                  <div className="flex items-center justify-between text-3xs text-slate-500 mb-1">
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                     <span className="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200/60">
                       {ev.source_platform || 'สื่อสาธารณะ'}
                     </span>
@@ -544,7 +544,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     </span>
                   </div>
                   <div className="font-semibold text-slate-900 leading-snug">{ev.title_or_summary}</div>
-                  <div className="text-3xs text-slate-400 mt-1 flex items-center justify-between">
+                  <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
                     <span>เวลาสังเกต: {ev.observed_at_th}</span>
                     <span>พิกัด: {ev.location_precision}</span>
                   </div>
@@ -554,7 +554,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                     href={ev.source_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-3xs font-semibold text-purple-600 hover:text-purple-800"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800"
                   >
                     <span>ดูแหล่งที่มา</span>
                     <ExternalLink className="w-3 h-3" />
@@ -576,22 +576,22 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             <div className="py-8 text-center text-slate-400 space-y-1">
               <Users className="w-8 h-8 text-slate-300 mx-auto" />
               <div className="text-xs font-semibold text-slate-600">ยังไม่มีรายงานจากประชาชนในพื้นที่นี้</div>
-              <div className="text-2xs text-slate-400">ประชาชนสามารถส่งรายงานสถานการณ์ผ่านเมนู "แจ้งรายงานสถานการณ์"</div>
+              <div className="text-xs text-slate-400">ประชาชนสามารถส่งรายงานสถานการณ์ผ่านเมนู "แจ้งรายงานสถานการณ์"</div>
             </div>
           ) : (
             citizenReports.map((cr: any) => (
               <div key={cr.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900">{cr.category}</span>
-                  <span className="text-3xs px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 font-semibold">
                     {cr.verification_status}
                   </span>
                 </div>
-                <div className="text-3xs text-slate-500">
+                <div className="text-xs text-slate-500">
                   ต.{cr.subdistrict} อ.{cr.district} • {cr.observed_at_th}
                 </div>
                 {cr.notes && (
-                  <div className="text-2xs text-slate-700 bg-white p-2 rounded-lg border border-slate-100 mt-1">
+                  <div className="text-xs text-slate-700 bg-white p-2 rounded-lg border border-slate-100 mt-1">
                     "{cr.notes}"
                   </div>
                 )}
@@ -622,16 +622,16 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                 return (
                   <div key={idx} className="relative space-y-1 text-xs">
                     <span className={`absolute -left-4 top-1.5 w-2 h-2 rounded-full ${dotColor} ring-4 ring-white`} />
-                    <div className="flex items-center justify-between text-3xs text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
                       <span>{t.timestamp_th}</span>
-                      <span className={`px-1 rounded text-2xs font-semibold ${
+                      <span className={`px-1 rounded text-xs font-semibold ${
                         isNews ? 'bg-blue-50 text-blue-700' : isEvidence ? 'bg-purple-50 text-purple-700' : 'bg-teal-50 text-teal-700'
                       }`}>
                         {isNews ? 'ข่าว' : isEvidence ? 'หลักฐาน' : 'รายงาน'}
                       </span>
                     </div>
                     <div className="font-bold text-slate-900 leading-snug">{t.title}</div>
-                    <div className="text-3xs text-slate-500">ที่มา: {t.source}</div>
+                    <div className="text-xs text-slate-500">ที่มา: {t.source}</div>
                   </div>
                 );
               })}
@@ -669,7 +669,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             <div className="flex items-center justify-between gap-2 min-h-[44px]">
               <div className="flex items-center gap-2 min-w-0">
                 <span 
-                  className="px-2.5 py-1 rounded-full text-2xs font-bold text-white shrink-0 shadow-2xs"
+                  className="px-2.5 py-1 rounded-full text-xs font-bold text-white shrink-0 shadow-2xs"
                   style={{ backgroundColor: priorityColor }}
                 >
                   {priorityBadge}
@@ -678,7 +678,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate leading-tight">
                     {areaTitle}
                   </h4>
-                  <span className="text-2xs text-slate-500 font-medium block truncate">
+                  <span className="text-xs text-slate-500 font-medium block truncate">
                     แตะเพื่อดูโทรมาตร ข่าว และรายงาน
                   </span>
                 </div>
@@ -722,14 +722,14 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span 
-                      className="px-2 py-0.5 rounded-full text-3xs font-bold text-white shrink-0"
+                      className="px-2 py-0.5 rounded-full text-xs font-bold text-white shrink-0"
                       style={{ backgroundColor: priorityColor }}
                     >
                       {priorityBadge}
                     </span>
                     <h3 className="text-sm font-bold text-slate-900 truncate">{areaTitle}</h3>
                   </div>
-                  <span className="text-2xs text-slate-500 truncate block mt-0.5">{areaSubtitle}</span>
+                  <span className="text-xs text-slate-500 truncate block mt-0.5">{areaSubtitle}</span>
                 </div>
                 <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
                   <X className="w-5 h-5" />
@@ -742,7 +742,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`px-2.5 py-1 text-2xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 ${
                       activeTab === tab.key 
                         ? 'bg-[#0284C7] text-white shadow-2xs' 
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -750,7 +750,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   >
                     <span>{tab.label}</span>
                     {tab.count != null && tab.count > 0 && (
-                      <span className={`px-1 py-0.2 rounded-full text-3xs ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                      <span className={`px-1 py-0.2 rounded-full text-xs ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
                         {tab.count}
                       </span>
                     )}
@@ -780,7 +780,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span 
-                  className="px-2.5 py-0.5 rounded-full text-2xs font-bold text-white shrink-0 shadow-2xs"
+                  className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white shrink-0 shadow-2xs"
                   style={{ backgroundColor: priorityColor }}
                 >
                   {priorityBadge}
@@ -789,7 +789,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
                   {areaTitle}
                 </h3>
               </div>
-              <span className="text-2xs text-slate-500 truncate block mt-0.5">{areaSubtitle}</span>
+              <span className="text-xs text-slate-500 truncate block mt-0.5">{areaSubtitle}</span>
             </div>
             <button 
               onClick={onClose} 
@@ -806,7 +806,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-2.5 py-1 text-2xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-xl shrink-0 whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
                   activeTab === tab.key 
                     ? 'bg-[#0284C7] text-white shadow-2xs' 
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -814,7 +814,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
               >
                 <span>{tab.label}</span>
                 {tab.count != null && tab.count > 0 && (
-                  <span className={`px-1 py-0.2 rounded-full text-3xs ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                  <span className={`px-1 py-0.2 rounded-full text-xs ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
                     {tab.count}
                   </span>
                 )}
@@ -829,7 +829,7 @@ export const AreaAnalysisPanel: React.FC<AreaAnalysisPanelProps> = ({ data, onCl
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-2xs text-slate-500 shrink-0">
+        <div className="p-3 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <div className="flex items-center gap-1 truncate">
             <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span>ข้อมูลตรวจสอบย้อนหลังได้</span>

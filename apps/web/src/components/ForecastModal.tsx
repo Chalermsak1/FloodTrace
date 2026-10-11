@@ -174,7 +174,7 @@ export const ForecastModal: React.FC<Props> = ({ isOpen, onClose, onOpenProvenan
                     <div className="text-xs text-amber-400 mt-0.5">
                       {d.probability_max_pct}% prob
                     </div>
-                    <div className={`mt-1.5 text-2xs px-1.5 py-0.5 rounded font-semibold ${
+                    <div className={`mt-1.5 text-xs px-1.5 py-0.5 rounded font-semibold ${
                       (d.runoff_risk_level || '').includes('WARNING')
                         ? 'bg-rose-500/20 text-rose-300'
                         : (d.runoff_risk_level || '').includes('HIGH')

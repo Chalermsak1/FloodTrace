@@ -138,7 +138,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                 <h2 className="text-base font-bold text-white tracking-wide">
                   My Area & Public Area Card
                 </h2>
-                <span className="px-2 py-0.5 rounded text-2xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                   MASTER PROMPT SEC. 24 & 31
                 </span>
               </div>
@@ -218,7 +218,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                   
                   {/* Flood */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <Waves className="w-3.5 h-3.5 text-sky-400" />
                       Flood (Official Observed Data)
                     </div>
@@ -227,7 +227,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Water Stage */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <Activity className="w-3.5 h-3.5 text-teal-400" />
                       Water Stage (Measured Fact)
                     </div>
@@ -236,7 +236,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Hydrological Connectivity */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <Compass className="w-3.5 h-3.5 text-indigo-400" />
                       Hydrological Connectivity (Modeled)
                     </div>
@@ -245,7 +245,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Nearby Facilities */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-amber-400" />
                       Nearby Facilities (Official Record)
                     </div>
@@ -254,7 +254,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Citizen Observations */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-400" />
                       Citizen Observations (Unverified)
                     </div>
@@ -263,7 +263,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Current Lab Evidence */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                       Current Laboratory Evidence
                     </div>
@@ -272,7 +272,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                   {/* Forecast */}
                   <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 md:col-span-2">
-                    <div className="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                       <CloudRain className="w-3.5 h-3.5 text-sky-400" />
                       Forecast (Weather Simulation)
                     </div>
@@ -283,7 +283,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
 
                 {/* Interpretation */}
                 <div className="p-3.5 rounded-xl bg-sky-950/30 border border-sky-800/40 text-xs text-sky-200 space-y-1">
-                  <div className="font-bold text-sky-300 uppercase text-2xs tracking-wider">
+                  <div className="font-bold text-sky-300 uppercase text-xs tracking-wider">
                     Screening Interpretation:
                   </div>
                   <p>{areaCard.interpretation}</p>
@@ -302,7 +302,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                 <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div>
-                      <div className="text-2xs font-mono text-teal-400 font-bold uppercase tracking-wider">
+                      <div className="text-xs font-mono text-teal-400 font-bold uppercase tracking-wider">
                         Master Prompt Section 25
                       </div>
                       <h4 className="text-sm font-bold text-white flex items-center gap-2 mt-0.5">
@@ -310,7 +310,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                         Where is this water connected to?
                       </h4>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
                       {waterway.analysis_type}
                     </span>
                   </div>
@@ -320,7 +320,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                     {/* Waterway Identification */}
                     <div className="space-y-2">
                       <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                        <span className="text-2xs font-bold text-slate-400 uppercase">Connected Waterway (Official Record)</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase">Connected Waterway (Official Record)</span>
                         <div className="font-bold text-white text-sm mt-0.5">{waterway.connected_waterway.name}</div>
                         <p className="text-slate-400 text-xs mt-1">{waterway.connected_waterway.description}</p>
                         <div className="text-xs text-teal-400 mt-2 font-mono">
@@ -329,7 +329,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                       </div>
 
                       <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                        <span className="text-2xs font-bold text-slate-400 uppercase">Flow Direction (Modeled)</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase">Flow Direction (Modeled)</span>
                         <div className="font-semibold text-slate-300 mt-0.5">{waterway.upstream_network.flow_direction}</div>
                       </div>
                     </div>
@@ -337,7 +337,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                     {/* Upstream Facilities & Gauges */}
                     <div className="space-y-2">
                       <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                        <span className="text-2xs font-bold text-slate-400 uppercase">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
                           Upstream Telemetry Gauges ({(waterway.monitoring_locations || []).length})
                         </span>
                         <div className="space-y-1.5 mt-2">
@@ -357,10 +357,10 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                       </div>
 
                       <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                        <span className="text-2xs font-bold text-slate-400 uppercase">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
                           Upstream Registered Facilities ({(waterway.registered_facilities || []).length})
                         </span>
-                        <p className="text-2xs text-slate-400 mb-2">
+                        <p className="text-xs text-slate-400 mb-2">
                           Official DIW 101/105/106 registrations within upstream corridor. Category denotes activity type, not toxicity.
                         </p>
                         <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
@@ -368,9 +368,9 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
                             <div key={f.facility_id} className="text-xs bg-slate-950 p-2 rounded-lg border border-slate-800 flex justify-between items-center">
                               <div>
                                 <div className="font-semibold text-slate-300 truncate max-w-[200px]">{f.name}</div>
-                                <div className="text-2xs text-slate-400">Type {f.official_activity_category} • {f.subdistrict}</div>
+                                <div className="text-xs text-slate-400">Type {f.official_activity_category} • {f.subdistrict}</div>
                               </div>
-                              <span className="text-2xs font-mono text-slate-400">{f.distance_to_point_km} km</span>
+                              <span className="text-xs font-mono text-slate-400">{f.distance_to_point_km} km</span>
                             </div>
                           ))}
                         </div>
@@ -389,7 +389,7 @@ export const MyAreaModal: React.FC<Props> = ({ isOpen, onClose, onOpenEvidenceCa
               {/* Section 31 Privacy Guarantee */}
               <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
                 <span>Privacy Safeguard: Spatial envelope evaluation. Exact user GPS coordinates are never stored or logged.</span>
-                <span className="font-mono text-2xs text-sky-400 font-semibold">PDPA Section 37 Compliant</span>
+                <span className="font-mono text-xs text-sky-400 font-semibold">PDPA Section 37 Compliant</span>
               </div>
             </>
           ) : null}

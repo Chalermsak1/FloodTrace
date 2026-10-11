@@ -71,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="flex items-start justify-between p-4 sm:p-6 border-b border-slate-100 bg-white/95 backdrop-blur-xs sticky top-0 z-10 shrink-0">
           <div className="space-y-1 pr-6 min-w-0">
             {badge && <div className="mb-1.5">{badge}</div>}
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug truncate">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug truncate">
               {title}
             </h3>
             {subtitle && (

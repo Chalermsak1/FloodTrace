@@ -486,16 +486,16 @@ export const CasesPage: React.FC = () => {
                       </div>
 
                       <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-block text-2xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                        <span className="inline-block text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                           หลักฐานจากแหล่งสาธารณะ (External Evidence)
                         </span>
                         {ev.related_sources_count && ev.related_sources_count > 1 && (
-                          <span className="inline-block text-2xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                          <span className="inline-block text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                             {ev.related_sources_count} แหล่งอ้างอิง
                           </span>
                         )}
                         {ev.related_news && ev.related_news.length > 0 && (
-                          <span className="inline-block text-2xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          <span className="inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                             ข่าวสนับสนุน ({ev.related_news.length})
                           </span>
                         )}
@@ -536,7 +536,7 @@ export const CasesPage: React.FC = () => {
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
               <div className="font-semibold text-slate-800 text-xs sm:text-sm">พื้นที่โดยประมาณ (Generalized Area):</div>
               <div className="text-slate-900 font-bold">{selectedReport.generalized_location || `อำเภอ${selectedReport.district}`}</div>
-              <div className="text-2xs text-slate-500 pt-1">
+              <div className="text-xs text-slate-500 pt-1">
                 * พิกัดตำแหน่งถูกปัดเศษตามมาตรฐานความปลอดภัยข้อมูลเพื่อปกป้องความเป็นส่วนตัวของผู้รายงาน
               </div>
             </div>

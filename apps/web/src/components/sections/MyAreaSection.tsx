@@ -111,7 +111,7 @@ export const MyAreaSection: React.FC<MyAreaSectionProps> = ({
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[#717F8F]">สถานะพื้นที่ของคุณ</span>
-              <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-[#E16434] text-white">
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#E16434] text-white">
                 HIGH
               </span>
             </div>

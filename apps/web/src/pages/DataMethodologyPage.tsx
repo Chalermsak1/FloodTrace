@@ -66,7 +66,7 @@ export const DataMethodologyPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900">
               ข้อมูลที่เชื่อมต่ออัตโนมัติ (Active / Automated Refresh)
             </h3>
-            <span className="text-2xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold border border-emerald-200">
+            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold border border-emerald-200">
               🟢 กำลังอัปเดตอัตโนมัติ
             </span>
           </div>
@@ -80,7 +80,7 @@ export const DataMethodologyPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="font-bold text-sm sm:text-base text-slate-900">{ds.dataset}</span>
-                    <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
                       {ds.status_th}
                     </span>
                   </div>
@@ -89,7 +89,7 @@ export const DataMethodologyPage: React.FC = () => {
                     {ds.provenance}
                   </p>
                 </div>
-                <div className="pt-2 border-t border-emerald-100 text-2xs space-y-1 text-slate-500">
+                <div className="pt-2 border-t border-emerald-100 text-xs space-y-1 text-slate-500">
                   <div><strong>รอบการดึงข้อมูล:</strong> {ds.refresh_interval} ({ds.update_mode})</div>
                   <div><strong>สัญญาอนุญาต:</strong> {ds.license}</div>
                 </div>
@@ -105,7 +105,7 @@ export const DataMethodologyPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900">
               ข้อมูลอ้างอิงเชิงพื้นที่ (Reference Datasets)
             </h3>
-            <span className="text-2xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold border border-blue-200">
+            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold border border-blue-200">
               🔵 ข้อมูลอ้างอิง
             </span>
           </div>
@@ -119,7 +119,7 @@ export const DataMethodologyPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="font-bold text-sm sm:text-base text-slate-900">{ds.dataset}</span>
-                    <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-blue-100 text-blue-800">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
                       {ds.status_th}
                     </span>
                   </div>
@@ -128,12 +128,12 @@ export const DataMethodologyPage: React.FC = () => {
                     {ds.provenance}
                   </p>
                   {ds.disclaimer && (
-                    <div className="mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-2xs text-amber-900 leading-normal">
+                    <div className="mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-normal">
                       <strong>หมายเหตุสำคัญ:</strong> {ds.disclaimer}
                     </div>
                   )}
                 </div>
-                <div className="pt-2 border-t border-blue-100 text-2xs space-y-1 text-slate-500">
+                <div className="pt-2 border-t border-blue-100 text-xs space-y-1 text-slate-500">
                   <div><strong>รูปแบบชุดข้อมูล:</strong> {ds.update_mode}</div>
                   <div><strong>สัญญาอนุญาต:</strong> {ds.license}</div>
                 </div>
@@ -149,7 +149,7 @@ export const DataMethodologyPage: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900">
               แหล่งข้อมูลที่ยังรอการอนุญาตให้เข้าถึง (Blocked / Pending Access)
             </h3>
-            <span className="text-2xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold border border-slate-300">
+            <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold border border-slate-300">
               ⚪ ยังรอการอนุญาตให้เข้าถึง
             </span>
           </div>
@@ -162,12 +162,12 @@ export const DataMethodologyPage: React.FC = () => {
               <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between gap-1 mb-1">
                   <span className="font-bold text-xs sm:text-sm text-slate-800">{ds.dataset}</span>
-                  <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-slate-200 text-slate-700">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">
                     {ds.status_th}
                   </span>
                 </div>
-                <div className="text-2xs text-slate-500 font-medium">{ds.agency}</div>
-                <p className="text-2xs text-slate-600 leading-normal">
+                <div className="text-xs text-slate-500 font-medium">{ds.agency}</div>
+                <p className="text-xs text-slate-600 leading-normal">
                   <strong>เหตุผล:</strong> {ds.reason}
                 </p>
               </div>

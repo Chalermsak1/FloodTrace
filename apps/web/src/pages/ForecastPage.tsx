@@ -185,7 +185,7 @@ export const ForecastPage: React.FC = () => {
                 ผลจากแบบจำลองใช้เพื่อการเฝ้าระวัง ไม่ใช่ผลตรวจทางห้องปฏิบัติการ และไม่ใช่การระบุผู้ก่อมลพิษ
               </span>
             </div>
-            <span className="text-2xs text-slate-500 shrink-0 hidden sm:inline">
+            <span className="text-xs text-slate-500 shrink-0 hidden sm:inline">
               อัปเดตตามรอบโทรมาตรน้ำ
             </span>
           </div>
@@ -234,7 +234,7 @@ export const ForecastPage: React.FC = () => {
             </div>
 
             <div className="pt-2 border-t border-slate-100">
-              <div className="text-2xs text-slate-500 leading-relaxed">
+              <div className="text-xs text-slate-500 leading-relaxed">
                 * สัญลักษณ์เส้นประสีม่วงบนแผนที่แสดงขอบเขตพื้นที่ที่แบบจำลองแนะนำให้ติดตามล่วงหน้า
               </div>
             </div>

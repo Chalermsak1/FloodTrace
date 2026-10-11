@@ -78,7 +78,7 @@ export const LayerControl: React.FC<Props> = ({ visibleLayers, onToggleLayer, co
                 <div className="flex items-center gap-1.5 shrink-0">
                   {item.count !== undefined && (
                     item.count === 0 && (item.key === 'facilities' || item.key === 'stations' || item.key === 'reservoirs') ? (
-                      <span className="px-1.5 py-0.5 rounded text-2xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Blocked under REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True">
+                      <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Blocked under REQUIRE_PRIVATE_ACCESS_FOR_PRODUCTION = True">
                         ACCESS REQ
                       </span>
                     ) : (
